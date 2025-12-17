@@ -72,6 +72,7 @@ export default function POSPage() {
   const [customerGstin, setCustomerGstin] = useState('');
   const [paymentMode, setPaymentMode] = useState('cash');
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchBy, setSearchBy] = useState('name');
   const [invoiceNumber, setInvoiceNumber] = useState('');
 
   useEffect(() => {
@@ -134,9 +135,15 @@ export default function POSPage() {
   const tax = subtotal * taxRate;
   const total = subtotal + tax;
 
-  const filteredProducts = products.filter((product) =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProducts = products.filter((product) => {
+    if (searchBy === 'name') {
+      return product.name.toLowerCase().includes(searchTerm.toLowerCase());
+    } else if (searchBy === 'mrp') {
+      return product.price.toString().includes(searchTerm);
+    }
+    return false;
+  });
+
 
   const clearSale = () => {
     setCart([]);
@@ -155,7 +162,7 @@ export default function POSPage() {
 
   return (
      <div className="flex-1 overflow-hidden h-full flex flex-col">
-        <div className="flex-none p-4 border-b">
+        <div className="flex-none p-4 border-b space-y-4">
             <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -164,6 +171,23 @@ export default function POSPage() {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
+            </div>
+             <div className="flex items-center space-x-4">
+                <Label className="text-sm font-medium">Search By:</Label>
+                <RadioGroup
+                    value={searchBy}
+                    onValueChange={setSearchBy}
+                    className="flex items-center space-x-4"
+                >
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="name" id="name" />
+                        <Label htmlFor="name">Name/Code</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="mrp" id="mrp" />
+                        <Label htmlFor="mrp">MRP</Label>
+                    </div>
+                </RadioGroup>
             </div>
         </div>
         <ScrollArea className="flex-none h-40">
@@ -377,4 +401,5 @@ export default function POSPage() {
         </div>
     </div>
   );
-}
+
+    
