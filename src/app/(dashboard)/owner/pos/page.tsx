@@ -143,22 +143,22 @@ export default function POSPage() {
             </div>
         </div>
         <ScrollArea className="flex-none h-40">
-            <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-4 p-4">
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-4 p-4">
                 {filteredProducts.map((product) => (
                     <Card
                         key={product.id}
-                        className="group relative flex flex-col items-center justify-center p-2 hover:bg-accent cursor-pointer aspect-square transition-colors"
+                        className="group relative flex flex-col items-center justify-center p-2 hover:bg-accent cursor-pointer aspect-square transition-colors shadow-sm"
                         onClick={() => addToCart(product)}
                     >
-                        <div className="text-[10px] sm:text-xs font-medium text-center flex-grow flex items-center">
+                        <div className="text-xs sm:text-sm font-semibold text-center flex-grow flex items-center justify-center">
                             {product.name}
                         </div>
-                        <div className="text-[10px] text-muted-foreground mt-1">
+                        <div className="text-xs text-muted-foreground mt-1">
                             ₹{product.price.toFixed(2)}
                         </div>
-                        <div className="absolute bottom-0 right-0">
-                          <Button variant="ghost" size="icon" className="h-6 w-6 text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                              <PlusCircle className="h-4 w-4" />
+                        <div className="absolute bottom-1 right-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                              <PlusCircle className="h-5 w-5" />
                           </Button>
                         </div>
                     </Card>
