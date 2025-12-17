@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -52,6 +52,11 @@ export default function POSPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [invoiceNumber, setInvoiceNumber] = useState('');
+
+  useEffect(() => {
+    setInvoiceNumber(new Date().getTime().toString().slice(-6));
+  }, []);
 
   const addToCart = (productToAdd: Product) => {
     setCart((prevCart) => {
@@ -145,7 +150,7 @@ export default function POSPage() {
           <CardHeader>
             <CardTitle>Current Sale</CardTitle>
             <CardDescription>
-              Invoice #INV{new Date().getTime().toString().slice(-6)}
+              {invoiceNumber ? `Invoice #INV${invoiceNumber}` : '...'}
             </CardDescription>
           </CardHeader>
           <CardContent>
