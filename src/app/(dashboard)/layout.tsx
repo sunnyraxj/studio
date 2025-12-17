@@ -2,6 +2,7 @@
 'use client';
 
 import Link from 'next/link';
+import React, { useState } from 'react';
 import {
   Bell,
   CircleUser,
@@ -13,6 +14,10 @@ import {
   Package,
   Printer,
   ChevronRight,
+  ChevronDown,
+  LogOut,
+  Settings,
+  LifeBuoy,
 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -46,6 +51,11 @@ import {
   CardTitle,
   CardContent,
 } from '@/components/ui/card';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 
 const navLinks = [
   {
@@ -86,6 +96,8 @@ const navLinks = [
 function AppSidebar() {
   const pathname = usePathname();
   const { open } = useSidebar();
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
+
   return (
     <Sidebar>
       <SidebarHeader className="h-14 lg:h-[60px]">
@@ -133,9 +145,9 @@ function AppSidebar() {
         </SidebarMenu>
       </SidebarContent>
 
-      <SidebarFooter className="mt-auto">
+      <SidebarFooter className="mt-auto p-2">
         {open && (
-          <Card>
+          <Card className="mb-2">
             <CardHeader className="p-2 pt-0 md:p-4">
               <CardTitle>Upgrade to Pro</CardTitle>
               <CardDescription>
@@ -150,31 +162,37 @@ function AppSidebar() {
             </CardContent>
           </Card>
         )}
-        <div className={cn("flex p-2 items-center", open ? "justify-between" : "justify-center")}>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size={open ? "default" : "icon"}
-                  className={cn(!open && "rounded-full w-8 h-8")}
-                >
-                  <CircleUser className="h-5 w-5" />
-                  {open && <span className='ml-2'>My Account</span>}
-                  <span className="sr-only">Toggle user menu</span>
+        <Collapsible open={isAccountOpen} onOpenChange={setIsAccountOpen}>
+          <CollapsibleTrigger asChild>
+             <Button
+                variant="ghost"
+                className={cn("w-full flex items-center", open ? "justify-between" : "justify-center")}
+                size={open ? "default" : "icon"}
+              >
+              <div className="flex items-center gap-2">
+                <CircleUser className="h-5 w-5" />
+                {open && <span>My Account</span>}
+              </div>
+              {open && (isAccountOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />)}
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-1 pt-2">
+             <Link href="/owner/settings" passHref>
+                <Button variant="ghost" className="w-full justify-start gap-2">
+                    <Settings className="h-4 w-4" />
+                    Settings
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/owner/settings">Settings</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem>Support</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Logout</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-        </div>
+             </Link>
+             <Button variant="ghost" className="w-full justify-start gap-2">
+                <LifeBuoy className="h-4 w-4" />
+                Support
+             </Button>
+             <Button variant="ghost" className="w-full justify-start gap-2">
+                <LogOut className="h-4 w-4" />
+                Logout
+             </Button>
+          </CollapsibleContent>
+        </Collapsible>
       </SidebarFooter>
     </Sidebar>
   );
@@ -253,6 +271,24 @@ export default function DashboardLayout({
           <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
             <MobileSidebar />
             <div className="w-full flex-1">{/* Add nav items here */}</div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="secondary" size="icon" className="rounded-full">
+                  <CircleUser className="h-5 w-5" />
+                  <span className="sr-only">Toggle user menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                   <Link href="/owner/settings">Settings</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem>Support</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>Logout</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </header>
           <main className="flex flex-1 flex-col p-4 lg:p-6 overflow-hidden">
             {children}
