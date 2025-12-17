@@ -111,7 +111,7 @@ export default function POSPage() {
   const updateDiscount = (productId: number, discount: number) => {
     setCart((prevCart) =>
       prevCart.map((item) =>
-        item.product.id === productId ? { ...item, discount: discount } : item
+        item.product.id === productId ? { ...item, discount: isNaN(discount) ? 0 : discount } : item
       )
     );
   };
@@ -120,10 +120,15 @@ export default function POSPage() {
     setCart((prevCart) => prevCart.filter((item) => item.product.id !== productId));
   };
 
-  const subtotal = cart.reduce(
-    (acc, item) => acc + (item.product.price * item.quantity) - item.discount,
-    0
-  );
+  const getSubtotal = () => {
+    return cart.reduce((acc, item) => {
+      const itemTotal = item.product.price * item.quantity;
+      const discountAmount = itemTotal * (item.discount / 100);
+      return acc + (itemTotal - discountAmount);
+    }, 0);
+  };
+
+  const subtotal = getSubtotal();
   const taxRate = 0.05; // 5%
   const tax = subtotal * taxRate;
   const total = subtotal + tax;
@@ -190,7 +195,7 @@ export default function POSPage() {
                             <TableHead className="w-[50px]">Sr.No</TableHead>
                             <TableHead>Item</TableHead>
                             <TableHead className="text-center">Qty</TableHead>
-                            <TableHead className="w-[120px]">Discount (₹)</TableHead>
+                            <TableHead className="w-[120px]">Discount (%)</TableHead>
                             <TableHead className="text-right">Amount</TableHead>
                             <TableHead className="w-[50px] text-right">Delete</TableHead>
                             </TableRow>
@@ -203,39 +208,51 @@ export default function POSPage() {
                                 </TableCell>
                             </TableRow>
                             )}
-                            {cart.map((item, index) => (
-                            <TableRow key={item.product.id}>
-                                <TableCell className="font-medium py-2">{index + 1}</TableCell>
-                                <TableCell className='font-medium py-2'>{item.product.name}</TableCell>
-                                <TableCell className="text-center py-2">
-                                <div className="flex items-center justify-center gap-1">
-                                    <Button variant="ghost" size="icon" className='h-6 w-6' onClick={() => updateQuantity(item.product.id, -1)}>
-                                    <MinusCircle className='h-4 w-4' />
-                                    </Button>
-                                    <span>{item.quantity}</span>
-                                    <Button variant="ghost" size="icon" className='h-6 w-6' onClick={() => updateQuantity(item.product.id, 1)}>
-                                    <PlusCircle className='h-4 w-4' />
-                                    </Button>
-                                </div>
-                                </TableCell>
-                                <TableCell className="py-2">
-                                  <Input
-                                    type="number"
-                                    value={item.discount}
-                                    onChange={(e) => updateDiscount(item.product.id, parseFloat(e.target.value) || 0)}
-                                    className="h-8 text-center"
-                                  />
-                                </TableCell>
-                                <TableCell className="text-right py-2">
-                                ₹{((item.product.price * item.quantity) - item.discount).toFixed(2)}
-                                </TableCell>
-                                <TableCell className="text-right py-2">
-                                    <Button variant="ghost" size="icon" className='h-6 w-6 text-red-500 hover:text-red-700' onClick={() => removeItem(item.product.id)}>
-                                        <Trash2 className='h-4 w-4' />
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                            ))}
+                            {cart.map((item, index) => {
+                              const itemTotal = item.product.price * item.quantity;
+                              const discountAmount = itemTotal * (item.discount / 100);
+                              const finalPrice = itemTotal - discountAmount;
+
+                              return (
+                                <TableRow key={item.product.id}>
+                                    <TableCell className="font-medium py-2">{index + 1}</TableCell>
+                                    <TableCell className='font-medium py-2'>{item.product.name}</TableCell>
+                                    <TableCell className="text-center py-2">
+                                    <div className="flex items-center justify-center gap-1">
+                                        <Button variant="ghost" size="icon" className='h-6 w-6' onClick={() => updateQuantity(item.product.id, -1)}>
+                                        <MinusCircle className='h-4 w-4' />
+                                        </Button>
+                                        <span>{item.quantity}</span>
+                                        <Button variant="ghost" size="icon" className='h-6 w-6' onClick={() => updateQuantity(item.product.id, 1)}>
+                                        <PlusCircle className='h-4 w-4' />
+                                        </Button>
+                                    </div>
+                                    </TableCell>
+                                    <TableCell className="py-2">
+                                    <Input
+                                        type="number"
+                                        value={item.discount === 0 ? '' : item.discount}
+                                        placeholder="0"
+                                        onFocus={(e) => e.target.value === '0' && (e.target.value = '')}
+                                        onBlur={(e) => e.target.value === '' && updateDiscount(item.product.id, 0) }
+                                        onChange={(e) => {
+                                            const value = parseFloat(e.target.value);
+                                            updateDiscount(item.product.id, isNaN(value) ? 0 : value)
+                                        }}
+                                        className="h-8 text-center"
+                                    />
+                                    </TableCell>
+                                    <TableCell className="text-right py-2">
+                                    ₹{finalPrice.toFixed(2)}
+                                    </TableCell>
+                                    <TableCell className="text-right py-2">
+                                        <Button variant="ghost" size="icon" className='h-6 w-6 text-red-500 hover:text-red-700' onClick={() => removeItem(item.product.id)}>
+                                            <Trash2 className='h-4 w-4' />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                              )
+                            })}
                         </TableBody>
                     </Table>
                 </ScrollArea>
