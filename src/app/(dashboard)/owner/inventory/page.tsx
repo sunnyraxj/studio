@@ -30,7 +30,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
@@ -211,6 +210,10 @@ export const columns: ColumnDef<InventoryItem>[] = [
 
       return <div className="text-right font-medium">{formatted}</div>;
     },
+    filterFn: (row, columnId, filterValue) => {
+        const rowValue = row.getValue(columnId) as number;
+        return String(rowValue).includes(String(filterValue));
+    }
   },
   {
     accessorKey: 'gst',
@@ -360,8 +363,8 @@ export default function InventoryPage() {
                     <Label htmlFor="category">Category</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="price" id="mrp" />
-                    <Label htmlFor="mrp">MRP</Label>
+                    <RadioGroupItem value="price" id="price" />
+                    <Label htmlFor="price">MRP</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                     <RadioGroupItem value="sku" id="sku" />
