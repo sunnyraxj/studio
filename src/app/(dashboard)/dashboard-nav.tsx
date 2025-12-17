@@ -66,7 +66,7 @@ export function DashboardNav({ isMobile = false }: { isMobile?: boolean }) {
           <span className="sr-only">Acme Inc</span>
         </Link>
         {navLinks.map((link) => (
-          <NavLink key={link.href} {...link} isMobile={true} />
+          <NavLink key={link.label} {...link} isMobile={true} />
         ))}
       </nav>
     );
@@ -75,7 +75,7 @@ export function DashboardNav({ isMobile = false }: { isMobile?: boolean }) {
   return (
     <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
       {navLinks.map((link) => (
-        <NavLink key={link.href} {...link} isMobile={false} />
+        <NavLink key={link.label} {...link} isMobile={false} />
       ))}
     </nav>
   );
