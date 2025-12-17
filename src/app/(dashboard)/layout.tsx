@@ -10,7 +10,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <AppSidebar />
         <div className="flex flex-col md:pl-[var(--sidebar-width)] group-data-[collapsible=icon]:md:pl-[var(--sidebar-width-icon)] transition-[padding] ease-linear">
           <Header />
-          <main className="p-4 sm:p-6 lg:p-8 overflow-auto">
+          <main className="p-4 sm:p-6 lg:p-8">
               {children}
           </main>
         </div>
