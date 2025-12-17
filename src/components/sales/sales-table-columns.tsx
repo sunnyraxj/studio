@@ -8,7 +8,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal, ArrowUpDown, CircleDollarSign, Smartphone, Landmark } from "lucide-react"
@@ -19,6 +18,28 @@ const paymentMethodIcons = {
     cash: CircleDollarSign,
     card: Landmark,
     online: Smartphone
+}
+
+function ActionsCell({ row }: { row: any }) {
+  const sale = row.original as Sale;
+
+  return (
+    <div className="text-right">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="h-8 w-8 p-0">
+            <span className="sr-only">Open menu</span>
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <DropdownMenuItem>View sale details</DropdownMenuItem>
+          <DropdownMenuItem>Generate Invoice</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  )
 }
 
 export const columns: ColumnDef<Sale>[] = [
@@ -105,26 +126,6 @@ export const columns: ColumnDef<Sale>[] = [
   },
   {
     id: "actions",
-    cell: ({ row }) => {
-      const sale = row.original
- 
-      return (
-        <div className="text-right">
-            <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem>View sale details</DropdownMenuItem>
-                <DropdownMenuItem>Generate Invoice</DropdownMenuItem>
-            </DropdownMenuContent>
-            </DropdownMenu>
-        </div>
-      )
-    },
+    cell: ActionsCell
   },
 ]
