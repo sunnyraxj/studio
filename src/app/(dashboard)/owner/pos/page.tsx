@@ -25,6 +25,7 @@ import {
   RadioGroupItem,
 } from '@/components/ui/radio-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 
 type Product = {
   id: number;
@@ -147,6 +148,11 @@ export default function POSPage() {
     setPaymentMode('cash');
   };
 
+  const getCartItemQuantity = (productId: number) => {
+    const item = cart.find(cartItem => cartItem.product.id === productId);
+    return item ? item.quantity : 0;
+  }
+
   return (
      <div className="flex-1 overflow-hidden h-full flex flex-col">
         <div className="flex-none p-4 border-b">
@@ -162,12 +168,22 @@ export default function POSPage() {
         </div>
         <ScrollArea className="flex-none h-40">
             <div className="grid grid-cols-4 gap-4 p-4">
-                {filteredProducts.map((product) => (
+                {filteredProducts.map((product) => {
+                  const quantityInCart = getCartItemQuantity(product.id);
+                  return (
                     <Card
                         key={product.id}
                         className="group relative flex flex-col items-center justify-center p-3 hover:bg-green-100 cursor-pointer transition-colors shadow-sm"
                         onClick={() => addToCart(product)}
                     >
+                        {quantityInCart > 0 && (
+                          <Badge 
+                            variant="secondary"
+                            className="absolute -top-2 -right-2 h-6 w-6 rounded-full flex items-center justify-center bg-primary text-primary-foreground"
+                          >
+                            {quantityInCart}
+                          </Badge>
+                        )}
                         <div className="text-xs sm:text-sm font-semibold text-center">
                             {product.name}
                         </div>
@@ -175,7 +191,8 @@ export default function POSPage() {
                             MRP: ₹{product.price.toFixed(2)}
                         </div>
                     </Card>
-                ))}
+                  )
+                })}
             </div>
         </ScrollArea>
         
