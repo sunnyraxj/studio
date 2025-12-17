@@ -19,6 +19,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import * as React from 'react';
+import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -261,9 +262,11 @@ export default function InventoryPage() {
           className="max-w-sm"
         />
         <div className="ml-auto flex items-center gap-2">
+           <Link href="/owner/inventory/add">
             <Button>
                 <PlusCircle className="mr-2 h-4 w-4" /> Add Product
             </Button>
+           </Link>
             <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="ml-auto">
