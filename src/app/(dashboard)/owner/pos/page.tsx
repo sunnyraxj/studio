@@ -5,10 +5,6 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-  CardDescription,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,6 +23,7 @@ import {
   RadioGroup,
   RadioGroupItem,
 } from '@/components/ui/radio-group';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type Product = {
   id: number;
@@ -50,6 +47,10 @@ const sampleProducts: Product[] = [
   { id: 8, name: 'Hoodie', price: 1100 },
   { id: 9, name: 'Sunglasses', price: 450 },
   { id: 10, name: 'Belt', price: 300 },
+  { id: 11, name: 'Jacket', price: 1500 },
+  { id: 12, name: 'Scarf', price: 200 },
+  { id: 13, name: 'Gloves', price: 120 },
+  { id: 14, name: 'Shorts', price: 400 },
 ];
 
 export default function POSPage() {
@@ -122,184 +123,188 @@ export default function POSPage() {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-      <div className="md:col-span-2">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Products</CardTitle>
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search products..."
-                className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+     <div className="flex-1 overflow-hidden">
+        <Card className="h-full flex flex-col md:flex-row">
+            <div className="w-full md:w-3/5 flex flex-col">
+                <div className="p-4 border-b">
+                    <div className="relative">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search products..."
+                            className="pl-8"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                </div>
+                <ScrollArea className="flex-1">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
+                        {filteredProducts.map((product) => (
+                            <Card
+                                key={product.id}
+                                className="flex flex-col items-center justify-center p-4 hover:bg-accent cursor-pointer aspect-square"
+                                onClick={() => addToCart(product)}
+                            >
+                                <div className="text-sm font-medium text-center flex-grow flex items-center">
+                                    {product.name}
+                                </div>
+                                <div className="text-xs text-muted-foreground mt-1">
+                                    ₹{product.price.toFixed(2)}
+                                </div>
+                                <Button variant="ghost" size="icon" className="mt-2 h-8 w-8 text-primary">
+                                    <PlusCircle className="h-5 w-5" />
+                                </Button>
+                            </Card>
+                        ))}
+                    </div>
+                </ScrollArea>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {filteredProducts.map((product) => (
-                <Card
-                  key={product.id}
-                  className="flex flex-col items-center justify-center p-4 hover:bg-accent cursor-pointer"
-                  onClick={() => addToCart(product)}
-                >
-                  <div className="text-sm font-medium text-center">
-                    {product.name}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    ₹{product.price.toFixed(2)}
-                  </div>
-                  <Button variant="ghost" size="icon" className="mt-2 h-8 w-8">
-                    <PlusCircle className="h-4 w-4" />
-                  </Button>
-                </Card>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
-      <div>
-        <Card>
-          <CardHeader>
-            <CardTitle>Current Sale</CardTitle>
-            <CardDescription>
-              {invoiceNumber ? `Invoice #INV${invoiceNumber}` : '...'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="customer-name">Customer Name</Label>
-              <Input
-                id="customer-name"
-                placeholder="Enter customer name"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="customer-address">Address</Label>
-              <Textarea
-                id="customer-address"
-                placeholder="Enter customer address"
-                value={customerAddress}
-                onChange={(e) => setCustomerAddress(e.target.value)}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="customer-pin">PIN</Label>
-                <Input
-                  id="customer-pin"
-                  placeholder="Enter PIN code"
-                  value={customerPin}
-                  onChange={(e) => setCustomerPin(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="customer-state">State</Label>
-                <Input
-                  id="customer-state"
-                  placeholder="Enter state"
-                  value={customerState}
-                  onChange={(e) => setCustomerState(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="customer-gstin">GSTIN</Label>
-              <Input
-                id="customer-gstin"
-                placeholder="Enter GSTIN"
-                value={customerGstin}
-                onChange={(e) => setCustomerGstin(e.target.value)}
-              />
-            </div>
-             <div className="space-y-2">
-              <Label>Payment Mode</Label>
-              <RadioGroup
-                value={paymentMode}
-                onValueChange={setPaymentMode}
-                className="flex items-center space-x-4"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="cash" id="cash" />
-                  <Label htmlFor="cash">Cash</Label>
+            <div className="w-full md:w-2/5 border-l flex flex-col">
+                <div className="p-4 border-b">
+                    <h2 className="text-lg font-semibold">Current Sale</h2>
+                    <p className="text-sm text-muted-foreground">
+                        {invoiceNumber ? `Invoice #INV${invoiceNumber}` : '...'}
+                    </p>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="card" id="card" />
-                  <Label htmlFor="card">Card</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="upi" id="upi" />
-                  <Label htmlFor="upi">UPI</Label>
-                </div>
-              </RadioGroup>
-            </div>
-            <Separator />
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Item</TableHead>
-                  <TableHead className="text-center">Qty</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {cart.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={3} className="text-center text-muted-foreground">
-                      No items in sale
-                    </TableCell>
-                  </TableRow>
-                )}
-                {cart.map((item) => (
-                  <TableRow key={item.product.id}>
-                    <TableCell className='font-medium'>{item.product.name}</TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        <Button variant="ghost" size="icon" className='h-6 w-6' onClick={() => updateQuantity(item.product.id, -1)}>
-                          <MinusCircle className='h-4 w-4' />
+
+                <ScrollArea className="flex-1">
+                    <div className="p-4 space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="customer-name">Customer Name</Label>
+                            <Input
+                                id="customer-name"
+                                placeholder="Enter customer name"
+                                value={customerName}
+                                onChange={(e) => setCustomerName(e.target.value)}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="customer-address">Address</Label>
+                            <Textarea
+                                id="customer-address"
+                                placeholder="Enter customer address"
+                                value={customerAddress}
+                                onChange={(e) => setCustomerAddress(e.target.value)}
+                                rows={2}
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="customer-pin">PIN</Label>
+                                <Input
+                                    id="customer-pin"
+                                    placeholder="Enter PIN code"
+                                    value={customerPin}
+                                    onChange={(e) => setCustomerPin(e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="customer-state">State</Label>
+                                <Input
+                                    id="customer-state"
+                                    placeholder="Enter state"
+                                    value={customerState}
+                                    onChange={(e) => setCustomerState(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="customer-gstin">GSTIN</Label>
+                            <Input
+                                id="customer-gstin"
+                                placeholder="Enter GSTIN"
+                                value={customerGstin}
+                                onChange={(e) => setCustomerGstin(e.target.value)}
+                            />
+                        </div>
+                         <div className="space-y-2">
+                            <Label>Payment Mode</Label>
+                            <RadioGroup
+                                value={paymentMode}
+                                onValueChange={setPaymentMode}
+                                className="flex items-center space-x-4"
+                            >
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="cash" id="cash" />
+                                    <Label htmlFor="cash">Cash</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="card" id="card" />
+                                    <Label htmlFor="card">Card</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="upi" id="upi" />
+                                    <Label htmlFor="upi">UPI</Label>
+                                </div>
+                            </RadioGroup>
+                        </div>
+                        <Separator />
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                <TableHead>Item</TableHead>
+                                <TableHead className="text-center">Qty</TableHead>
+                                <TableHead className="text-right">Amount</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {cart.length === 0 && (
+                                <TableRow>
+                                    <TableCell colSpan={3} className="text-center text-muted-foreground h-24">
+                                    No items in sale
+                                    </TableCell>
+                                </TableRow>
+                                )}
+                                {cart.map((item) => (
+                                <TableRow key={item.product.id}>
+                                    <TableCell className='font-medium'>{item.product.name}</TableCell>
+                                    <TableCell className="text-center">
+                                    <div className="flex items-center justify-center gap-1">
+                                        <Button variant="ghost" size="icon" className='h-6 w-6' onClick={() => updateQuantity(item.product.id, -1)}>
+                                        <MinusCircle className='h-4 w-4' />
+                                        </Button>
+                                        <span>{item.quantity}</span>
+                                        <Button variant="ghost" size="icon" className='h-6 w-6' onClick={() => updateQuantity(item.product.id, 1)}>
+                                        <PlusCircle className='h-4 w-4' />
+                                        </Button>
+                                    </div>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                    ₹{(item.product.price * item.quantity).toFixed(2)}
+                                    </TableCell>
+                                </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </ScrollArea>
+                
+                <div className="p-4 border-t mt-auto space-y-4">
+                    <div className="space-y-2">
+                        <div className="flex justify-between">
+                            <span>Subtotal</span>
+                            <span>₹{subtotal.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Tax ({(taxRate * 100).toFixed(0)}%)</span>
+                            <span>₹{tax.toFixed(2)}</span>
+                        </div>
+                        <Separator />
+                        <div className="flex justify-between font-semibold text-lg">
+                            <span>Total</span>
+                            <span>₹{total.toFixed(2)}</span>
+                        </div>
+                    </div>
+                    <div className="flex-col items-stretch space-y-2">
+                        <Button className="w-full" disabled={cart.length === 0}>Complete Sale</Button>
+                        <Button variant="destructive" className="w-full" onClick={clearSale} disabled={cart.length === 0}>
+                            <Trash2 className="mr-2 h-4 w-4" /> Clear Sale
                         </Button>
-                        <span>{item.quantity}</span>
-                         <Button variant="ghost" size="icon" className='h-6 w-6' onClick={() => updateQuantity(item.product.id, 1)}>
-                          <PlusCircle className='h-4 w-4' />
-                        </Button>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      ₹{(item.product.price * item.quantity).toFixed(2)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <Separator />
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span>Subtotal</span>
-                <span>₹{subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Tax ({(taxRate * 100).toFixed(0)}%)</span>
-                <span>₹{tax.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between font-semibold text-lg">
-                <span>Total</span>
-                <span>₹{total.toFixed(2)}</span>
-              </div>
+                    </div>
+                </div>
             </div>
-          </CardContent>
-          <CardFooter className="flex-col items-stretch space-y-2">
-            <Button className="w-full" disabled={cart.length === 0}>Complete Sale</Button>
-            <Button variant="destructive" className="w-full" onClick={clearSale} disabled={cart.length === 0}>
-              <Trash2 className="mr-2 h-4 w-4" /> Clear Sale
-            </Button>
-          </CardFooter>
         </Card>
-      </div>
     </div>
   );
 }

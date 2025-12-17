@@ -105,14 +105,6 @@ function AppSidebar() {
             <Package2 className="h-6 w-6" />
             {open && <span>Acme Inc</span>}
           </Link>
-          {open && (
-            <div className="flex items-center">
-              <Button variant="outline" size="icon" className="ml-auto h-8 w-8">
-                <Bell className="h-4 w-4" />
-                <span className="sr-only">Toggle notifications</span>
-              </Button>
-            </div>
-          )}
         </div>
       </SidebarHeader>
 
@@ -258,7 +250,7 @@ export default function DashboardLayout({
               </DropdownMenuContent>
             </DropdownMenu>
           </header>
-          <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-y-auto">
+          <main className="flex flex-1 flex-col p-4 lg:p-6 overflow-hidden">
             {children}
           </main>
         </div>
