@@ -142,7 +142,7 @@ export default function POSPage() {
                 />
             </div>
         </div>
-        <ScrollArea className="flex-grow">
+        <ScrollArea className="flex-none h-48 sm:h-52 md:h-64">
             <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-4 p-4">
                 {filteredProducts.map((product) => (
                     <Card
@@ -166,10 +166,10 @@ export default function POSPage() {
             </div>
         </ScrollArea>
         
-        <div className="flex-none border-t h-[45%]">
-           <Card className="h-full flex flex-col md:flex-row rounded-none border-0">
+        <div className="flex-grow border-t">
+           <Card className="h-full flex flex-col md:flex-row rounded-none border-0 overflow-hidden">
              <div className="w-full md:w-3/5 flex flex-col">
-                <div className="p-4 border-b border-t md:border-t-0">
+                <div className="flex-none p-4 border-b border-t md:border-t-0">
                     <h2 className="text-lg font-semibold">Current Sale</h2>
                     <p className="text-sm text-muted-foreground">
                         {invoiceNumber ? `Invoice #INV${invoiceNumber}` : '...'}
@@ -319,5 +319,7 @@ export default function POSPage() {
     </div>
   );
 }
+
+    
 
     
