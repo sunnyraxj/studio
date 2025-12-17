@@ -12,12 +12,17 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { Settings, LogOut } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export async function Header() {
   const user = await getAuthenticatedUser();
 
   return (
-    <header className="fixed top-0 z-30 flex h-16 w-full shrink-0 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
+    <header className={cn(
+      "fixed top-0 z-30 flex h-16 shrink-0 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6",
+      "w-full md:w-[calc(100%-var(--sidebar-width))] group-data-[collapsible=icon]:md:w-[calc(100%-var(--sidebar-width-icon))]",
+      "transition-[width] ease-linear"
+      )}>
       <SidebarTrigger className="md:hidden" />
       <div className="hidden md:block">
         <Breadcrumb />
