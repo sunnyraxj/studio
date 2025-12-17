@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Bell,
   CircleUser,
@@ -97,6 +97,12 @@ function AppSidebar() {
   const pathname = usePathname();
   const { open } = useSidebar();
   const [isAccountOpen, setIsAccountOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      setIsAccountOpen(false);
+    }
+  }, [open]);
 
   return (
     <Sidebar>
