@@ -172,6 +172,44 @@ export default function POSPage() {
 
                 <ScrollArea className="flex-1">
                     <div className="p-4 space-y-4">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                <TableHead>Item</TableHead>
+                                <TableHead className="text-center">Qty</TableHead>
+                                <TableHead className="text-right">Amount</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {cart.length === 0 && (
+                                <TableRow>
+                                    <TableCell colSpan={3} className="text-center text-muted-foreground h-24">
+                                    No items in sale
+                                    </TableCell>
+                                </TableRow>
+                                )}
+                                {cart.map((item) => (
+                                <TableRow key={item.product.id}>
+                                    <TableCell className='font-medium'>{item.product.name}</TableCell>
+                                    <TableCell className="text-center">
+                                    <div className="flex items-center justify-center gap-1">
+                                        <Button variant="ghost" size="icon" className='h-6 w-6' onClick={() => updateQuantity(item.product.id, -1)}>
+                                        <MinusCircle className='h-4 w-4' />
+                                        </Button>
+                                        <span>{item.quantity}</span>
+                                        <Button variant="ghost" size="icon" className='h-6 w-6' onClick={() => updateQuantity(item.product.id, 1)}>
+                                        <PlusCircle className='h-4 w-4' />
+                                        </Button>
+                                    </div>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                    ₹{(item.product.price * item.quantity).toFixed(2)}
+                                    </TableCell>
+                                </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                        <Separator />
                         <div className="space-y-2">
                             <Label htmlFor="customer-name">Customer Name</Label>
                             <Input
@@ -241,44 +279,6 @@ export default function POSPage() {
                                 </div>
                             </RadioGroup>
                         </div>
-                        <Separator />
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                <TableHead>Item</TableHead>
-                                <TableHead className="text-center">Qty</TableHead>
-                                <TableHead className="text-right">Amount</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {cart.length === 0 && (
-                                <TableRow>
-                                    <TableCell colSpan={3} className="text-center text-muted-foreground h-24">
-                                    No items in sale
-                                    </TableCell>
-                                </TableRow>
-                                )}
-                                {cart.map((item) => (
-                                <TableRow key={item.product.id}>
-                                    <TableCell className='font-medium'>{item.product.name}</TableCell>
-                                    <TableCell className="text-center">
-                                    <div className="flex items-center justify-center gap-1">
-                                        <Button variant="ghost" size="icon" className='h-6 w-6' onClick={() => updateQuantity(item.product.id, -1)}>
-                                        <MinusCircle className='h-4 w-4' />
-                                        </Button>
-                                        <span>{item.quantity}</span>
-                                        <Button variant="ghost" size="icon" className='h-6 w-6' onClick={() => updateQuantity(item.product.id, 1)}>
-                                        <PlusCircle className='h-4 w-4' />
-                                        </Button>
-                                    </div>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                    ₹{(item.product.price * item.quantity).toFixed(2)}
-                                    </TableCell>
-                                </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
                     </div>
                 </ScrollArea>
                 
