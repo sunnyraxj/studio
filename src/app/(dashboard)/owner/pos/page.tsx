@@ -188,7 +188,7 @@ export default function POSPage() {
                             {product.name}
                         </div>
                         <div className="text-xs text-muted-foreground mt-1">
-                            MRP: ₹{product.price.toFixed(2)}
+                          <span className="font-bold text-foreground">MRP:</span> ₹{product.price.toFixed(2)}
                         </div>
                     </Card>
                   )
