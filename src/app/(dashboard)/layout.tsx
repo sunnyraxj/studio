@@ -111,7 +111,6 @@ function AppSidebar() {
                 <Bell className="h-4 w-4" />
                 <span className="sr-only">Toggle notifications</span>
               </Button>
-              <SidebarTrigger className="ml-2" />
             </div>
           )}
         </div>
@@ -236,7 +235,7 @@ export default function DashboardLayout({
         <div className="flex flex-col">
           <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
             <MobileSidebar />
-            <SidebarTrigger className="hidden md:flex" />
+            
             <div className="w-full flex-1">{/* Add nav items here */}</div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
