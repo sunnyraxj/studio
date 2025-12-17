@@ -160,14 +160,14 @@ export default function POSPage() {
                 {filteredProducts.map((product) => (
                     <Card
                         key={product.id}
-                        className="group relative flex flex-col items-center justify-center p-2 hover:bg-green-100 cursor-pointer aspect-square transition-colors shadow-sm"
+                        className="group relative flex flex-col items-center justify-center p-3 hover:bg-green-100 cursor-pointer transition-colors shadow-sm"
                         onClick={() => addToCart(product)}
                     >
-                        <div className="text-xs sm:text-sm font-semibold text-center flex-grow flex items-center justify-center">
+                        <div className="text-xs sm:text-sm font-semibold text-center">
                             {product.name}
                         </div>
                         <div className="text-xs text-muted-foreground mt-1">
-                            ₹{product.price.toFixed(2)}
+                            MRP: ₹{product.price.toFixed(2)}
                         </div>
                     </Card>
                 ))}
