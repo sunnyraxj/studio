@@ -187,8 +187,8 @@ export default function POSPage() {
                         <div className="text-xs sm:text-sm font-semibold text-center">
                             {product.name}
                         </div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          <span className="font-bold text-foreground">MRP:</span> ₹{product.price.toFixed(2)}
+                        <div className="text-sm text-foreground font-semibold mt-1">
+                          MRP: ₹{product.price.toFixed(2)}
                         </div>
                     </Card>
                   )
@@ -377,4 +377,5 @@ export default function POSPage() {
         </div>
     </div>
   );
-}
+
+    
