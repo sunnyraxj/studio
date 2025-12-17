@@ -133,8 +133,8 @@ function AppSidebar() {
         </SidebarMenu>
       </SidebarContent>
 
-      {open && (
-        <SidebarFooter className="mt-auto">
+      <SidebarFooter className="mt-auto">
+        {open && (
           <Card>
             <CardHeader className="p-2 pt-0 md:p-4">
               <CardTitle>Upgrade to Pro</CardTitle>
@@ -149,8 +149,31 @@ function AppSidebar() {
               </Button>
             </CardContent>
           </Card>
-        </SidebarFooter>
-      )}
+        )}
+        <div className={cn("flex p-2 items-center", open ? "justify-between" : "justify-center")}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size={open ? "default" : "icon"}
+                  className={cn(!open && "rounded-full w-8 h-8")}
+                >
+                  <CircleUser className="h-5 w-5" />
+                  {open && <span className='ml-2'>My Account</span>}
+                  <span className="sr-only">Toggle user menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>Settings</DropdownMenuItem>
+                <DropdownMenuItem>Support</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>Logout</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+        </div>
+      </SidebarFooter>
     </Sidebar>
   );
 }
@@ -227,28 +250,7 @@ export default function DashboardLayout({
         <div className="flex flex-col">
           <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
             <MobileSidebar />
-            
             <div className="w-full flex-1">{/* Add nav items here */}</div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="rounded-full"
-                >
-                  <CircleUser className="h-5 w-5" />
-                  <span className="sr-only">Toggle user menu</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Settings</DropdownMenuItem>
-                <DropdownMenuItem>Support</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Logout</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </header>
           <main className="flex flex-1 flex-col p-4 lg:p-6 overflow-hidden">
             {children}
