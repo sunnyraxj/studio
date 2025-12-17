@@ -84,13 +84,6 @@ const navLinks = [
     disabled: true,
     badge: null,
   },
-  {
-    href: '#',
-    icon: LineChart,
-    label: 'Analytics',
-    disabled: true,
-    badge: null,
-  },
 ];
 
 function AppSidebar() {
@@ -276,6 +269,7 @@ export default function DashboardLayout({
         <div className="flex flex-col">
           <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
             <MobileSidebar />
+            <div className="w-full flex-1" />
           </header>
           <main className="flex flex-1 flex-col p-4 lg:p-6 overflow-hidden">
             {children}
