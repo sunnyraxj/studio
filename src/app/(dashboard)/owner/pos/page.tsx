@@ -65,6 +65,7 @@ export default function POSPage() {
   const [invoiceNumber, setInvoiceNumber] = useState('');
 
   useEffect(() => {
+    // Generate invoice number only on the client-side
     setInvoiceNumber(new Date().getTime().toString().slice(-6));
   }, []);
 
