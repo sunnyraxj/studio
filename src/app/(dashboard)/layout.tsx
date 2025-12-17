@@ -5,13 +5,12 @@ import {
   LineChart,
   Package,
   Package2,
-  ShoppingCart,
   Users,
   Menu,
   CircleUser,
+  Printer,
 } from 'lucide-react';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -28,9 +27,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import Image from 'next/image';
 
 export default function DashboardLayout({
   children,
@@ -61,14 +58,11 @@ export default function DashboardLayout({
                 Dashboard
               </Link>
               <Link
-                href="#"
+                href="/owner/pos"
                 className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
               >
-                <ShoppingCart className="h-4 w-4" />
-                Orders
-                <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
-                  6
-                </Badge>
+                <Printer className="h-4 w-4" />
+                POS
               </Link>
               <Link
                 href="#"
@@ -141,14 +135,11 @@ export default function DashboardLayout({
                   Dashboard
                 </Link>
                 <Link
-                  href="#"
-                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl bg-muted px-3 py-2 text-foreground hover:text-foreground"
+                  href="/owner/pos"
+                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
                 >
-                  <ShoppingCart className="h-5 w-5" />
-                  Orders
-                  <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
-                    6
-                  </Badge>
+                  <Printer className="h-5 w-5" />
+                  POS
                 </Link>
                 <Link
                   href="#"
