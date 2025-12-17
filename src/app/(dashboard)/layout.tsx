@@ -71,10 +71,10 @@ const navLinks = [
     badge: null,
   },
   {
-    href: '#',
+    href: '/owner/inventory',
     icon: Package,
-    label: 'Products',
-    disabled: true,
+    label: 'Inventory',
+    disabled: false,
     badge: null,
   },
   {
