@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -51,6 +52,12 @@ const sampleProducts: Product[] = [
   { id: 12, name: 'Scarf', price: 200 },
   { id: 13, name: 'Gloves', price: 120 },
   { id: 14, name: 'Shorts', price: 400 },
+  { id: 15, name: 'Polo Shirt', price: 600 },
+  { id: 16, name: 'Leather Wallet', price: 550 },
+  { id: 17, name: 'Formal Shoes', price: 2500 },
+  { id: 18, name: 'Tie', price: 250 },
+  { id: 19, name: 'Sweatshirt', price: 950 },
+  { id: 20, name: 'Track Pants', price: 800 },
 ];
 
 export default function POSPage() {
@@ -123,93 +130,94 @@ export default function POSPage() {
   };
 
   return (
-     <div className="flex-1 overflow-hidden">
-        <Card className="h-full flex flex-col md:flex-row">
-            <div className="w-full md:w-3/5 flex flex-col">
-                <div className="p-4 border-b">
-                    <div className="relative">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Search products..."
-                            className="pl-8"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                </div>
-                <ScrollArea className="flex-1">
-                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 gap-4 p-4">
-                        {filteredProducts.map((product) => (
-                            <Card
-                                key={product.id}
-                                className="group relative flex flex-col items-center justify-center p-2 hover:bg-accent cursor-pointer aspect-square transition-colors"
-                                onClick={() => addToCart(product)}
-                            >
-                                <div className="text-xs sm:text-sm font-medium text-center flex-grow flex items-center">
-                                    {product.name}
-                                </div>
-                                <div className="text-xs text-muted-foreground mt-1">
-                                    ₹{product.price.toFixed(2)}
-                                </div>
-                                <div className="absolute bottom-2 right-2">
-                                  <Button variant="ghost" size="icon" className="h-7 w-7 text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <PlusCircle className="h-5 w-5" />
-                                  </Button>
-                                </div>
-                            </Card>
-                        ))}
-                    </div>
-                </ScrollArea>
+     <div className="flex-1 overflow-hidden h-full flex flex-col">
+        <div className="flex-none p-4 border-b">
+            <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                    placeholder="Search products..."
+                    className="pl-8"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
             </div>
-
-            <div className="w-full md:w-2/5 border-l flex flex-col">
-                <div className="p-4 border-b">
+        </div>
+        <ScrollArea className="flex-grow">
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-4 p-4">
+                {filteredProducts.map((product) => (
+                    <Card
+                        key={product.id}
+                        className="group relative flex flex-col items-center justify-center p-2 hover:bg-accent cursor-pointer aspect-square transition-colors"
+                        onClick={() => addToCart(product)}
+                    >
+                        <div className="text-xs sm:text-sm font-medium text-center flex-grow flex items-center">
+                            {product.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                            ₹{product.price.toFixed(2)}
+                        </div>
+                        <div className="absolute bottom-1 right-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                              <PlusCircle className="h-5 w-5" />
+                          </Button>
+                        </div>
+                    </Card>
+                ))}
+            </div>
+        </ScrollArea>
+        
+        <div className="flex-none border-t h-[45%]">
+           <Card className="h-full flex flex-col md:flex-row rounded-none border-0">
+             <div className="w-full md:w-3/5 flex flex-col">
+                <div className="p-4 border-b border-t md:border-t-0">
                     <h2 className="text-lg font-semibold">Current Sale</h2>
                     <p className="text-sm text-muted-foreground">
                         {invoiceNumber ? `Invoice #INV${invoiceNumber}` : '...'}
                     </p>
                 </div>
-
+                 <ScrollArea className="flex-1">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                            <TableHead>Item</TableHead>
+                            <TableHead className="text-center">Qty</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {cart.length === 0 && (
+                            <TableRow>
+                                <TableCell colSpan={3} className="text-center text-muted-foreground h-24">
+                                No items in sale
+                                </TableCell>
+                            </TableRow>
+                            )}
+                            {cart.map((item) => (
+                            <TableRow key={item.product.id}>
+                                <TableCell className='font-medium py-2'>{item.product.name}</TableCell>
+                                <TableCell className="text-center py-2">
+                                <div className="flex items-center justify-center gap-1">
+                                    <Button variant="ghost" size="icon" className='h-6 w-6' onClick={() => updateQuantity(item.product.id, -1)}>
+                                    <MinusCircle className='h-4 w-4' />
+                                    </Button>
+                                    <span>{item.quantity}</span>
+                                    <Button variant="ghost" size="icon" className='h-6 w-6' onClick={() => updateQuantity(item.product.id, 1)}>
+                                    <PlusCircle className='h-4 w-4' />
+                                    </Button>
+                                </div>
+                                </TableCell>
+                                <TableCell className="text-right py-2">
+                                ₹{(item.product.price * item.quantity).toFixed(2)}
+                                </TableCell>
+                            </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </ScrollArea>
+            </div>
+            <div className="w-full md:w-2/5 border-l flex flex-col">
                 <ScrollArea className="flex-1">
                     <div className="p-4 space-y-4">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                <TableHead>Item</TableHead>
-                                <TableHead className="text-center">Qty</TableHead>
-                                <TableHead className="text-right">Amount</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {cart.length === 0 && (
-                                <TableRow>
-                                    <TableCell colSpan={3} className="text-center text-muted-foreground h-24">
-                                    No items in sale
-                                    </TableCell>
-                                </TableRow>
-                                )}
-                                {cart.map((item) => (
-                                <TableRow key={item.product.id}>
-                                    <TableCell className='font-medium'>{item.product.name}</TableCell>
-                                    <TableCell className="text-center">
-                                    <div className="flex items-center justify-center gap-1">
-                                        <Button variant="ghost" size="icon" className='h-6 w-6' onClick={() => updateQuantity(item.product.id, -1)}>
-                                        <MinusCircle className='h-4 w-4' />
-                                        </Button>
-                                        <span>{item.quantity}</span>
-                                        <Button variant="ghost" size="icon" className='h-6 w-6' onClick={() => updateQuantity(item.product.id, 1)}>
-                                        <PlusCircle className='h-4 w-4' />
-                                        </Button>
-                                    </div>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                    ₹{(item.product.price * item.quantity).toFixed(2)}
-                                    </TableCell>
-                                </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                        <Separator />
                         <div className="space-y-2">
                             <Label htmlFor="customer-name">Customer Name</Label>
                             <Input
@@ -282,8 +290,8 @@ export default function POSPage() {
                     </div>
                 </ScrollArea>
                 
-                <div className="p-4 border-t mt-auto space-y-4">
-                    <div className="space-y-2">
+                <div className="p-4 border-t mt-auto space-y-4 bg-slate-50">
+                    <div className="space-y-1">
                         <div className="flex justify-between">
                             <span>Subtotal</span>
                             <span>₹{subtotal.toFixed(2)}</span>
@@ -306,7 +314,10 @@ export default function POSPage() {
                     </div>
                 </div>
             </div>
-        </Card>
+           </Card>
+        </div>
     </div>
   );
 }
+
+    
