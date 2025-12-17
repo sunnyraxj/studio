@@ -7,13 +7,13 @@ const modes = [
     name: 'Demo',
     description: 'Explore the app with sample data. No changes will be saved.',
     icon: VscBeaker,
-    href: '/owner/dashboard?mode=demo',
+    href: '/owner/dashboard',
   },
   {
     name: 'Production',
     description: 'Manage your live shop with real data.',
     icon: VscRocket,
-    href: '/owner/dashboard?mode=production',
+    href: '/owner/dashboard',
   },
 ];
 
