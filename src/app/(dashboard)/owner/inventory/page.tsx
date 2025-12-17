@@ -49,66 +49,73 @@ import { DataTablePagination } from '@/components/data-table-pagination';
 const data: InventoryItem[] = [
   {
     id: 'm5gr84i9',
-    name: 'T-Shirt',
+    name: "Men's Cotton T-Shirt",
     status: 'in stock',
     sku: 'TSHIRT-BLK-L',
     stock: 120,
-    price: 250,
+    price: 499,
+    category: 'Apparel',
+    size: 'L',
+    gst: 5,
+    hsn: '610910',
+    unit: 'pcs',
     dateAdded: new Date('2023-10-15'),
   },
   {
     id: '3u1reuv4',
-    name: 'Jeans',
+    name: 'Blue Denim Jeans',
     status: 'in stock',
     sku: 'JEANS-BLU-32',
     stock: 80,
-    price: 750,
+    price: 1299,
+    category: 'Apparel',
+    size: '32',
+    gst: 5,
+    hsn: '620342',
+    unit: 'pcs',
     dateAdded: new Date('2023-09-20'),
   },
   {
     id: 'derv1ws0',
-    name: 'Sneakers',
+    name: 'White Sneakers',
     status: 'low stock',
     sku: 'SNEAK-WHT-10',
     stock: 15,
-    price: 1200,
+    price: 2499,
+    category: 'Footwear',
+    size: '10',
+    gst: 18,
+    hsn: '640411',
+    unit: 'pair',
     dateAdded: new Date('2023-11-01'),
   },
   {
     id: '5kma53ae',
-    name: 'Watch',
+    name: 'Leather Strap Watch',
     status: 'in stock',
     sku: 'WATCH-SIL-01',
     stock: 45,
     price: 3500,
+    category: 'Accessories',
+    size: 'N/A',
+    gst: 18,
+    hsn: '910211',
+    unit: 'pcs',
     dateAdded: new Date('2023-08-05'),
   },
   {
     id: 'bhqecj4p',
-    name: 'Cap',
+    name: 'Red Baseball Cap',
     status: 'out of stock',
     sku: 'CAP-RED-OS',
     stock: 0,
-    price: 150,
+    price: 399,
+    category: 'Accessories',
+    size: 'One Size',
+    gst: 12,
+    hsn: '650500',
+    unit: 'pcs',
     dateAdded: new Date('2023-10-25'),
-  },
-  {
-    id: 'bhqecj5p',
-    name: 'Socks',
-    status: 'in stock',
-    sku: 'SOCKS-BLK-M',
-    stock: 200,
-    price: 80,
-    dateAdded: new Date('2023-09-01'),
-  },
-  {
-    id: 'bhqecj6p',
-    name: 'Backpack',
-    status: 'in stock',
-    sku: 'BACKPACK-GRY',
-    stock: 30,
-    price: 900,
-    dateAdded: new Date('2023-11-10'),
   },
 ];
 
@@ -120,6 +127,11 @@ export type InventoryItem = {
   price: number;
   status: 'in stock' | 'low stock' | 'out of stock';
   dateAdded: Date;
+  category: string;
+  size: string;
+  gst: number;
+  hsn: string;
+  unit: string;
 };
 
 export const columns: ColumnDef<InventoryItem>[] = [
@@ -148,7 +160,65 @@ export const columns: ColumnDef<InventoryItem>[] = [
   {
     accessorKey: 'name',
     header: 'Name',
-    cell: ({ row }) => <div className="capitalize">{row.getValue('name')}</div>,
+    cell: ({ row }) => <div className="capitalize font-medium">{row.getValue('name')}</div>,
+  },
+  {
+    accessorKey: 'category',
+    header: 'Category',
+    cell: ({ row }) => <div>{row.getValue('category')}</div>,
+  },
+  {
+    accessorKey: 'size',
+    header: 'Size',
+    cell: ({ row }) => <div>{row.getValue('size')}</div>,
+  },
+  {
+    accessorKey: 'stock',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Stock
+          <CaretSortIcon className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => <div className="text-center">{`${row.getValue('stock')} ${row.original.unit}`}</div>,
+  },
+    {
+    accessorKey: 'price',
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        className="text-right w-full"
+        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+      >
+        MRP
+        <CaretSortIcon className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const price = parseFloat(row.getValue('price'));
+
+      const formatted = new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+      }).format(price);
+
+      return <div className="text-right font-medium">{formatted}</div>;
+    },
+  },
+  {
+    accessorKey: 'gst',
+    header: () => <div className="text-center">GST (%)</div>,
+    cell: ({ row }) => <div className="text-center">{`${row.getValue('gst')}%`}</div>,
+  },
+  {
+    accessorKey: 'hsn',
+    header: 'HSN Code',
+    cell: ({ row }) => <div>{row.getValue('hsn')}</div>,
   },
   {
     accessorKey: 'sku',
@@ -172,45 +242,6 @@ export const columns: ColumnDef<InventoryItem>[] = [
     },
   },
   {
-    accessorKey: 'stock',
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-        >
-          Stock
-          <CaretSortIcon className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => <div className="text-center">{row.getValue('stock')}</div>,
-  },
-  {
-    accessorKey: 'price',
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        className="text-right w-full"
-        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-      >
-        Price
-        <CaretSortIcon className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => {
-      const price = parseFloat(row.getValue('price'));
-
-      // Format the price as a dollar amount
-      const formatted = new Intl.NumberFormat('en-IN', {
-        style: 'currency',
-        currency: 'INR',
-      }).format(price);
-
-      return <div className="text-right font-medium">{formatted}</div>;
-    },
-  },
-    {
     accessorKey: 'dateAdded',
     header: ({ column }) => (
       <Button
@@ -264,7 +295,10 @@ export default function InventoryPage() {
   const [columnFilters, setColumnFilters] =
     React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
+    React.useState<VisibilityState>({
+        hsn: false,
+        sku: false,
+    });
   const [rowSelection, setRowSelection] = React.useState({});
 
   const table = useReactTable({
@@ -387,5 +421,3 @@ export default function InventoryPage() {
     </div>
   );
 }
-
-    
