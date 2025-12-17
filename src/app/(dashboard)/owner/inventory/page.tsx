@@ -273,14 +273,8 @@ export const columns: ColumnDef<InventoryItem>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(item.id)}
-            >
-              Copy product ID
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>View details</DropdownMenuItem>
             <DropdownMenuItem>Edit product</DropdownMenuItem>
+            <DropdownMenuItem>Print barcode</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );
