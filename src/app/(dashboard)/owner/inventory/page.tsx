@@ -45,6 +45,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { PlusCircle } from 'lucide-react';
 import { DataTablePagination } from '@/components/data-table-pagination';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const data: InventoryItem[] = [
   {
@@ -294,6 +296,8 @@ export default function InventoryPage() {
         sku: false,
     });
   const [rowSelection, setRowSelection] = React.useState({});
+  const [searchBy, setSearchBy] = React.useState('name');
+  const [filterValue, setFilterValue] = React.useState('');
 
   const table = useReactTable({
     data,
@@ -314,17 +318,57 @@ export default function InventoryPage() {
     },
   });
 
+  const handleFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setFilterValue(value);
+    table.getColumn(searchBy)?.setFilterValue(value);
+  };
+
+  const handleSearchByChange = (value: string) => {
+    // Clear previous filter
+    table.getColumn(searchBy)?.setFilterValue('');
+
+    setSearchBy(value);
+    // Apply current filter value to new column
+    if (filterValue) {
+      table.getColumn(value)?.setFilterValue(filterValue);
+    }
+  };
+
+
   return (
     <div className="w-full">
-      <div className="flex items-center py-4">
-        <Input
-          placeholder="Filter products by name..."
-          value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
-          onChange={(event) =>
-            table.getColumn('name')?.setFilterValue(event.target.value)
-          }
-          className="max-w-sm"
-        />
+      <div className="flex items-center py-4 gap-4">
+        <div className="flex gap-4">
+            <Input
+            placeholder={`Filter by ${searchBy}...`}
+            value={filterValue}
+            onChange={handleFilterChange}
+            className="max-w-sm"
+            />
+            <RadioGroup
+                value={searchBy}
+                onValueChange={handleSearchByChange}
+                className="flex items-center space-x-4"
+            >
+                <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="name" id="name" />
+                    <Label htmlFor="name">Name</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="category" id="category" />
+                    <Label htmlFor="category">Category</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="price" id="mrp" />
+                    <Label htmlFor="mrp">MRP</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="sku" id="sku" />
+                    <Label htmlFor="sku">Code</Label>
+                </div>
+            </RadioGroup>
+        </div>
         <div className="ml-auto flex items-center gap-2">
            <Link href="/owner/inventory/add">
             <Button>
