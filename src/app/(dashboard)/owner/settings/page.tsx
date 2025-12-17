@@ -22,6 +22,7 @@ export default function SettingsPage() {
   const [companyName, setCompanyName] = useState('');
   const [companyAddress, setCompanyAddress] = useState('');
   const [companyGstin, setCompanyGstin] = useState('');
+  const [companyPhone, setCompanyPhone] = useState('');
 
   // State for Bank Details
   const [bankName, setBankName] = useState('');
@@ -37,6 +38,7 @@ export default function SettingsPage() {
       companyName,
       companyAddress,
       companyGstin,
+      companyPhone,
       bankName,
       accountNumber,
       ifscCode,
@@ -82,6 +84,15 @@ export default function SettingsPage() {
                   placeholder="Enter your company's full address"
                   value={companyAddress}
                   onChange={(e) => setCompanyAddress(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="company-phone">Phone Number</Label>
+                <Input
+                  id="company-phone"
+                  placeholder="Enter your company's phone number"
+                  value={companyPhone}
+                  onChange={(e) => setCompanyPhone(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
