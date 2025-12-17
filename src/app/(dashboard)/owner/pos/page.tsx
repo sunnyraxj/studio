@@ -22,6 +22,11 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { PlusCircle, Search, Trash2, MinusCircle } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from '@/components/ui/radio-group';
 
 type Product = {
   id: number;
@@ -51,6 +56,11 @@ export default function POSPage() {
   const [products] = useState<Product[]>(sampleProducts);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState('');
+  const [customerAddress, setCustomerAddress] = useState('');
+  const [customerPin, setCustomerPin] = useState('');
+  const [customerState, setCustomerState] = useState('');
+  const [customerGstin, setCustomerGstin] = useState('');
+  const [paymentMode, setPaymentMode] = useState('cash');
   const [searchTerm, setSearchTerm] = useState('');
   const [invoiceNumber, setInvoiceNumber] = useState('');
 
@@ -103,6 +113,11 @@ export default function POSPage() {
   const clearSale = () => {
     setCart([]);
     setCustomerName('');
+    setCustomerAddress('');
+    setCustomerPin('');
+    setCustomerState('');
+    setCustomerGstin('');
+    setPaymentMode('cash');
   };
 
   return (
@@ -153,7 +168,7 @@ export default function POSPage() {
               {invoiceNumber ? `Invoice #INV${invoiceNumber}` : '...'}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="customer-name">Customer Name</Label>
               <Input
@@ -163,7 +178,66 @@ export default function POSPage() {
                 onChange={(e) => setCustomerName(e.target.value)}
               />
             </div>
-            <Separator className="my-4" />
+            <div className="space-y-2">
+              <Label htmlFor="customer-address">Address</Label>
+              <Textarea
+                id="customer-address"
+                placeholder="Enter customer address"
+                value={customerAddress}
+                onChange={(e) => setCustomerAddress(e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="customer-pin">PIN</Label>
+                <Input
+                  id="customer-pin"
+                  placeholder="Enter PIN code"
+                  value={customerPin}
+                  onChange={(e) => setCustomerPin(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="customer-state">State</Label>
+                <Input
+                  id="customer-state"
+                  placeholder="Enter state"
+                  value={customerState}
+                  onChange={(e) => setCustomerState(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="customer-gstin">GSTIN</Label>
+              <Input
+                id="customer-gstin"
+                placeholder="Enter GSTIN"
+                value={customerGstin}
+                onChange={(e) => setCustomerGstin(e.target.value)}
+              />
+            </div>
+             <div className="space-y-2">
+              <Label>Payment Mode</Label>
+              <RadioGroup
+                value={paymentMode}
+                onValueChange={setPaymentMode}
+                className="flex items-center space-x-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="cash" id="cash" />
+                  <Label htmlFor="cash">Cash</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="card" id="card" />
+                  <Label htmlFor="card">Card</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="upi" id="upi" />
+                  <Label htmlFor="upi">UPI</Label>
+                </div>
+              </RadioGroup>
+            </div>
+            <Separator />
             <Table>
               <TableHeader>
                 <TableRow>
@@ -201,7 +275,7 @@ export default function POSPage() {
                 ))}
               </TableBody>
             </Table>
-            <Separator className="my-4" />
+            <Separator />
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span>Subtotal</span>
