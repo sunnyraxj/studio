@@ -116,6 +116,10 @@ export default function POSPage() {
     );
   };
 
+  const removeItem = (productId: number) => {
+    setCart((prevCart) => prevCart.filter((item) => item.product.id !== productId));
+  };
+
   const subtotal = cart.reduce(
     (acc, item) => acc + (item.product.price * item.quantity) - item.discount,
     0
@@ -188,12 +192,13 @@ export default function POSPage() {
                             <TableHead className="text-center">Qty</TableHead>
                             <TableHead className="w-[120px]">Discount (₹)</TableHead>
                             <TableHead className="text-right">Amount</TableHead>
+                            <TableHead className="w-[50px] text-right">Delete</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {cart.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center text-muted-foreground h-24">
+                                <TableCell colSpan={6} className="text-center text-muted-foreground h-24">
                                 No items in sale
                                 </TableCell>
                             </TableRow>
@@ -223,6 +228,11 @@ export default function POSPage() {
                                 </TableCell>
                                 <TableCell className="text-right py-2">
                                 ₹{((item.product.price * item.quantity) - item.discount).toFixed(2)}
+                                </TableCell>
+                                <TableCell className="text-right py-2">
+                                    <Button variant="ghost" size="icon" className='h-6 w-6 text-red-500 hover:text-red-700' onClick={() => removeItem(item.product.id)}>
+                                        <Trash2 className='h-4 w-4' />
+                                    </Button>
                                 </TableCell>
                             </TableRow>
                             ))}
