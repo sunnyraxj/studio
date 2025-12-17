@@ -35,6 +35,7 @@ type Product = {
 type CartItem = {
   product: Product;
   quantity: number;
+  discount: number;
 };
 
 const sampleProducts: Product[] = [
@@ -89,7 +90,7 @@ export default function POSPage() {
             : item
         );
       }
-      return [...prevCart, { product: productToAdd, quantity: 1 }];
+      return [...prevCart, { product: productToAdd, quantity: 1, discount: 0 }];
     });
   };
 
@@ -106,9 +107,17 @@ export default function POSPage() {
         .filter((item): item is CartItem => item !== null);
     });
   };
+  
+  const updateDiscount = (productId: number, discount: number) => {
+    setCart((prevCart) =>
+      prevCart.map((item) =>
+        item.product.id === productId ? { ...item, discount: discount } : item
+      )
+    );
+  };
 
   const subtotal = cart.reduce(
-    (acc, item) => acc + item.product.price * item.quantity,
+    (acc, item) => acc + (item.product.price * item.quantity) - item.discount,
     0
   );
   const taxRate = 0.05; // 5%
@@ -174,21 +183,24 @@ export default function POSPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
+                            <TableHead className="w-[50px]">Sr.No</TableHead>
                             <TableHead>Item</TableHead>
                             <TableHead className="text-center">Qty</TableHead>
+                            <TableHead className="w-[120px]">Discount (₹)</TableHead>
                             <TableHead className="text-right">Amount</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {cart.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={3} className="text-center text-muted-foreground h-24">
+                                <TableCell colSpan={5} className="text-center text-muted-foreground h-24">
                                 No items in sale
                                 </TableCell>
                             </TableRow>
                             )}
-                            {cart.map((item) => (
+                            {cart.map((item, index) => (
                             <TableRow key={item.product.id}>
+                                <TableCell className="font-medium py-2">{index + 1}</TableCell>
                                 <TableCell className='font-medium py-2'>{item.product.name}</TableCell>
                                 <TableCell className="text-center py-2">
                                 <div className="flex items-center justify-center gap-1">
@@ -201,8 +213,16 @@ export default function POSPage() {
                                     </Button>
                                 </div>
                                 </TableCell>
+                                <TableCell className="py-2">
+                                  <Input
+                                    type="number"
+                                    value={item.discount}
+                                    onChange={(e) => updateDiscount(item.product.id, parseFloat(e.target.value) || 0)}
+                                    className="h-8 text-center"
+                                  />
+                                </TableCell>
                                 <TableCell className="text-right py-2">
-                                ₹{(item.product.price * item.quantity).toFixed(2)}
+                                ₹{((item.product.price * item.quantity) - item.discount).toFixed(2)}
                                 </TableCell>
                             </TableRow>
                             ))}
