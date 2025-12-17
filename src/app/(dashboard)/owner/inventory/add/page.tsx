@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -24,6 +25,7 @@ import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 
 export default function AddProductPage() {
+  const router = useRouter();
   const [productName, setProductName] = useState('');
   const [mrp, setMrp] = useState('');
   const [gst, setGst] = useState('');
@@ -48,6 +50,9 @@ export default function AddProductPage() {
     };
     console.log('Saving product:', productData);
     // Here you would typically send the data to your backend/API
+    
+    // For now, let's redirect to the inventory page to simulate a save.
+    router.push('/owner/inventory');
   };
 
   return (
