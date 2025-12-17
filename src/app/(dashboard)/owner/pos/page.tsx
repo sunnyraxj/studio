@@ -138,22 +138,24 @@ export default function POSPage() {
                     </div>
                 </div>
                 <ScrollArea className="flex-1">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 gap-4 p-4">
                         {filteredProducts.map((product) => (
                             <Card
                                 key={product.id}
-                                className="flex flex-col items-center justify-center p-4 hover:bg-accent cursor-pointer aspect-square"
+                                className="group relative flex flex-col items-center justify-center p-2 hover:bg-accent cursor-pointer aspect-square transition-colors"
                                 onClick={() => addToCart(product)}
                             >
-                                <div className="text-sm font-medium text-center flex-grow flex items-center">
+                                <div className="text-xs sm:text-sm font-medium text-center flex-grow flex items-center">
                                     {product.name}
                                 </div>
                                 <div className="text-xs text-muted-foreground mt-1">
                                     ₹{product.price.toFixed(2)}
                                 </div>
-                                <Button variant="ghost" size="icon" className="mt-2 h-8 w-8 text-primary">
-                                    <PlusCircle className="h-5 w-5" />
-                                </Button>
+                                <div className="absolute bottom-2 right-2">
+                                  <Button variant="ghost" size="icon" className="h-7 w-7 text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <PlusCircle className="h-5 w-5" />
+                                  </Button>
+                                </div>
                             </Card>
                         ))}
                     </div>
