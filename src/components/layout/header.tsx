@@ -17,7 +17,7 @@ export async function Header() {
   const user = await getAuthenticatedUser();
 
   return (
-    <header className="fixed top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6 w-[calc(100%-var(--sidebar-width))] group-data-[collapsible=icon]:w-[calc(100%-var(--sidebar-width-icon))] group-data-[collapsible=offcanvas]:w-full transition-[width] ease-linear md:w-[calc(100%-var(--sidebar-width))] md:group-data-[collapsible=icon]:w-[calc(100%-var(--sidebar-width-icon))] md:group-data-[collapsible=offcanvas]:w-full">
+    <header className="fixed top-0 z-30 flex h-16 w-full shrink-0 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
       <SidebarTrigger className="md:hidden" />
       <div className="hidden md:block">
         <Breadcrumb />
