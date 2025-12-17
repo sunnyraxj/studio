@@ -20,6 +20,7 @@ import {
 } from '@tanstack/react-table';
 import * as React from 'react';
 import Link from 'next/link';
+import { format } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -53,6 +54,7 @@ const data: InventoryItem[] = [
     sku: 'TSHIRT-BLK-L',
     stock: 120,
     price: 250,
+    dateAdded: new Date('2023-10-15'),
   },
   {
     id: '3u1reuv4',
@@ -61,6 +63,7 @@ const data: InventoryItem[] = [
     sku: 'JEANS-BLU-32',
     stock: 80,
     price: 750,
+    dateAdded: new Date('2023-09-20'),
   },
   {
     id: 'derv1ws0',
@@ -69,6 +72,7 @@ const data: InventoryItem[] = [
     sku: 'SNEAK-WHT-10',
     stock: 15,
     price: 1200,
+    dateAdded: new Date('2023-11-01'),
   },
   {
     id: '5kma53ae',
@@ -77,6 +81,7 @@ const data: InventoryItem[] = [
     sku: 'WATCH-SIL-01',
     stock: 45,
     price: 3500,
+    dateAdded: new Date('2023-08-05'),
   },
   {
     id: 'bhqecj4p',
@@ -85,6 +90,7 @@ const data: InventoryItem[] = [
     sku: 'CAP-RED-OS',
     stock: 0,
     price: 150,
+    dateAdded: new Date('2023-10-25'),
   },
   {
     id: 'bhqecj5p',
@@ -93,6 +99,7 @@ const data: InventoryItem[] = [
     sku: 'SOCKS-BLK-M',
     stock: 200,
     price: 80,
+    dateAdded: new Date('2023-09-01'),
   },
   {
     id: 'bhqecj6p',
@@ -101,6 +108,7 @@ const data: InventoryItem[] = [
     sku: 'BACKPACK-GRY',
     stock: 30,
     price: 900,
+    dateAdded: new Date('2023-11-10'),
   },
 ];
 
@@ -111,6 +119,7 @@ export type InventoryItem = {
   stock: number;
   price: number;
   status: 'in stock' | 'low stock' | 'out of stock';
+  dateAdded: Date;
 };
 
 export const columns: ColumnDef<InventoryItem>[] = [
@@ -175,11 +184,20 @@ export const columns: ColumnDef<InventoryItem>[] = [
         </Button>
       );
     },
-    cell: ({ row }) => <div className="lowercase">{row.getValue('stock')}</div>,
+    cell: ({ row }) => <div className="text-center">{row.getValue('stock')}</div>,
   },
   {
     accessorKey: 'price',
-    header: () => <div className="text-right">Price</div>,
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        className="text-right w-full"
+        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+      >
+        Price
+        <CaretSortIcon className="ml-2 h-4 w-4" />
+      </Button>
+    ),
     cell: ({ row }) => {
       const price = parseFloat(row.getValue('price'));
 
@@ -190,6 +208,22 @@ export const columns: ColumnDef<InventoryItem>[] = [
       }).format(price);
 
       return <div className="text-right font-medium">{formatted}</div>;
+    },
+  },
+    {
+    accessorKey: 'dateAdded',
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+      >
+        Date Added
+        <CaretSortIcon className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const date = new Date(row.getValue('dateAdded'));
+      return <div>{format(date, 'dd MMM yyyy')}</div>;
     },
   },
   {
@@ -224,7 +258,9 @@ export const columns: ColumnDef<InventoryItem>[] = [
 ];
 
 export default function InventoryPage() {
-  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [sorting, setSorting] = React.useState<SortingState>([
+    { id: 'dateAdded', desc: true }
+  ]);
   const [columnFilters, setColumnFilters] =
     React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] =
@@ -287,7 +323,7 @@ export default function InventoryPage() {
                         column.toggleVisibility(!!value)
                         }
                     >
-                        {column.id}
+                        {column.id === 'dateAdded' ? 'Date Added' : column.id}
                     </DropdownMenuCheckboxItem>
                     );
                 })}
@@ -351,3 +387,5 @@ export default function InventoryPage() {
     </div>
   );
 }
+
+    
