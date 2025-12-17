@@ -6,11 +6,11 @@ import { Toaster } from "@/components/ui/toaster";
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
-      <div className="min-h-screen w-full bg-background text-foreground">
+      <div className="w-full bg-background text-foreground">
         <AppSidebar />
         <div className="flex flex-col md:pl-[var(--sidebar-width)] group-data-[collapsible=icon]:md:pl-[var(--sidebar-width-icon)] transition-[padding] ease-linear">
           <Header />
-          <main className="flex-1 overflow-y-auto p-4 pt-20 sm:p-6 sm:pt-22 lg:p-8 lg:pt-24">
+          <main className="h-[calc(100vh-theme(height.16))] overflow-y-auto p-4 sm:p-6 lg:p-8">
               {children}
           </main>
         </div>
