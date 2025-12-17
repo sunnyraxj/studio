@@ -64,7 +64,7 @@ export const columns: ColumnDef<PaymentRequest>[] = [
     header: "Submitted",
     cell: ({ row }) => {
         const date = new Date(row.getValue("dateSubmitted"))
-        return <div>{date.toLocaleDateString()}</div>
+        return <div>{date.toLocaleDateString('en-IN')}</div>
     }
   },
   {

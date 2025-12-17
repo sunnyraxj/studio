@@ -75,7 +75,7 @@ export const columns: ColumnDef<Expense>[] = [
       },
       cell: ({ row }) => {
         const date = new Date(row.getValue("date"))
-        return <div>{date.toLocaleDateString()}</div>
+        return <div>{date.toLocaleDateString('en-IN')}</div>
       }
   },
   {
