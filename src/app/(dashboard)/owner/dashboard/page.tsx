@@ -1,3 +1,6 @@
+
+'use client';
+
 import {
   Card,
   CardContent,
@@ -12,7 +15,7 @@ export default function DashboardPage() {
   return (
     <div className="flex-1 space-y-4">
       <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Dashboard (Demo Mode)</h2>
         <div className="flex items-center space-x-2">
           <DatePicker />
         </div>
@@ -24,9 +27,9 @@ export default function DashboardPage() {
             <IndianRupee className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹45,231.89</div>
+            <div className="text-2xl font-bold">₹12,345.67</div>
             <p className="text-xs text-muted-foreground">
-              +20.1% from last month
+              Sample data for demo
             </p>
           </CardContent>
         </Card>
@@ -38,9 +41,9 @@ export default function DashboardPage() {
             <IndianRupee className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹2,350</div>
-            <p className="text-xs text-muted-foreground">
-              +180.1% from last month
+            <div className="text-2xl font-bold">₹1,50,000</div>
+             <p className="text-xs text-muted-foreground">
+              Sample data for demo
             </p>
           </CardContent>
         </Card>
@@ -52,9 +55,9 @@ export default function DashboardPage() {
             <IndianRupee className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹573</div>
+            <div className="text-2xl font-bold">₹25,000</div>
             <p className="text-xs text-muted-foreground">
-              +19% from last month
+             Sample data for demo
             </p>
           </CardContent>
         </Card>
