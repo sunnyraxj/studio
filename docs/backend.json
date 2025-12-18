@@ -53,12 +53,21 @@
           "description": "The user's current subscription status.",
           "enum": [
             "active",
-            "inactive"
+            "inactive",
+            "pending_verification"
           ]
         },
         "shopId": {
-            "type": "string",
-            "description": "The ID of the shop this user belongs to."
+          "type": "string",
+          "description": "The ID of the shop this user belongs to."
+        },
+        "role": {
+          "type": "string",
+          "description": "The user's role in the system.",
+          "enum": [
+            "user",
+            "superadmin"
+          ]
         }
       },
       "required": [
@@ -95,31 +104,62 @@
           "type": "string"
         }
       },
-      "required": ["id", "name", "price", "stock", "status"]
+      "required": [
+        "id",
+        "name",
+        "price",
+        "stock",
+        "status"
+      ]
     },
     "Sale": {
-        "type": "object",
-        "title": "Sale",
-        "description": "Represents a single sale transaction.",
-        "properties": {
-            "id": {"type": "string"},
-            "date": {"type": "string", "format": "date-time"},
-            "total": {"type": "number"},
-            "items": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "productId": {"type": "string"},
-                        "name": {"type": "string"},
-                        "quantity": {"type": "number"},
-                        "price": {"type": "number"}
-                    },
-                    "required": ["productId", "name", "quantity", "price"]
-                }
-            }
+      "type": "object",
+      "title": "Sale",
+      "description": "Represents a single sale transaction.",
+      "properties": {
+        "id": {
+          "type": "string"
         },
-        "required": ["id", "date", "total", "items"]
+        "date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "total": {
+          "type": "number"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "productId": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "quantity": {
+                "type": "number"
+              },
+              "price": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "productId",
+              "name",
+              "quantity",
+              "price"
+            ]
+          }
+        }
+      },
+      "required": [
+        "id",
+        "date",
+        "total",
+        "items"
+      ]
     }
   },
   "auth": {
@@ -149,25 +189,31 @@
         }
       },
       {
-          "path": "/shops/{shopId}/products/{productId}",
-          "definition": {
-              "schema": { "$ref": "#/backend/entities/Product"},
-              "description": "Products for a specific shop."
-          }
+        "path": "/shops/{shopId}/products/{productId}",
+        "definition": {
+          "schema": {
+            "$ref": "#/backend/entities/Product"
+          },
+          "description": "Products for a specific shop."
+        }
       },
       {
-          "path": "/shops/{shopId}/sales/{saleId}",
-          "definition": {
-              "schema": {"$ref": "#/backend/entities/Sale"},
-              "description": "Sales records for a specific shop."
-          }
+        "path": "/shops/{shopId}/sales/{saleId}",
+        "definition": {
+          "schema": {
+            "$ref": "#/backend/entities/Sale"
+          },
+          "description": "Sales records for a specific shop."
+        }
       },
-       {
-          "path": "/shops/{shopId}/settings/{docId}",
-          "definition": {
-              "schema": { "type": "object" },
-              "description": "Settings for a specific shop."
-          }
+      {
+        "path": "/shops/{shopId}/settings/{docId}",
+        "definition": {
+          "schema": {
+            "type": "object"
+          },
+          "description": "Settings for a specific shop."
+        }
       }
     ]
   }

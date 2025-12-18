@@ -23,7 +23,7 @@ import {
 import { toast } from '@/hooks/use-toast.tsx';
 import { doc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
-import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { setDoc } from 'firebase/firestore';
 
 
 export default function LoginPage() {
@@ -37,7 +37,7 @@ export default function LoginPage() {
   const handleLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // After login, the layout will handle redirection based on subscription status
+      // After login, the layout will handle redirection based on subscription status and role
       router.push('/dashboard'); 
     } catch (error: any) {
       toast({
@@ -74,11 +74,10 @@ export default function LoginPage() {
             id: user.uid,
             email: user.email,
             subscriptionStatus: 'inactive',
+            role: 'user', // Default role for new users
         };
       
-        // This is a fire-and-forget operation, which is fine for profile creation.
-        // It's wrapped in a helper to add global error handling.
-        setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
+        await setDoc(userDocRef, userProfile, { merge: true });
       }
 
       // After sign-up, always redirect to the subscription page

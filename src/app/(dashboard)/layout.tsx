@@ -90,6 +90,7 @@ const navLinks = [
 
 type UserProfile = {
   subscriptionStatus?: string;
+  role?: 'user' | 'superadmin';
 };
 
 function AppSidebar() {
@@ -302,15 +303,21 @@ export default function DashboardLayout({
     if (isUserLoading || isProfileLoading) {
       return;
     }
-  
-    // If there is a logged-in user but their profile indicates they aren't subscribed,
-    // redirect them to the subscription page.
-    if (user && userData?.subscriptionStatus !== 'active') {
-       router.push('/subscribe');
+
+    if (user && userData?.role === 'superadmin') {
+      return; // Super admins can access the dashboard
     }
-    // If the user is not logged in (`user` is null), they can view the demo pages, 
+
+    if (user) {
+      if (userData?.subscriptionStatus === 'pending_verification') {
+        router.push('/pending-verification');
+      } else if (userData?.subscriptionStatus !== 'active') {
+        router.push('/subscribe');
+      }
+    }
+    // If the user is not logged in (`user` is null), they can view the demo pages,
     // so no redirection is needed.
-  
+
   }, [user, userData, isUserLoading, isProfileLoading, router]);
 
   return (

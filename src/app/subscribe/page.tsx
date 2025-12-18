@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,7 +14,7 @@ import {
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore } from '@/firebase';
-import { doc, writeBatch, collection, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast.tsx';
 
 const proPlan = {
@@ -45,7 +45,7 @@ export default function SubscribePage() {
 
   const handleSubscribe = async () => {
     if (!user || !firestore) {
-       toast({
+      toast({
         variant: 'destructive',
         title: 'Not Authenticated',
         description: 'You must be logged in to subscribe.',
@@ -53,53 +53,38 @@ export default function SubscribePage() {
       return;
     }
 
-    // Check if the user already has a shop to prevent creating a new one
+    // Check if the user already has an active or pending subscription
     const userDocRef = doc(firestore, 'users', user.uid);
     const userDoc = await getDoc(userDocRef);
-    if (userDoc.exists() && userDoc.data()?.shopId) {
+    const userData = userDoc.data();
+
+    if (userData?.subscriptionStatus === 'active' || userData?.subscriptionStatus === 'pending_verification') {
         toast({
             variant: "destructive",
-            title: "Already Subscribed",
-            description: "You already have an active shop. Redirecting you to the dashboard."
+            title: "Subscription Exists",
+            description: "You already have a subscription. Redirecting you..."
         });
         router.push('/dashboard');
         return;
     }
     
-    // Create a batch write to perform multiple operations atomically
-    const batch = writeBatch(firestore);
-
-    // 1. Create a new shop document
-    const shopDocRef = doc(collection(firestore, 'shops'));
-    batch.set(shopDocRef, {
-      id: shopDocRef.id,
-      ownerId: user.uid,
-      name: `${user.email?.split('@')[0] || 'My'}'s Shop`, // Default shop name
-    });
-
-    // 2. Update the user's profile with subscription and shop info
-    batch.update(userDocRef, {
-        subscriptionStatus: 'active',
+    // Update user's profile to pending verification
+    try {
+      await updateDoc(userDocRef, {
+        subscriptionStatus: 'pending_verification',
         planName: proPlan.name,
         planPrice: proPlan.price,
-        subscriptionStartDate: new Date().toISOString(),
-        shopId: shopDocRef.id, // Link user to the new shop
-    });
-
-    try {
-      await batch.commit();
-
-      toast({
-        title: 'Subscription Successful!',
-        description: `You are now subscribed to the ${proPlan.name} plan. Your shop has been created.`,
+        subscriptionRequestDate: new Date().toISOString(),
       });
-      router.push('/dashboard');
+
+      // Redirect to payment simulation page
+      router.push('/payment');
     } catch (error: any) {
-      console.error("Subscription and shop creation failed:", error);
+      console.error("Subscription update failed:", error);
       toast({
         variant: 'destructive',
         title: 'Subscription Failed',
-        description: `Could not create your shop. ${error.message}`,
+        description: `Could not update your subscription status. ${error.message}`,
       });
     }
   };
@@ -150,10 +135,9 @@ export default function SubscribePage() {
           size="lg"
           onClick={handleSubscribe}
         >
-          Subscribe Now
+          Proceed to Payment
         </Button>
       </div>
     </div>
   );
 }
-
