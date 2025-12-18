@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   ColumnDef,
   flexRender,
@@ -34,7 +34,6 @@ import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@
 import { collection, doc } from 'firebase/firestore';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import { Badge } from '@/components/ui/badge';
-import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { format } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
@@ -46,6 +45,8 @@ import * as XLSX from 'xlsx';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { Separator } from '@/components/ui/separator';
 
 
 // Common Types
