@@ -94,7 +94,11 @@ type UserProfile = {
   shopId?: string;
 };
 
-function AppSidebar() {
+type Shop = {
+    name?: string;
+}
+
+function AppSidebar({ shopName }: { shopName: string }) {
   const pathname = usePathname();
   const { open } = useSidebar();
   const [isAccountOpen, setIsAccountOpen] = useState(false);
@@ -130,7 +134,7 @@ function AppSidebar() {
             )}
           >
             <Package2 className="h-6 w-6" />
-            {open && <span>apna billing ERP</span>}
+            {open && <span className="truncate">{shopName}</span>}
           </Link>
         </div>
       </SidebarHeader>
@@ -217,7 +221,7 @@ function AppSidebar() {
   );
 }
 
-function MobileSidebar() {
+function MobileSidebar({ shopName }: { shopName: string }) {
   const pathname = usePathname();
   const { user } = useUser();
 
@@ -236,7 +240,7 @@ function MobileSidebar() {
             className="flex items-center gap-2 text-lg font-semibold"
           >
             <Package2 className="h-6 w-6" />
-            <span className="sr-only">apna billing ERP</span>
+            <span className="truncate">{shopName}</span>
           </Link>
           {navLinks.map((link) => (
             <Link
@@ -298,6 +302,14 @@ export default function DashboardLayout({
   }, [user, firestore]);
 
   const { data: userData, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
+  const shopId = userData?.shopId;
+
+  const shopDocRef = useMemoFirebase(() => {
+    if (!shopId || !firestore) return null;
+    return doc(firestore, `shops/${shopId}`);
+  }, [shopId, firestore]);
+
+  const { data: shopData, isLoading: isShopLoading } = useDoc<Shop>(shopDocRef);
 
   useEffect(() => {
     // Wait until both user and their profile data are loaded
@@ -319,7 +331,7 @@ export default function DashboardLayout({
           break;
         case 'active':
           // If active but no shop, they need to set it up.
-          if (!userData.shopId) {
+          if (!shopId) {
             router.push('/shop-setup');
           }
           // Otherwise, they are active and have a shop, so they can stay.
@@ -334,9 +346,11 @@ export default function DashboardLayout({
     } else if (!user && !isUserLoading) {
         // If not logged in and not loading, stay in demo mode on dashboard.
     }
-  }, [user, userData, isUserLoading, isProfileLoading, router]);
+  }, [user, userData, isUserLoading, isProfileLoading, router, shopId]);
 
-  if (isUserLoading || (user && isProfileLoading)) {
+  const isLoading = isUserLoading || (user && (isProfileLoading || (!!shopId && isShopLoading)));
+
+  if (isLoading) {
     return (
         <div className="flex min-h-screen w-full items-center justify-center">
             <p>Loading...</p>
@@ -344,14 +358,15 @@ export default function DashboardLayout({
     );
   }
 
+  const shopName = user ? (shopData?.name || 'My Shop') : 'Demo Shop';
 
   return (
     <SidebarProvider>
       <div className="grid min-h-screen w-full md:grid-cols-[auto_1fr] lg:grid-cols-[auto_1fr]">
-        <AppSidebar />
+        <AppSidebar shopName={shopName} />
         <div className="flex flex-col">
           <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
-            <MobileSidebar />
+            <MobileSidebar shopName={shopName} />
             <div className="w-full flex-1" />
           </header>
           <main className="flex flex-1 flex-col p-4 lg:p-6 overflow-hidden">
