@@ -399,12 +399,6 @@ export default function InventoryPage() {
             </RadioGroup>
         </div>
         <div className="ml-auto flex items-center gap-2">
-            <Button variant="outline">
-              <FileDown className="mr-2 h-4 w-4" /> Download Template
-            </Button>
-            <Button variant="outline">
-              <FileUp className="mr-2 h-4 w-4" /> Import Products
-            </Button>
            <Link href="/dashboard/inventory/add">
             <Button>
                 <PlusCircle className="mr-2 h-4 w-4" /> Add Product

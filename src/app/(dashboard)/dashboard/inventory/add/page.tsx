@@ -26,6 +26,7 @@ import Link from 'next/link';
 import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 import { addDoc, collection, doc } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast.tsx';
+import { FileDown, FileUp } from 'lucide-react';
 
 type UserProfile = {
   shopId?: string;
@@ -115,6 +116,14 @@ export default function AddProductPage() {
             <p className="text-muted-foreground">
                 Fill in the details below to add a new product to your inventory.
             </p>
+        </div>
+        <div className="flex items-center gap-2">
+            <Button variant="outline">
+              <FileDown className="mr-2 h-4 w-4" /> Download Template
+            </Button>
+            <Button variant="outline">
+              <FileUp className="mr-2 h-4 w-4" /> Import Products
+            </Button>
         </div>
       </div>
       <Separator />
