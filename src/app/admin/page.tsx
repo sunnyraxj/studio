@@ -155,10 +155,10 @@ export default function AdminPage() {
               <AlertDialogDescription>
                 Are you sure you want to approve this user? This will grant them full access to the platform.
                  <div className="mt-4 space-y-2 text-sm text-foreground">
-                    <p><strong>Name:</strong> {selectedUser?.name}</p>
-                    <p><strong>Email:</strong> {selectedUser?.email}</p>
-                    <p><strong>UTR:</strong> {selectedUser?.utr}</p>
-                    <p><strong>Amount:</strong> ₹{selectedUser?.planPrice?.toLocaleString('en-IN')}</p>
+                    <div><strong>Name:</strong> {selectedUser?.name}</div>
+                    <div><strong>Email:</strong> {selectedUser?.email}</div>
+                    <div><strong>UTR:</strong> {selectedUser?.utr}</div>
+                    <div><strong>Amount:</strong> ₹{selectedUser?.planPrice?.toLocaleString('en-IN')}</div>
                 </div>
               </AlertDialogDescription>
             </AlertDialogHeader>
