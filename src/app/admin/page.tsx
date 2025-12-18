@@ -44,6 +44,7 @@ type UserProfile = {
   role?: 'user' | 'admin';
   utr?: string;
   planPrice?: number;
+  rejectionReason?: string;
 };
 
 export default function AdminPage() {
@@ -199,13 +200,13 @@ export default function AdminPage() {
               <AlertDialogTitle>Confirm Approval</AlertDialogTitle>
               <AlertDialogDescription>
                 Are you sure you want to approve this user? This will grant them full access to the platform.
-                 <div className="mt-4 space-y-2 text-sm text-foreground">
-                    <div><strong>Name:</strong> {selectedUser?.name}</div>
-                    <div><strong>Email:</strong> {selectedUser?.email}</div>
-                    <div><strong>UTR:</strong> {selectedUser?.utr}</div>
-                    <div><strong>Amount:</strong> ₹{selectedUser?.planPrice?.toLocaleString('en-IN')}</div>
-                </div>
               </AlertDialogDescription>
+              <div className="mt-4 space-y-2 text-sm text-foreground pt-4">
+                  <div><strong>Name:</strong> {selectedUser?.name}</div>
+                  <div><strong>Email:</strong> {selectedUser?.email}</div>
+                  <div><strong>UTR:</strong> {selectedUser?.utr}</div>
+                  <div><strong>Amount:</strong> ₹{selectedUser?.planPrice?.toLocaleString('en-IN')}</div>
+              </div>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel onClick={() => setSelectedUser(null)}>Cancel</AlertDialogCancel>
