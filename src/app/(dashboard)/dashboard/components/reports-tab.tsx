@@ -172,11 +172,13 @@ export function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null,
         <CardHeader>
           <div className="flex justify-between items-start">
             <div>
-              <CardTitle>Sales Reports</CardTitle>
-              <CardDescription>A detailed report of all items sold.</CardDescription>
-              <div className="mt-4 text-lg font-medium">
-                Total Sales (Filtered): <span className="font-bold">₹{totalSales.toLocaleString('en-IN')}</span>
+              <div className="flex items-center gap-4">
+                <CardTitle>Sales Reports</CardTitle>
+                <div className="text-lg font-medium text-muted-foreground">
+                    Total Sales (Filtered): <span className="font-bold text-foreground">₹{totalSales.toLocaleString('en-IN')}</span>
+                </div>
               </div>
+              <CardDescription>A detailed report of all items sold.</CardDescription>
             </div>
              <div className="flex items-center gap-2">
                <div className="relative">
