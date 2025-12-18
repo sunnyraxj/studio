@@ -325,11 +325,14 @@ export default function DashboardLayout({
           // Otherwise, they are active and have a shop, so they can stay.
           break;
         case 'inactive':
+        case 'rejected':
         default:
-          // Inactive users are sent to subscribe.
+          // Inactive or rejected users are sent to subscribe.
           router.push('/subscribe');
           break;
       }
+    } else if (!user && !isUserLoading) {
+        // If not logged in and not loading, stay in demo mode on dashboard.
     }
   }, [user, userData, isUserLoading, isProfileLoading, router]);
 
