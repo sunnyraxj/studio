@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -70,11 +71,6 @@ const navLinks = [
     icon: Printer,
     label: 'POS',
   },
-   {
-    href: '/dashboard/sales',
-    icon: IndianRupee,
-    label: 'All Sales',
-  },
   {
     href: '/dashboard/inventory',
     icon: Package,
@@ -84,11 +80,6 @@ const navLinks = [
     href: '/dashboard/customers',
     icon: Users,
     label: 'Customers',
-  },
-   {
-    href: '/dashboard/reports',
-    icon: LineChart,
-    label: 'Reports',
   },
 ];
 
