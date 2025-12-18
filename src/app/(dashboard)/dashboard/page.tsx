@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -39,9 +38,11 @@ import { format } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
 import { CaretSortIcon, ChevronDownIcon, ChevronRightIcon } from '@radix-ui/react-icons';
-import { IndianRupee } from 'lucide-react';
+import { IndianRupee, FileDown } from 'lucide-react';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { FaWhatsapp } from 'react-icons/fa';
+import * as XLSX from 'xlsx';
+
 
 // Common Types
 type Sale = {
@@ -284,6 +285,10 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
     return items;
   }, [salesData, dateRange]);
 
+  const totalSales = useMemo(() => {
+    return reportData.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  }, [reportData]);
+
   const table = useReactTable({
     data: reportData,
     columns: reportsColumns,
@@ -295,6 +300,24 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
     getPaginationRowModel: getPaginationRowModel(),
   });
 
+  const handleExport = () => {
+    const dataToExport = reportData.map(item => ({
+        'Product Name': item.name,
+        'Product Code': item.sku,
+        'Date Sold': format(new Date(item.saleDate), 'dd-MM-yyyy'),
+        'Quantity Sold': item.quantity,
+        'HSN Code': item.hsn,
+        'GST (%)': item.gst,
+        'Price per Item': item.price,
+        'Total': item.price * item.quantity
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sales Report");
+    XLSX.writeFile(workbook, `SalesReport-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -302,8 +325,14 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
           <div>
             <CardTitle>Sales Reports</CardTitle>
             <CardDescription>A detailed report of all items sold.</CardDescription>
+            <div className="mt-4 text-2xl font-bold">
+                Total Sales: ₹{totalSales.toLocaleString('en-IN')}
+            </div>
           </div>
           <div className="flex items-center gap-4">
+            <Button variant="outline" onClick={handleExport} disabled={reportData.length === 0}>
+                <FileDown className="mr-2 h-4 w-4" /> Export to Excel
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline">
@@ -324,6 +353,11 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
                           column.toggleVisibility(!!value)
                         }
                       >
+                         <span className="flex h-3.5 w-3.5 items-center justify-center mr-2">
+                           <DropdownMenuTrigger asChild>
+                              <span className={`w-full h-full rounded-sm ${column.getIsVisible() ? 'bg-primary' : 'border border-primary'}`} />
+                           </DropdownMenuTrigger>
+                        </span>
                         {column.id === 'saleDate' ? 'Date Sold' : 
                          column.id === 'name' ? 'Product Name' :
                          column.id === 'sku' ? 'Product Code' :
@@ -624,9 +658,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
-
-    
-
-    
