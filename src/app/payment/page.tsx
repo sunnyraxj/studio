@@ -62,7 +62,7 @@ export default function PaymentPage() {
     if (adminSettingsData?.paymentUpiId && userData?.planPrice) {
         // This is a placeholder for a real QR code generation service.
         // In a real app, you would call an API to generate a QR code for the UPI deeplink.
-        const upiDeepLink = `upi://pay?pa=${adminSettingsData.paymentUpiId}&pn=Acme%20Inc&am=${userData.planPrice}&cu=INR&tn=Subscription`;
+        const upiDeepLink = `upi://pay?pa=${adminSettingsData.paymentUpiId}&pn=apna%20billing%20ERP&am=${userData.planPrice}&cu=INR&tn=Subscription`;
         console.log("Generated UPI Deep Link:", upiDeepLink);
         // For demonstration, we'll continue to use a placeholder image.
         // You would replace this with the URL of the generated QR code.

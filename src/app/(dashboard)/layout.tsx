@@ -130,7 +130,7 @@ function AppSidebar() {
             )}
           >
             <Package2 className="h-6 w-6" />
-            {open && <span>Acme Inc</span>}
+            {open && <span>apna billing ERP</span>}
           </Link>
         </div>
       </SidebarHeader>
@@ -236,7 +236,7 @@ function MobileSidebar() {
             className="flex items-center gap-2 text-lg font-semibold"
           >
             <Package2 className="h-6 w-6" />
-            <span className="sr-only">Acme Inc</span>
+            <span className="sr-only">apna billing ERP</span>
           </Link>
           {navLinks.map((link) => (
             <Link
@@ -337,7 +337,7 @@ export default function DashboardLayout({
     }
   }, [user, userData, isUserLoading, isProfileLoading, router]);
 
-  if (isUserLoading || isProfileLoading) {
+  if (isUserLoading || (user && isProfileLoading)) {
     return (
         <div className="flex min-h-screen w-full items-center justify-center">
             <p>Loading...</p>
