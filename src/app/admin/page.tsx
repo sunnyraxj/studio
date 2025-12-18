@@ -52,8 +52,8 @@ export default function AdminPage() {
 
     const batch = writeBatch(firestore);
     
-    // 1. Update the user's profile to active, but DO NOT create the shop yet.
-    // The shop will be created after the user completes the shop-setup flow.
+    // 1. Update the user's profile to active.
+    // The user will be redirected to the shop-setup page on their next login.
     const targetUserDocRef = doc(firestore, 'users', targetUser.id);
     batch.update(targetUserDocRef, {
       subscriptionStatus: 'active',

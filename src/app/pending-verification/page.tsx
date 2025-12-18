@@ -32,12 +32,14 @@ export default function PendingVerificationPage() {
       router.push('/login');
       return;
     }
-
+    
+    // If user is active, they need to set up their shop or go to dashboard
     if (userData?.subscriptionStatus === 'active') {
-      router.push('/dashboard');
+      router.push('/shop-setup');
     } else if (userData?.subscriptionStatus === 'inactive') {
       router.push('/subscribe');
     }
+    // Otherwise, they are correctly on the pending verification page.
   }, [user, userData, isUserLoading, isProfileLoading, router]);
 
   return (

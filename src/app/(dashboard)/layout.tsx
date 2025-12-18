@@ -326,8 +326,8 @@ export default function DashboardLayout({
           break;
         case 'inactive':
         default:
-          // Inactive users can now browse the dashboard (in demo mode)
-          // and are not automatically redirected to /subscribe.
+          // Inactive users are sent to subscribe.
+          router.push('/subscribe');
           break;
       }
     }

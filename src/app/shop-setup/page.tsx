@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { useFirestore, useUser } from '@/firebase';
-import { doc, setDoc, writeBatch, collection } from 'firebase/firestore';
+import { doc, writeBatch, collection } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast.tsx';
 
 const totalSteps = 3;
@@ -214,12 +214,6 @@ export default function ShopSetupPage() {
             </>
           )}
         </Card>
-        
-        {step === totalSteps && (
-            <div className="mt-8 text-center">
-                <p className="text-muted-foreground">You will be redirected to the dashboard shortly after verification. This may take up to 1 hour.</p>
-            </div>
-        )}
       </div>
     </div>
   );
