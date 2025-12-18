@@ -250,12 +250,21 @@ function AllSalesTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoa
 const reportsColumns: ColumnDef<ReportItem>[] = [
   { accessorKey: 'name', header: 'Product Name', cell: ({ row }) => <div className="font-medium">{row.getValue('name')}</div> },
   { accessorKey: 'sku', header: 'Product Code' },
-  { accessorKey: 'hsn', header: 'HSN Code' },
-  { accessorKey: 'gst', header: 'GST (%)', cell: ({ row }) => `${row.original.gst}%`},
-  { accessorKey: 'quantity', header: 'Quantity Sold' },
-  { accessorKey: 'price', header: 'Price per Item', cell: ({ row }) => `₹${row.original.price.toLocaleString('en-IN')}` },
   { accessorKey: 'saleDate', header: 'Date Sold', cell: ({ row }) => format(new Date(row.original.saleDate), 'dd MMM yyyy') },
+  { accessorKey: 'quantity', header: 'Quantity Sold', cell: ({ row }) => <div className='text-center'>{row.getValue('quantity')}</div> },
+  { accessorKey: 'hsn', header: 'HSN Code' },
+  { accessorKey: 'gst', header: 'GST (%)', cell: ({ row }) => <div className='text-center'>{`${row.original.gst || 0}%`}</div>},
+  { accessorKey: 'price', header: 'Price per Item', cell: ({ row }) => <div className="text-right">₹{row.original.price.toLocaleString('en-IN')}</div> },
+  {
+    id: 'total',
+    header: () => <div className="text-right">Total</div>,
+    cell: ({ row }) => {
+      const total = row.original.price * row.original.quantity;
+      return <div className="text-right font-medium">₹{total.toLocaleString('en-IN')}</div>;
+    },
+  },
 ];
+
 
 function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoading: boolean }) {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
@@ -615,6 +624,8 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
 
     
 
