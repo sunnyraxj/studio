@@ -57,7 +57,7 @@ interface State {
   toasts: ToasterToast[]
 }
 
-const toastTimeouts = new Map()
+const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 
 const addToRemoveQueue = (toastId: string) => {
   if (toastTimeouts.has(toastId)) {
@@ -137,8 +137,8 @@ let memoryState: State = { toasts: [] }
 
 function dispatch(action: Action) {
   memoryState = reducer(memoryState, action)
-  listeners.forEach((listener_2) => {
-    listener_2(memoryState)
+  listeners.forEach((listener) => {
+    listener(memoryState)
   })
 }
 
