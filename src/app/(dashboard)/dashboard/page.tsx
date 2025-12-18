@@ -75,6 +75,7 @@ type Customer = {
   name: string;
   phone: string;
   invoiceNumbers: string[];
+  lastPurchaseDate: string;
 };
 
 type UserProfile = {
@@ -88,11 +89,11 @@ const demoSales: Sale[] = [
     { id: '3', invoiceNumber: 'INV125', date: new Date(Date.now() - 172800000).toISOString(), customer: { name: 'Amit Singh', phone: '9876543212' }, total: 3500, items: [{ productId: '4', name: 'Watch', quantity: 1, price: 3500, sku: 'WT-01', hsn: '9102', gst: 18 }] },
 ];
 const demoCustomers: Customer[] = [
-    { id: '1', name: 'Ravi Kumar', phone: '9876543210', invoiceNumbers: ['INV123', 'INV128'] },
-    { id: '2', name: 'Priya Sharma', phone: '9876543211', invoiceNumbers: ['INV124'] },
-    { id: '3', name: 'Amit Singh', phone: '9876543212', invoiceNumbers: ['INV125', 'INV129', 'INV130'] },
-    { id: '4', name: 'Sunita Gupta', phone: '9876543213', invoiceNumbers: ['INV126'] },
-    { id: '5', name: 'Vikas Patel', phone: '9876543214', invoiceNumbers: ['INV127'] },
+    { id: '1', name: 'Ravi Kumar', phone: '9876543210', invoiceNumbers: ['INV123', 'INV128'], lastPurchaseDate: new Date().toISOString() },
+    { id: '2', name: 'Priya Sharma', phone: '9876543211', invoiceNumbers: ['INV124'], lastPurchaseDate: new Date(Date.now() - 86400000).toISOString() },
+    { id: '3', name: 'Amit Singh', phone: '9876543212', invoiceNumbers: ['INV125', 'INV129', 'INV130'], lastPurchaseDate: new Date(Date.now() - 172800000).toISOString() },
+    { id: '4', name: 'Sunita Gupta', phone: '9876543213', invoiceNumbers: ['INV126'], lastPurchaseDate: new Date(Date.now() - 259200000).toISOString() },
+    { id: '5', name: 'Vikas Patel', phone: '9876543214', invoiceNumbers: ['INV127'], lastPurchaseDate: new Date(Date.now() - 345600000).toISOString() },
 ];
 const DemoData = {
     todaySales: 12345.67,
@@ -359,6 +360,16 @@ const customerColumns: ColumnDef<Customer>[] = [
     header: 'Phone',
   },
   {
+    accessorKey: 'lastPurchaseDate',
+    header: ({ column }) => (
+      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+        Last Purchase
+        <CaretSortIcon className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => format(new Date(row.getValue('lastPurchaseDate')), 'dd MMM yyyy'),
+  },
+  {
     accessorKey: 'invoiceNumbers',
     header: 'Invoice Numbers',
     cell: ({ row }) => {
@@ -387,11 +398,21 @@ const customerColumns: ColumnDef<Customer>[] = [
 ];
 
 function CustomersTab({ salesData, isLoading, isDemoMode }: { salesData: Sale[] | null, isLoading: boolean, isDemoMode: boolean }) {
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'lastPurchaseDate', desc: true }]);
+
   const customersData = useMemo(() => {
     if (isDemoMode) return demoCustomers;
     if (!salesData) return [];
 
-    const customerMap = new Map<string, Customer>();
+    type CustomerAggregate = {
+        id: string;
+        name: string;
+        phone: string;
+        invoiceNumbers: Set<string>;
+        lastPurchaseDate: string;
+    }
+
+    const customerMap = new Map<string, CustomerAggregate>();
 
     salesData.forEach((sale) => {
       if (!sale.customer || (!sale.customer.phone && !sale.customer.name)) return;
@@ -400,25 +421,36 @@ function CustomersTab({ salesData, isLoading, isDemoMode }: { salesData: Sale[] 
 
       if (customerMap.has(customerKey)) {
         const existingCustomer = customerMap.get(customerKey)!;
-        existingCustomer.invoiceNumbers.push(sale.invoiceNumber);
+        existingCustomer.invoiceNumbers.add(sale.invoiceNumber);
+        if (new Date(sale.date) > new Date(existingCustomer.lastPurchaseDate)) {
+            existingCustomer.lastPurchaseDate = sale.date;
+        }
       } else {
         customerMap.set(customerKey, {
           id: customerKey,
           name: sale.customer.name,
           phone: sale.customer.phone || '',
-          invoiceNumbers: [sale.invoiceNumber],
+          invoiceNumbers: new Set([sale.invoiceNumber]),
+          lastPurchaseDate: sale.date,
         });
       }
     });
+    
+    return Array.from(customerMap.values()).map(c => ({
+        ...c,
+        invoiceNumbers: Array.from(c.invoiceNumbers),
+    }));
 
-    return Array.from(customerMap.values());
   }, [salesData, isDemoMode]);
 
   const table = useReactTable({
     data: customersData,
     columns: customerColumns,
+    state: { sorting },
+    onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
   });
 
   return (
@@ -583,5 +615,7 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
 
     
