@@ -300,24 +300,51 @@ export default function DashboardLayout({
   const { data: userData, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
   useEffect(() => {
+    // Wait until both user and their profile data are loaded
     if (isUserLoading || isProfileLoading) {
       return;
     }
 
-    if (user && userData?.role === 'admin') {
-      return; 
-    }
+    // If there is no user, they are not logged in.
+    // However, the POS and Inventory pages show demo data, so we don't redirect from the dashboard.
+    // Specific actions on those pages will handle redirection if needed.
 
-    if (user) {
-      if (userData?.subscriptionStatus === 'pending_verification') {
-        router.push('/pending-verification');
-      } else if (userData?.subscriptionStatus !== 'active') {
-        router.push('/subscribe');
-      } else if (userData.subscriptionStatus === 'active' && !userData.shopId) {
-        router.push('/shop-setup');
+    // If a user is logged in, check their status
+    if (user && userData) {
+      // Admins should not be redirected from the dashboard. They can view it in demo mode.
+      if (userData.role === 'admin') {
+        return;
+      }
+      
+      // Handle redirects for regular users based on their subscription and shop status.
+      switch (userData.subscriptionStatus) {
+        case 'pending_verification':
+          router.push('/pending-verification');
+          break;
+        case 'active':
+          // If active but no shop, they need to set it up.
+          if (!userData.shopId) {
+            router.push('/shop-setup');
+          }
+          // Otherwise, they are active and have a shop, so they can stay.
+          break;
+        case 'inactive':
+        default:
+          // If inactive or any other status, they need to subscribe.
+          router.push('/subscribe');
+          break;
       }
     }
   }, [user, userData, isUserLoading, isProfileLoading, router]);
+
+  if (isUserLoading || isProfileLoading) {
+    return (
+        <div className="flex min-h-screen w-full items-center justify-center">
+            <p>Loading...</p>
+        </div>
+    );
+  }
+
 
   return (
     <SidebarProvider>
