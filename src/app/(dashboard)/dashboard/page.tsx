@@ -44,6 +44,8 @@ import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMe
 import { FaWhatsapp } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 
 // Common Types
@@ -270,31 +272,65 @@ const reportsColumns: ColumnDef<ReportItem>[] = [
 
 
 function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoading: boolean }) {
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     hsn: false,
   });
+  
+  const [filteredData, setFilteredData] = useState<ReportItem[]>([]);
+
+  const [startDay, setStartDay] = useState('');
+  const [startMonth, setStartMonth] = useState('');
+  const [startYear, setStartYear] = useState('');
+  const [endDay, setEndDay] = useState('');
+  const [endMonth, setEndMonth] = useState('');
+  const [endYear, setEndYear] = useState('');
 
   const reportData = useMemo(() => {
     if (!salesData) return [];
-    let items: ReportItem[] = salesData.flatMap(sale => sale.items.map(item => ({ ...item, saleDate: sale.date })));
-    if (dateRange?.from) {
-        items = items.filter(item => new Date(item.saleDate) >= dateRange.from!);
+    return salesData.flatMap(sale => sale.items.map(item => ({ ...item, saleDate: sale.date })));
+  }, [salesData]);
+  
+  useEffect(() => {
+    setFilteredData(reportData);
+  },[reportData]);
+
+  const handleFilter = () => {
+    const startDateStr = `${startYear}-${startMonth.padStart(2, '0')}-${startDay.padStart(2, '0')}`;
+    const endDateStr = `${endYear}-${endMonth.padStart(2, '0')}-${endDay.padStart(2, '0')}`;
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+    endDate.setHours(23, 59, 59, 999);
+
+    const isValidStartDate = !isNaN(startDate.getTime()) && startDay && startMonth && startYear;
+    const isValidEndDate = !isNaN(endDate.getTime()) && endDay && endMonth && endYear;
+    
+    let data = reportData;
+
+    if (isValidStartDate) {
+      data = data.filter(item => new Date(item.saleDate) >= startDate);
     }
-    if (dateRange?.to) {
-        const toDate = new Date(dateRange.to);
-        toDate.setHours(23, 59, 59, 999);
-        items = items.filter(item => new Date(item.saleDate) <= toDate);
+    if (isValidEndDate) {
+      data = data.filter(item => new Date(item.saleDate) <= endDate);
     }
-    return items;
-  }, [salesData, dateRange]);
+    setFilteredData(data);
+  };
+  
+  const handleClearFilter = () => {
+    setStartDay('');
+    setStartMonth('');
+    setStartYear('');
+    setEndDay('');
+    setEndMonth('');
+    setEndYear('');
+    setFilteredData(reportData);
+  }
 
   const totalSales = useMemo(() => {
-    return reportData.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  }, [reportData]);
+    return filteredData.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  }, [filteredData]);
 
   const table = useReactTable({
-    data: reportData,
+    data: filteredData,
     columns: reportsColumns,
     state: {
         columnVisibility,
@@ -305,7 +341,7 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
   });
 
   const handleExport = () => {
-    const dataToExport = reportData.map(item => ({
+    const dataToExport = filteredData.map(item => ({
         'Product Name': item.name,
         'Product Code': item.sku,
         'Date Sold': format(new Date(item.saleDate), 'dd-MM-yyyy'),
@@ -322,10 +358,6 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
     XLSX.writeFile(workbook, `SalesReport-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
   }
 
-  const handleClearFilter = () => {
-    setDateRange(undefined);
-  }
-
   return (
     <TooltipProvider>
       <Card>
@@ -339,10 +371,31 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <div className="flex items-end gap-2">
+                  <div className="grid gap-1.5">
+                    <Label>Start Date</Label>
+                    <div className="flex gap-1.5">
+                        <Input placeholder="DD" value={startDay} onChange={e => setStartDay(e.target.value)} className="w-12" />
+                        <Input placeholder="MM" value={startMonth} onChange={e => setStartMonth(e.target.value)} className="w-12" />
+                        <Input placeholder="YYYY" value={startYear} onChange={e => setStartYear(e.target.value)} className="w-20" />
+                    </div>
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label>End Date</Label>
+                     <div className="flex gap-1.5">
+                        <Input placeholder="DD" value={endDay} onChange={e => setEndDay(e.target.value)} className="w-12" />
+                        <Input placeholder="MM" value={endMonth} onChange={e => setEndMonth(e.target.value)} className="w-12" />
+                        <Input placeholder="YYYY" value={endYear} onChange={e => setEndYear(e.target.value)} className="w-20" />
+                    </div>
+                  </div>
+                  <Button onClick={handleFilter}>Filter</Button>
+                  <Button variant="ghost" size="icon" onClick={handleClearFilter}><X className="h-4 w-4" /></Button>
+              </div>
+              <Separator orientation="vertical" className="h-14" />
               <Tooltip>
                   <TooltipTrigger asChild>
-                      <Button variant="outline" onClick={handleExport} disabled={reportData.length === 0}>
-                          <FileDown className="mr-2 h-4 w-4" /> Export to Excel
+                      <Button variant="outline" onClick={handleExport} disabled={filteredData.length === 0}>
+                          <FileDown className="mr-2 h-4 w-4" /> Export
                       </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -352,7 +405,7 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline">
-                    Columns <ChevronDownIcon className="ml-2 h-4 w-4" />
+                    Cols <ChevronDownIcon className="ml-2 h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -379,19 +432,6 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
                     })}
                 </DropdownMenuContent>
               </DropdownMenu>
-              <DateRangePicker onDateChange={setDateRange} initialDateRange={dateRange} />
-              {dateRange && (
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" onClick={handleClearFilter}>
-                            <X className="h-4 w-4" />
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p>Clear date filter</p>
-                    </TooltipContent>
-                </Tooltip>
-              )}
             </div>
           </div>
         </CardHeader>
@@ -682,5 +722,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
