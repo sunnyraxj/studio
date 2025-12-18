@@ -3,7 +3,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { FirebaseClientProvider, useMemoFirebase } from '@/firebase';
+import { FirebaseClientProvider } from '@/firebase';
 import {
   Sidebar,
   SidebarHeader,
