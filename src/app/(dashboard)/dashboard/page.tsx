@@ -1,27 +1,8 @@
 
 'use client';
 
-import React, { useMemo, useState, useEffect } from 'react';
-import {
-  ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-  getPaginationRowModel,
-  getSortedRowModel,
-  getExpandedRowModel,
-  SortingState,
-  ExpandedState,
-  VisibilityState,
-} from '@tanstack/react-table';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import React, { useMemo, useState } from 'react';
+import dynamic from 'next/dynamic';
 import {
   Card,
   CardContent,
@@ -32,25 +13,11 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
-import { DataTablePagination } from '@/components/data-table-pagination';
-import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
-import { Button } from '@/components/ui/button';
-import { CaretSortIcon, ChevronDownIcon, ChevronRightIcon } from '@radix-ui/react-icons';
-import { IndianRupee, FileDown, X, Search } from 'lucide-react';
-import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { FaWhatsapp } from 'react-icons/fa';
-import * as XLSX from 'xlsx';
-import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Calendar } from "@/components/ui/calendar";
-import { DateRangePicker } from '@/components/ui/date-range-picker';
-
+import { IndianRupee } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Common Types
-type Sale = {
+export type Sale = {
   id: string;
   invoiceNumber: string;
   customer: {
@@ -62,7 +29,7 @@ type Sale = {
   items: SaleItem[];
 };
 
-type SaleItem = {
+export type SaleItem = {
   productId: string;
   name: string;
   quantity: number;
@@ -72,11 +39,11 @@ type SaleItem = {
   gst?: number;
 };
 
-type ReportItem = SaleItem & {
+export type ReportItem = SaleItem & {
   saleDate: string;
 };
 
-type Customer = {
+export type Customer = {
   id: string;
   name: string;
   phone: string;
@@ -94,7 +61,8 @@ const demoSales: Sale[] = [
     { id: '2', invoiceNumber: 'INV124', date: new Date(Date.now() - 86400000).toISOString(), customer: { name: 'Priya Sharma', phone: '9876543211' }, total: 1200, items: [{ productId: '3', name: 'Sneakers', quantity: 1, price: 1200, sku: 'SH-01', hsn: '6404', gst: 18 }] },
     { id: '3', invoiceNumber: 'INV125', date: new Date(Date.now() - 172800000).toISOString(), customer: { name: 'Amit Singh', phone: '9876543212' }, total: 3500, items: [{ productId: '4', name: 'Watch', quantity: 1, price: 3500, sku: 'WT-01', hsn: '9102', gst: 18 }] },
 ];
-const demoCustomers: Customer[] = [
+
+export const demoCustomers: Customer[] = [
     { id: '1', name: 'Ravi Kumar', phone: '9876543210', invoiceNumbers: ['INV123', 'INV128'], lastPurchaseDate: new Date().toISOString() },
     { id: '2', name: 'Priya Sharma', phone: '9876543211', invoiceNumbers: ['INV124'], lastPurchaseDate: new Date(Date.now() - 86400000).toISOString() },
     { id: '3', name: 'Amit Singh', phone: '9876543212', invoiceNumbers: ['INV125', 'INV129', 'INV130'], lastPurchaseDate: new Date(Date.now() - 172800000).toISOString() },
@@ -107,678 +75,31 @@ const DemoData = {
     thisYearSales: 1850000,
 };
 
-// All Sales Tab Component
-const salesColumns: ColumnDef<Sale>[] = [
-  {
-    id: 'expander',
-    header: () => null,
-    cell: ({ row }) => {
-      return row.getCanExpand() ? (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={row.getToggleExpandedHandler()}
-          className="h-6 w-6"
-        >
-          {row.getIsExpanded() ? <ChevronDownIcon /> : <ChevronRightIcon />}
-        </Button>
-      ) : null;
-    },
-  },
-  {
-    accessorKey: 'invoiceNumber',
-    header: 'Invoice #',
-    cell: ({ row }) => <Badge variant="outline">{row.getValue('invoiceNumber')}</Badge>,
-  },
-  {
-    accessorKey: 'customer.name',
-    header: 'Customer',
-    cell: ({ row }) => <div className="font-medium">{row.original.customer.name}</div>,
-  },
-  {
-    accessorKey: 'date',
-    header: ({ column }) => (
-      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
-        Date <CaretSortIcon className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => format(new Date(row.getValue('date')), 'dd MMM yyyy'),
-  },
-  {
-    accessorKey: 'total',
-    header: ({ column }) => (
-      <Button variant="ghost" className='w-full justify-end' onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
-        Amount <CaretSortIcon className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => <div className="text-right font-semibold">₹{row.original.total.toLocaleString('en-IN')}</div>,
-  },
-];
+const LoadingComponent = () => (
+  <Card>
+    <CardHeader>
+      <Skeleton className="h-8 w-1/2" />
+      <Skeleton className="h-4 w-3/4" />
+    </CardHeader>
+    <CardContent>
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-40 w-full" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+    </CardContent>
+  </Card>
+);
 
-function AllSalesTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoading: boolean }) {
-  const [sorting, setSorting] = useState<SortingState>([{ id: 'date', desc: true }]);
-  const [expanded, setExpanded] = useState<ExpandedState>({});
-  
-  const [filteredData, setFilteredData] = useState<Sale[]>([]);
-  const [isFilterApplied, setIsFilterApplied] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const [startDay, setStartDay] = useState('');
-  const [startMonth, setStartMonth] = useState('');
-  const [startYear, setStartYear] = useState('');
-  const [endDay, setEndDay] = useState('');
-  const [endMonth, setEndMonth] = useState('');
-  const [endYear, setEndYear] = useState('');
-  
-  const originalData = useMemo(() => salesData || [], [salesData]);
-
-  useEffect(() => {
-    let data = originalData;
-
-    // Date filtering
-    const startDateStr = `${startYear}-${startMonth.padStart(2, '0')}-${startDay.padStart(2, '0')}`;
-    const endDateStr = `${endYear}-${endMonth.padStart(2, '0')}-${endDay.padStart(2, '0')}`;
-    const startDate = new Date(startDateStr);
-    const endDate = new Date(endDateStr);
-    endDate.setHours(23, 59, 59, 999);
-
-    const isValidStartDate = !isNaN(startDate.getTime()) && startDay && startMonth && startYear;
-    const isValidEndDate = !isNaN(endDate.getTime()) && endDay && endMonth && endYear;
-    
-    let applied = false;
-    if (isFilterApplied) {
-        if (isValidStartDate) {
-            data = data.filter(item => new Date(item.date) >= startDate);
-            applied = true;
-        }
-        if (isValidEndDate) {
-            data = data.filter(item => new Date(item.date) <= endDate);
-            applied = true;
-        }
-    }
-    
-    // Search filtering
-    if (searchTerm) {
-        data = data.filter(sale => 
-            sale.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            sale.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        applied = true;
-    }
-
-    setFilteredData(data);
-    setIsFilterApplied(applied || !!searchTerm || (isFilterApplied && (isValidStartDate || isValidEndDate)));
-
-  },[originalData, startDay, startMonth, startYear, endDay, endMonth, endYear, searchTerm, isFilterApplied]);
-
-  const handleFilter = () => {
-    setIsFilterApplied(true);
-  };
-  
-  const handleClearFilter = () => {
-    setStartDay('');
-    setStartMonth('');
-    setStartYear('');
-    setEndDay('');
-    setEndMonth('');
-    setEndYear('');
-    setSearchTerm('');
-    setIsFilterApplied(false);
-  }
-
-  const table = useReactTable({
-    data: filteredData,
-    columns: salesColumns,
-    state: { sorting, expanded },
-    onSortingChange: setSorting,
-    onExpandedChange: setExpanded,
-    getRowCanExpand: () => true,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getExpandedRowModel: getExpandedRowModel(),
-  });
-
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle>All Sales</CardTitle>
-            <CardDescription>A complete list of all your transactions.</CardDescription>
-          </div>
-           <div className="flex items-center gap-4">
-             <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                    placeholder="Search by customer or invoice..."
-                    className="pl-8 w-64"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-            </div>
-            <div className="flex items-end gap-2 p-2 border rounded-lg bg-muted/50">
-                <div className="grid gap-1.5">
-                  <Label className="text-xs">Start Date</Label>
-                  <div className="flex gap-1">
-                      <Input placeholder="DD" value={startDay} onChange={e => setStartDay(e.target.value)} className="w-12 h-8" />
-                      <Input placeholder="MM" value={startMonth} onChange={e => setStartMonth(e.target.value)} className="w-12 h-8" />
-                      <Input placeholder="YYYY" value={startYear} onChange={e => setStartYear(e.target.value)} className="w-20 h-8" />
-                  </div>
-                </div>
-                <div className="grid gap-1.5">
-                  <Label className="text-xs">End Date</Label>
-                   <div className="flex gap-1">
-                      <Input placeholder="DD" value={endDay} onChange={e => setEndDay(e.target.value)} className="w-12 h-8" />
-                      <Input placeholder="MM" value={endMonth} onChange={e => setEndMonth(e.target.value)} className="w-12 h-8" />
-                      <Input placeholder="YYYY" value={endYear} onChange={e => setEndYear(e.target.value)} className="w-20 h-8" />
-                  </div>
-                </div>
-                <Button onClick={handleFilter} size="sm">Filter</Button>
-                {isFilterApplied && (
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleClearFilter}>
-                      <X className="h-4 w-4" />
-                      <span className="sr-only">Clear Filter</span>
-                  </Button>
-                )}
-            </div>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>{table.getHeaderGroups().map(hg => <TableRow key={hg.id}>{hg.headers.map(h => <TableHead key={h.id}>{h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}</TableHead>)}</TableRow>)}</TableHeader>
-            <TableBody>
-              {isLoading ? <TableRow><TableCell colSpan={salesColumns.length} className="h-24 text-center">Loading sales...</TableCell></TableRow>
-                : table.getRowModel().rows?.length ? table.getRowModel().rows.map(row => (
-                  <React.Fragment key={row.id}>
-                    <TableRow data-state={row.getIsSelected() && 'selected'}>
-                      {row.getVisibleCells().map(cell => (
-                        <TableCell key={cell.id}>
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                    {row.getIsExpanded() && (
-                      <TableRow>
-                        <TableCell colSpan={salesColumns.length} className="p-0">
-                          <div className="p-4 bg-muted/50">
-                            <h4 className="font-bold mb-2">Items in Invoice #{row.original.invoiceNumber}</h4>
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead>Product</TableHead>
-                                  <TableHead className="text-center">Quantity</TableHead>
-                                  <TableHead className="text-right">Price</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {row.original.items.map((item, index) => (
-                                  <TableRow key={index}>
-                                    <TableCell>{item.name}</TableCell>
-                                    <TableCell className="text-center">{item.quantity}</TableCell>
-                                    <TableCell className="text-right">₹{item.price.toLocaleString('en-IN')}</TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </React.Fragment>
-                )) : <TableRow><TableCell colSpan={salesColumns.length} className="h-24 text-center">No sales found for the selected period.</TableCell></TableRow>}
-            </TableBody>
-          </Table>
-        </div>
-        <div className="py-4"><DataTablePagination table={table} /></div>
-      </CardContent>
-    </Card>
-  );
-}
-
-
-// Reports Tab Component
-const reportsColumns: ColumnDef<ReportItem>[] = [
-  { accessorKey: 'name', header: 'Product Name', cell: ({ row }) => <div className="font-medium">{row.getValue('name')}</div> },
-  { accessorKey: 'sku', header: 'Product Code' },
-  { accessorKey: 'saleDate', header: 'Date Sold', cell: ({ row }) => format(new Date(row.original.saleDate), 'dd MMM yyyy') },
-  { accessorKey: 'quantity', header: 'Quantity Sold', cell: ({ row }) => <div className='text-center'>{row.getValue('quantity')}</div> },
-  { accessorKey: 'hsn', header: 'HSN Code' },
-  { accessorKey: 'gst', header: 'GST (%)', cell: ({ row }) => <div className='text-center'>{`${row.original.gst || 0}%`}</div>},
-  { accessorKey: 'price', header: 'Price per Item', cell: ({ row }) => <div className="text-right">₹{row.original.price.toLocaleString('en-IN')}</div> },
-  {
-    id: 'total',
-    header: () => <div className="text-right">Total</div>,
-    cell: ({ row }) => {
-      const total = row.original.price * row.original.quantity;
-      return <div className="text-right font-medium">₹{total.toLocaleString('en-IN')}</div>;
-    },
-  },
-];
-
-
-function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoading: boolean }) {
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
-    hsn: false,
-  });
-  
-  const [filteredData, setFilteredData] = useState<ReportItem[]>([]);
-  const [isFilterApplied, setIsFilterApplied] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const [startDay, setStartDay] = useState('');
-  const [startMonth, setStartMonth] = useState('');
-  const [startYear, setStartYear] = useState('');
-  const [endDay, setEndDay] = useState('');
-  const [endMonth, setEndMonth] = useState('');
-  const [endYear, setEndYear] = useState('');
-
-  const reportData = useMemo(() => {
-    if (!salesData) return [];
-    return salesData.flatMap(sale => sale.items.map(item => ({ ...item, saleDate: sale.date })));
-  }, [salesData]);
-  
-  useEffect(() => {
-    let data = reportData;
-
-     // Date filtering
-    const startDateStr = `${startYear}-${startMonth.padStart(2, '0')}-${startDay.padStart(2, '0')}`;
-    const endDateStr = `${endYear}-${endMonth.padStart(2, '0')}-${endDay.padStart(2, '0')}`;
-    const startDate = new Date(startDateStr);
-    const endDate = new Date(endDateStr);
-    endDate.setHours(23, 59, 59, 999);
-
-    const isValidStartDate = !isNaN(startDate.getTime()) && startDay && startMonth && startYear;
-    const isValidEndDate = !isNaN(endDate.getTime()) && endDay && endMonth && endYear;
-    
-    let applied = false;
-    if (isFilterApplied) {
-        if (isValidStartDate) {
-            data = data.filter(item => new Date(item.saleDate) >= startDate);
-            applied = true;
-        }
-        if (isValidEndDate) {
-            data = data.filter(item => new Date(item.saleDate) <= endDate);
-            applied = true;
-        }
-    }
-
-    // Search filtering
-    if (searchTerm) {
-        data = data.filter(item => 
-            item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (item.sku && item.sku.toLowerCase().includes(searchTerm.toLowerCase()))
-        );
-        applied = true;
-    }
-    
-    setFilteredData(data);
-    setIsFilterApplied(applied || !!searchTerm || (isFilterApplied && (isValidStartDate || isValidEndDate)));
-
-  }, [reportData, startDay, startMonth, startYear, endDay, endMonth, endYear, searchTerm, isFilterApplied]);
-
-  const handleFilter = () => {
-    setIsFilterApplied(true);
-  };
-  
-  const handleClearFilter = () => {
-    setStartDay('');
-    setStartMonth('');
-    setStartYear('');
-    setEndDay('');
-    setEndMonth('');
-    setEndYear('');
-    setSearchTerm('');
-    setIsFilterApplied(false);
-  }
-
-  const totalSales = useMemo(() => {
-    return filteredData.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  }, [filteredData]);
-
-  const table = useReactTable({
-    data: filteredData,
-    columns: reportsColumns,
-    state: {
-        columnVisibility,
-    },
-    onColumnVisibilityChange: setColumnVisibility,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-  });
-
-  const handleExport = () => {
-    const dataToExport = filteredData.map(item => ({
-        'Product Name': item.name,
-        'Product Code': item.sku,
-        'Date Sold': format(new Date(item.saleDate), 'dd-MM-yyyy'),
-        'Quantity Sold': item.quantity,
-        'HSN Code': item.hsn,
-        'GST (%)': item.gst,
-        'Price per Item': item.price,
-        'Total': item.price * item.quantity
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Sales Report");
-    XLSX.writeFile(workbook, `SalesReport-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
-  }
-
-  return (
-    <TooltipProvider>
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-start">
-            <div>
-              <CardTitle>Sales Reports</CardTitle>
-              <CardDescription>A detailed report of all items sold.</CardDescription>
-              <div className="mt-4 text-lg font-medium">
-                Total Sales (Filtered): <span className="font-bold">₹{totalSales.toLocaleString('en-IN')}</span>
-              </div>
-            </div>
-             <div className="flex items-center gap-2">
-               <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                      placeholder="Search by product name or code..."
-                      className="pl-8 w-64"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-              </div>
-              <div className="flex items-end gap-2 p-2 border rounded-lg bg-muted/50">
-                <div className="grid gap-1.5">
-                  <Label className="text-xs">Start Date</Label>
-                  <div className="flex gap-1">
-                      <Input placeholder="DD" value={startDay} onChange={e => setStartDay(e.target.value)} className="w-12 h-8" />
-                      <Input placeholder="MM" value={startMonth} onChange={e => setStartMonth(e.target.value)} className="w-12 h-8" />
-                      <Input placeholder="YYYY" value={startYear} onChange={e => setStartYear(e.target.value)} className="w-20 h-8" />
-                  </div>
-                </div>
-                <div className="grid gap-1.5">
-                  <Label className="text-xs">End Date</Label>
-                   <div className="flex gap-1">
-                      <Input placeholder="DD" value={endDay} onChange={e => setEndDay(e.target.value)} className="w-12 h-8" />
-                      <Input placeholder="MM" value={endMonth} onChange={e => setEndMonth(e.target.value)} className="w-12 h-8" />
-                      <Input placeholder="YYYY" value={endYear} onChange={e => setEndYear(e.target.value)} className="w-20 h-8" />
-                  </div>
-                </div>
-                <Button onClick={handleFilter} size="sm">Filter</Button>
-                {isFilterApplied && (
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleClearFilter}>
-                      <X className="h-4 w-4" />
-                      <span className="sr-only">Clear Filter</span>
-                  </Button>
-                )}
-            </div>
-              <Separator orientation="vertical" className="h-10" />
-              <Tooltip>
-                  <TooltipTrigger asChild>
-                      <Button variant="outline" onClick={handleExport} disabled={filteredData.length === 0}>
-                          <FileDown className="mr-2 h-4 w-4" /> Export
-                      </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                      <p>Downloads an Excel file of the currently filtered sales report.</p>
-                  </TooltipContent>
-              </Tooltip>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline">
-                    Cols <ChevronDownIcon className="ml-2 h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {table
-                    .getAllColumns()
-                    .filter((column) => column.getCanHide())
-                    .map((column) => {
-                      return (
-                        <DropdownMenuCheckboxItem
-                          key={column.id}
-                          className="capitalize"
-                          checked={column.getIsVisible()}
-                          onCheckedChange={(value) =>
-                            column.toggleVisibility(!!value)
-                          }
-                        >
-                          {column.id === 'saleDate' ? 'Date Sold' : 
-                          column.id === 'name' ? 'Product Name' :
-                          column.id === 'sku' ? 'Product Code' :
-                          column.id === 'hsn' ? 'HSN Code' :
-                          column.id }
-                        </DropdownMenuCheckboxItem>
-                      );
-                    })}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>{table.getHeaderGroups().map(hg => <TableRow key={hg.id}>{hg.headers.map(h => <TableHead key={h.id}>{h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}</TableHead>)}</TableRow>)}</TableHeader>
-              <TableBody>
-                {isLoading ? <TableRow><TableCell colSpan={reportsColumns.length} className="h-24 text-center">Loading reports...</TableCell></TableRow>
-                  : table.getRowModel().rows?.length ? table.getRowModel().rows.map(row => (
-                    <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>{row.getVisibleCells().map(cell => <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>)}</TableRow>
-                  )) : <TableRow><TableCell colSpan={reportsColumns.length} className="h-24 text-center">No items found for the selected criteria.</TableCell></TableRow>}
-              </TableBody>
-            </Table>
-          </div>
-          <div className="py-4"><DataTablePagination table={table} /></div>
-        </CardContent>
-      </Card>
-    </TooltipProvider>
-  );
-}
-
-
-// Customers Tab Component
-const customerColumns: ColumnDef<Customer>[] = [
-  {
-    accessorKey: 'name',
-    header: 'Name',
-    cell: ({ row }) => <div className="font-medium">{row.getValue('name')}</div>,
-  },
-  {
-    accessorKey: 'phone',
-    header: 'Phone',
-  },
-  {
-    accessorKey: 'lastPurchaseDate',
-    header: ({ column }) => (
-      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
-        Last Purchase
-        <CaretSortIcon className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => format(new Date(row.getValue('lastPurchaseDate')), 'dd MMM yyyy'),
-  },
-  {
-    accessorKey: 'invoiceNumbers',
-    header: 'Invoice Numbers',
-    cell: ({ row }) => {
-      const invoices = row.getValue('invoiceNumbers') as string[];
-      return <div className="flex flex-wrap gap-1">{invoices.map(inv => <span key={inv} className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded-full">{inv}</span>)}</div>;
-    },
-  },
-  {
-    id: 'actions',
-    cell: ({ row }) => {
-      const customer = row.original;
-      const handleWhatsApp = () => {
-        if (customer.phone) {
-          window.open(`https://wa.me/${customer.phone}`, '_blank');
-        }
-      };
-
-      return (
-        <Button variant="outline" size="sm" onClick={handleWhatsApp} disabled={!customer.phone}>
-          <FaWhatsapp className="mr-2 h-4 w-4" />
-          WhatsApp
-        </Button>
-      );
-    },
-  },
-];
-
-function CustomersTab({ salesData, isLoading, isDemoMode }: { salesData: Sale[] | null, isLoading: boolean, isDemoMode: boolean }) {
-  const [sorting, setSorting] = useState<SortingState>([{ id: 'lastPurchaseDate', desc: true }]);
-  const [searchTerm, setSearchTerm] = useState('');
-  
-  const customersData = useMemo(() => {
-    if (isDemoMode) return demoCustomers;
-    if (!salesData) return [];
-
-    type CustomerAggregate = {
-        id: string;
-        name: string;
-        phone: string;
-        invoiceNumbers: Set<string>;
-        lastPurchaseDate: string;
-    }
-
-    const customerMap = new Map<string, CustomerAggregate>();
-
-    salesData.forEach((sale) => {
-      if (!sale.customer || (!sale.customer.phone && !sale.customer.name)) return;
-      
-      const customerKey = sale.customer.phone || sale.customer.name.toLowerCase();
-
-      if (customerMap.has(customerKey)) {
-        const existingCustomer = customerMap.get(customerKey)!;
-        existingCustomer.invoiceNumbers.add(sale.invoiceNumber);
-        if (new Date(sale.date) > new Date(existingCustomer.lastPurchaseDate)) {
-            existingCustomer.lastPurchaseDate = sale.date;
-        }
-      } else {
-        customerMap.set(customerKey, {
-          id: customerKey,
-          name: sale.customer.name,
-          phone: sale.customer.phone || '',
-          invoiceNumbers: new Set([sale.invoiceNumber]),
-          lastPurchaseDate: sale.date,
-        });
-      }
-    });
-    
-    return Array.from(customerMap.values()).map(c => ({
-        ...c,
-        invoiceNumbers: Array.from(c.invoiceNumbers),
-    }));
-
-  }, [salesData, isDemoMode]);
-  
-  const filteredCustomers = useMemo(() => {
-     if (!searchTerm) return customersData;
-     return customersData.filter(customer => 
-         customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-         (customer.phone && customer.phone.includes(searchTerm))
-     );
-  }, [customersData, searchTerm]);
-
-  const table = useReactTable({
-    data: filteredCustomers,
-    columns: customerColumns,
-    state: { sorting },
-    onSortingChange: setSorting,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-  });
-
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle>Customers</CardTitle>
-          <CardDescription>
-            A list of all your customers and their purchase history.
-          </CardDescription>
-        </div>
-        <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-                placeholder="Search by name or phone..."
-                className="pl-8 w-64"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-            />
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => {
-                    return (
-                      <TableHead key={header.id}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
-                    );
-                  })}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {isLoading && !isDemoMode ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={customerColumns.length}
-                    className="h-24 text-center"
-                  >
-                    Loading customers...
-                  </TableCell>
-                </TableRow>
-              ) : table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && 'selected'}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={customerColumns.length}
-                    className="h-24 text-center"
-                  >
-                    No customers found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-        <div className="py-4">
-          <DataTablePagination table={table} />
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
+const AllSalesTab = dynamic(() => import('./components/all-sales-tab').then(mod => mod.AllSalesTab), {
+  loading: () => <LoadingComponent />,
+});
+const ReportsTab = dynamic(() => import('./components/reports-tab').then(mod => mod.ReportsTab), {
+  loading: () => <LoadingComponent />,
+});
+const CustomersTab = dynamic(() => import('./components/customers-tab').then(mod => mod.CustomersTab), {
+  loading: () => <LoadingComponent />,
+});
 
 
 // Main Dashboard Page
