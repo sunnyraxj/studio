@@ -76,11 +76,6 @@ const navLinks = [
     icon: Package,
     label: 'Inventory',
   },
-  {
-    href: '/dashboard/customers',
-    icon: Users,
-    label: 'Customers',
-  },
 ];
 
 type UserProfile = {

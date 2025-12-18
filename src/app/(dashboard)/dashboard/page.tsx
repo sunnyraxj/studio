@@ -41,6 +41,7 @@ import { Button } from '@/components/ui/button';
 import { CaretSortIcon, ChevronDownIcon, ChevronRightIcon } from '@radix-ui/react-icons';
 import { IndianRupee } from 'lucide-react';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { FaWhatsapp } from 'react-icons/fa';
 
 // Common Types
 type Sale = {
@@ -48,6 +49,7 @@ type Sale = {
   invoiceNumber: string;
   customer: {
     name: string;
+    phone?: string;
   };
   date: string;
   total: number;
@@ -68,15 +70,29 @@ type ReportItem = SaleItem & {
   saleDate: string;
 };
 
+type Customer = {
+  id: string;
+  name: string;
+  phone: string;
+  invoiceNumbers: string[];
+};
+
 type UserProfile = {
   shopId?: string;
 };
 
 // Demo Data
 const demoSales: Sale[] = [
-    { id: '1', invoiceNumber: 'INV123', date: new Date().toISOString(), customer: { name: 'Ravi Kumar' }, total: 2500, items: [{ productId: '1', name: 'T-Shirt', quantity: 2, price: 500, sku: 'TS-01', hsn: '6109', gst: 5 }, { productId: '2', name: 'Jeans', quantity: 1, price: 1500, sku: 'JN-01', hsn: '6203', gst: 5 }] },
-    { id: '2', invoiceNumber: 'INV124', date: new Date(Date.now() - 86400000).toISOString(), customer: { name: 'Priya Sharma' }, total: 1200, items: [{ productId: '3', name: 'Sneakers', quantity: 1, price: 1200, sku: 'SH-01', hsn: '6404', gst: 18 }] },
-    { id: '3', invoiceNumber: 'INV125', date: new Date(Date.now() - 172800000).toISOString(), customer: { name: 'Amit Singh' }, total: 3500, items: [{ productId: '4', name: 'Watch', quantity: 1, price: 3500, sku: 'WT-01', hsn: '9102', gst: 18 }] },
+    { id: '1', invoiceNumber: 'INV123', date: new Date().toISOString(), customer: { name: 'Ravi Kumar', phone: '9876543210' }, total: 2500, items: [{ productId: '1', name: 'T-Shirt', quantity: 2, price: 500, sku: 'TS-01', hsn: '6109', gst: 5 }, { productId: '2', name: 'Jeans', quantity: 1, price: 1500, sku: 'JN-01', hsn: '6203', gst: 5 }] },
+    { id: '2', invoiceNumber: 'INV124', date: new Date(Date.now() - 86400000).toISOString(), customer: { name: 'Priya Sharma', phone: '9876543211' }, total: 1200, items: [{ productId: '3', name: 'Sneakers', quantity: 1, price: 1200, sku: 'SH-01', hsn: '6404', gst: 18 }] },
+    { id: '3', invoiceNumber: 'INV125', date: new Date(Date.now() - 172800000).toISOString(), customer: { name: 'Amit Singh', phone: '9876543212' }, total: 3500, items: [{ productId: '4', name: 'Watch', quantity: 1, price: 3500, sku: 'WT-01', hsn: '9102', gst: 18 }] },
+];
+const demoCustomers: Customer[] = [
+    { id: '1', name: 'Ravi Kumar', phone: '9876543210', invoiceNumbers: ['INV123', 'INV128'] },
+    { id: '2', name: 'Priya Sharma', phone: '9876543211', invoiceNumbers: ['INV124'] },
+    { id: '3', name: 'Amit Singh', phone: '9876543212', invoiceNumbers: ['INV125', 'INV129', 'INV130'] },
+    { id: '4', name: 'Sunita Gupta', phone: '9876543213', invoiceNumbers: ['INV126'] },
+    { id: '5', name: 'Vikas Patel', phone: '9876543214', invoiceNumbers: ['INV127'] },
 ];
 const DemoData = {
     todaySales: 12345.67,
@@ -331,6 +347,158 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
 }
 
 
+// Customers Tab Component
+const customerColumns: ColumnDef<Customer>[] = [
+  {
+    accessorKey: 'name',
+    header: 'Name',
+    cell: ({ row }) => <div className="font-medium">{row.getValue('name')}</div>,
+  },
+  {
+    accessorKey: 'phone',
+    header: 'Phone',
+  },
+  {
+    accessorKey: 'invoiceNumbers',
+    header: 'Invoice Numbers',
+    cell: ({ row }) => {
+      const invoices = row.getValue('invoiceNumbers') as string[];
+      return <div className="flex flex-wrap gap-1">{invoices.map(inv => <span key={inv} className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded-full">{inv}</span>)}</div>;
+    },
+  },
+  {
+    id: 'actions',
+    cell: ({ row }) => {
+      const customer = row.original;
+      const handleWhatsApp = () => {
+        if (customer.phone) {
+          window.open(`https://wa.me/${customer.phone}`, '_blank');
+        }
+      };
+
+      return (
+        <Button variant="outline" size="sm" onClick={handleWhatsApp} disabled={!customer.phone}>
+          <FaWhatsapp className="mr-2 h-4 w-4" />
+          WhatsApp
+        </Button>
+      );
+    },
+  },
+];
+
+function CustomersTab({ salesData, isLoading, isDemoMode }: { salesData: Sale[] | null, isLoading: boolean, isDemoMode: boolean }) {
+  const customersData = useMemo(() => {
+    if (isDemoMode) return demoCustomers;
+    if (!salesData) return [];
+
+    const customerMap = new Map<string, Customer>();
+
+    salesData.forEach((sale) => {
+      if (!sale.customer || (!sale.customer.phone && !sale.customer.name)) return;
+      
+      const customerKey = sale.customer.phone || sale.customer.name.toLowerCase();
+
+      if (customerMap.has(customerKey)) {
+        const existingCustomer = customerMap.get(customerKey)!;
+        existingCustomer.invoiceNumbers.push(sale.invoiceNumber);
+      } else {
+        customerMap.set(customerKey, {
+          id: customerKey,
+          name: sale.customer.name,
+          phone: sale.customer.phone || '',
+          invoiceNumbers: [sale.invoiceNumber],
+        });
+      }
+    });
+
+    return Array.from(customerMap.values());
+  }, [salesData, isDemoMode]);
+
+  const table = useReactTable({
+    data: customersData,
+    columns: customerColumns,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Customers</CardTitle>
+        <CardDescription>
+          A list of all your customers and their purchase history.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => {
+                    return (
+                      <TableHead key={header.id}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    );
+                  })}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {isLoading && !isDemoMode ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={customerColumns.length}
+                    className="h-24 text-center"
+                  >
+                    Loading customers...
+                  </TableCell>
+                </TableRow>
+              ) : table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && 'selected'}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={customerColumns.length}
+                    className="h-24 text-center"
+                  >
+                    No customers found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+        <div className="py-4">
+          <DataTablePagination table={table} />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+
+
 // Main Dashboard Page
 export default function DashboardPage() {
   const { user } = useUser();
@@ -369,6 +537,7 @@ export default function DashboardPage() {
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="sales">All Sales</TabsTrigger>
                 <TabsTrigger value="reports">Reports</TabsTrigger>
+                <TabsTrigger value="customers">Customers</TabsTrigger>
             </TabsList>
             <TabsContent value="overview" className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -406,6 +575,9 @@ export default function DashboardPage() {
             </TabsContent>
             <TabsContent value="reports">
                 <ReportsTab salesData={salesData} isLoading={isLoading} />
+            </TabsContent>
+            <TabsContent value="customers">
+                <CustomersTab salesData={salesData} isLoading={isLoading} isDemoMode={isDemoMode} />
             </TabsContent>
         </Tabs>
     </div>
