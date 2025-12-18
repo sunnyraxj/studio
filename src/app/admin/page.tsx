@@ -1,9 +1,8 @@
-
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useCollection, useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore } from '@/firebase';
 import { collection, doc, writeBatch } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,32 +33,11 @@ type UserProfile = {
 export default function AdminPage() {
   const router = useRouter();
   const firestore = useFirestore();
-  const { user, isUserLoading } = useUser();
 
-  const userDocRef = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return doc(firestore, `users/${user.uid}`);
-  }, [user, firestore]);
-
-  const { data: currentUserProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
-
-  useEffect(() => {
-    if (!isUserLoading && !isProfileLoading) {
-      if (!user || currentUserProfile?.role !== 'admin') {
-        toast({
-          variant: 'destructive',
-          title: 'Access Denied',
-          description: 'You do not have permission to access this page.',
-        });
-        router.push('/login');
-      }
-    }
-  }, [user, currentUserProfile, isUserLoading, isProfileLoading, router]);
-
-  const usersCollectionRef = useMemoFirebase(() => {
-    if (!firestore || currentUserProfile?.role !== 'admin' ) return null;
+  const usersCollectionRef = useMemo(() => {
+    if (!firestore) return null;
     return collection(firestore, 'users');
-  }, [firestore, currentUserProfile]);
+  }, [firestore]);
 
   const { data: usersData, isLoading: isUsersLoading } = useCollection<UserProfile>(usersCollectionRef);
 
@@ -101,10 +79,6 @@ export default function AdminPage() {
       });
     }
   };
-
-  if (isUserLoading || isProfileLoading || currentUserProfile?.role !== 'admin') {
-    return <div className="flex items-center justify-center min-h-screen">Loading Admin Dashboard...</div>;
-  }
 
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">

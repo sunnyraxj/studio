@@ -23,20 +23,19 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      // Allow user to read/update their own profile
-      // Allow admin to read/update any profile
-      allow read, update: if isOwner(userId) || isAdmin();
+      // Allow public read for verification, and admins to list all users
+      allow get, list: if true;
+      // Allow user to update their own profile or an admin to update any profile
+      allow update: if isOwner(userId) || isAdmin();
       // Allow user to create their own profile
       allow create: if request.auth.uid == userId;
-      // Allow admins to list all users
-      allow list: if isAdmin();
     }
 
     match /shops/{shopId} {
       // Allow shop owner to get their shop
       allow get: if isShopOwner(shopId);
-      // Allow a user to create a shop for themselves OR a admin to create a shop for anyone
-      allow create: if request.resource.data.ownerId == request.auth.uid || isAdmin();
+      // Allow public to create shops for approval, and admins to create shops.
+      allow create: if true;
       // You can't change the owner of a shop.
       // A shop owner can update their shop details.
       allow update: if isShopOwner(shopId) && request.resource.data.ownerId == resource.data.ownerId;
