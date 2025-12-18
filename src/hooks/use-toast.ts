@@ -195,10 +195,10 @@ function useToast() {
 }
 
 function ToasterProvider({ children }: { children: React.ReactNode }) {
-    // This component is a placeholder to provide the context.
-    // The actual toast logic is handled by the `useToast` hook and global state.
-    // In a real app, you might have context values here.
-    return <>{children}</>;
+  // This component is a placeholder to provide the context.
+  // The actual toast logic is handled by the `useToast` hook and global state.
+  // In a real app, you might have context values here.
+  return <>{children}</>;
 }
 
 
