@@ -83,34 +83,22 @@ export default function LoginPage() {
       );
       const user = userCredential.user;
       
-      const isSuperAdmin = roleParam === 'superadmin';
-
-      // Create a user profile in Firestore
+      // Create a user profile in Firestore for a regular user
       if (firestore) {
         const userDocRef = doc(firestore, 'users', user.uid);
       
         const userProfile = {
             id: user.uid,
             email: user.email,
-            subscriptionStatus: isSuperAdmin ? 'active' : 'inactive',
-            role: isSuperAdmin ? 'superadmin' : 'user',
+            subscriptionStatus: 'inactive',
+            role: 'user',
         };
       
         await setDoc(userDocRef, userProfile, { merge: true });
       }
-
-      if (isSuperAdmin) {
-        // Superadmins get immediate access to the admin panel
-        toast({
-            title: 'Admin Account Created',
-            description: 'You now have super admin privileges.',
-        });
-        router.push('/admin');
-      } else {
-         // Regular users go to the subscription page
-        router.push('/subscribe');
-      }
-
+      
+      // After sign-up, always redirect to the subscription page
+      router.push('/subscribe');
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -130,7 +118,7 @@ export default function LoginPage() {
         <TabsContent value="login">
           <Card>
             <CardHeader>
-              <CardTitle>{roleParam === 'superadmin' ? 'Admin Login' : 'Login'}</CardTitle>
+              <CardTitle>Login</CardTitle>
               <CardDescription>
                 Enter your credentials to access your account.
               </CardDescription>
@@ -179,9 +167,9 @@ export default function LoginPage() {
         <TabsContent value="signup">
           <Card>
             <CardHeader>
-              <CardTitle>{roleParam === 'superadmin' ? 'Create Admin Account' : 'Sign Up'}</CardTitle>
+              <CardTitle>Sign Up</CardTitle>
               <CardDescription>
-                {roleParam === 'superadmin' ? 'Create a new account with admin privileges.' : 'Create a new account to get started.'}
+                Create a new account to get started.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -241,7 +229,7 @@ export default function LoginPage() {
             </CardContent>
             <CardFooter>
               <Button className="w-full" onClick={handleSignUp}>
-                {roleParam === 'superadmin' ? 'Create Admin Account' : 'Sign Up'}
+                Sign Up
               </Button>
             </CardFooter>
           </Card>
