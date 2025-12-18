@@ -67,3 +67,9 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .root[data-state="checked"] {
+    @apply bg-primary text-primary-foreground;
+  }
+}
