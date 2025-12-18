@@ -55,7 +55,8 @@
           "enum": [
             "active",
             "inactive",
-            "pending_verification"
+            "pending_verification",
+            "rejected"
           ]
         },
         "shopId": {
@@ -77,6 +78,10 @@
         "planPrice": {
           "type": "number",
           "description": "The price of the plan the user is subscribing to."
+        },
+        "rejectionReason": {
+          "type": "string",
+          "description": "The reason provided by an admin for rejecting a payment."
         }
       },
       "required": [

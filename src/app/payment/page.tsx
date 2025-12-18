@@ -18,11 +18,14 @@ import { toast } from '@/hooks/use-toast.tsx';
 import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Terminal } from 'lucide-react';
 
 type UserProfile = {
-  subscriptionStatus?: 'active' | 'inactive' | 'pending_verification';
+  subscriptionStatus?: 'active' | 'inactive' | 'pending_verification' | 'rejected';
   planName?: string;
   planPrice?: number;
+  rejectionReason?: string;
 };
 
 type AdminSettings = {
@@ -51,6 +54,7 @@ export default function PaymentPage() {
   const [utr, setUtr] = useState('');
   const [paymentStep, setPaymentStep] = useState<'pay' | 'utr'>('pay');
   const [qrCodeUrl, setQrCodeUrl] = useState("https://picsum.photos/seed/qr/250/250");
+  const isRejected = userData?.subscriptionStatus === 'rejected';
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -64,6 +68,13 @@ export default function PaymentPage() {
         setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiDeepLink)}`);
     }
   }, [adminSettingsData, userData]);
+
+  // If the payment was rejected, jump straight to the UTR step.
+  useEffect(() => {
+    if(isRejected) {
+        setPaymentStep('utr');
+    }
+  }, [isRejected])
 
   const handleProceedToUtr = () => {
     setPaymentStep('utr');
@@ -84,7 +95,8 @@ export default function PaymentPage() {
     setIsProcessing(true);
     
     try {
-      await updateDoc(userDocRef, { utr: utr, subscriptionStatus: 'pending_verification' });
+      // When resubmitting, clear the old rejection reason.
+      await updateDoc(userDocRef, { utr: utr, subscriptionStatus: 'pending_verification', rejectionReason: '' });
       toast({
         title: 'Payment Submitted',
         description: 'Your payment is being processed and is now pending verification from an admin.',
@@ -107,7 +119,7 @@ export default function PaymentPage() {
   
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
-      {paymentStep === 'pay' && (
+      {paymentStep === 'pay' && !isRejected && (
         <Card className="w-[450px]">
           <CardHeader>
             <CardTitle>Complete Your Payment</CardTitle>
@@ -136,7 +148,7 @@ export default function PaymentPage() {
           </CardContent>
           <CardFooter>
             <Button className="w-full" onClick={handleProceedToUtr}>
-              Proceed to Enter UTR
+              I have paid, proceed to enter UTR
             </Button>
           </CardFooter>
         </Card>
@@ -151,6 +163,17 @@ export default function PaymentPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {isRejected && userData?.rejectionReason && (
+                 <Alert variant="destructive">
+                    <Terminal className="h-4 w-4" />
+                    <AlertTitle>Payment Rejected</AlertTitle>
+                    <AlertDescription>
+                        {userData.rejectionReason}
+                        <br/>
+                        Please make the payment again and submit the new UTR.
+                    </AlertDescription>
+                </Alert>
+            )}
              <div className="space-y-2">
                 <Label htmlFor="utr">UTR / Transaction ID</Label>
                 <Input
@@ -158,7 +181,6 @@ export default function PaymentPage() {
                   placeholder="Enter your 12-digit UTR"
                   value={utr}
                   onChange={(e) => setUtr(e.target.value)}
-                  maxLength={12}
                 />
               </div>
           </CardContent>
@@ -166,9 +188,11 @@ export default function PaymentPage() {
             <Button className="w-full" onClick={handleSubmitUtr} disabled={isProcessing || !utr}>
               {isProcessing ? 'Submitting...' : 'Submit for Verification'}
             </Button>
-             <Button variant="outline" className="w-full" onClick={() => setPaymentStep('pay')}>
-              Back to QR Code
-            </Button>
+             {!isRejected && (
+                <Button variant="outline" className="w-full" onClick={() => setPaymentStep('pay')}>
+                    Back to QR Code
+                </Button>
+             )}
           </CardFooter>
         </Card>
       )}

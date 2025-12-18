@@ -31,14 +31,16 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 type UserProfile = {
   id: string;
   name?: string;
   email?: string;
-  subscriptionStatus?: 'active' | 'inactive' | 'pending_verification';
+  subscriptionStatus?: 'active' | 'inactive' | 'pending_verification' | 'rejected';
   role?: 'user' | 'admin';
   utr?: string;
   planPrice?: number;
@@ -59,15 +61,15 @@ export default function AdminPage() {
   }, [usersData]);
 
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
+  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
+  const [rejectionNote, setRejectionNote] = useState('');
 
   const handleApprove = async (targetUser: UserProfile) => {
     if (!firestore || !targetUser) return;
 
     const batch = writeBatch(firestore);
     
-    // 1. Update the user's profile to active.
-    // The user will be redirected to the shop-setup page on their next login.
     const targetUserDocRef = doc(firestore, 'users', targetUser.id);
     batch.update(targetUserDocRef, {
       subscriptionStatus: 'active',
@@ -77,7 +79,7 @@ export default function AdminPage() {
       await batch.commit();
       toast({
         title: 'User Approved',
-        description: `${targetUser.email} has been granted access. They will be prompted to set up their shop on next login.`,
+        description: `${targetUser.email} has been granted access.`,
       });
     } catch (error: any) {
       toast({
@@ -86,14 +88,56 @@ export default function AdminPage() {
         description: error.message,
       });
     } finally {
-        setIsDialogOpen(false);
+        setIsApproveDialogOpen(false);
         setSelectedUser(null);
     }
   };
+  
+  const handleReject = async (targetUser: UserProfile) => {
+    if (!firestore || !targetUser || !rejectionNote) {
+        toast({
+            variant: "destructive",
+            title: "Rejection note is required"
+        });
+        return;
+    };
 
-  const openConfirmationDialog = (user: UserProfile) => {
+    const batch = writeBatch(firestore);
+    
+    const targetUserDocRef = doc(firestore, 'users', targetUser.id);
+    batch.update(targetUserDocRef, {
+      subscriptionStatus: 'rejected',
+      rejectionReason: rejectionNote,
+      utr: '', // Clear UTR so they must re-enter it
+    });
+
+    try {
+      await batch.commit();
+      toast({
+        title: 'User Rejected',
+        description: `${targetUser.email}'s payment has been rejected.`,
+      });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Rejection Failed',
+        description: error.message,
+      });
+    } finally {
+        setIsRejectDialogOpen(false);
+        setSelectedUser(null);
+        setRejectionNote('');
+    }
+  };
+
+  const openApproveDialog = (user: UserProfile) => {
     setSelectedUser(user);
-    setIsDialogOpen(true);
+    setIsApproveDialogOpen(true);
+  };
+  
+  const openRejectDialog = (user: UserProfile) => {
+    setSelectedUser(user);
+    setIsRejectDialogOpen(true);
   };
 
 
@@ -115,7 +159,7 @@ export default function AdminPage() {
                 <TableHead>Amount</TableHead>
                 <TableHead>UTR</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Action</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -133,8 +177,9 @@ export default function AdminPage() {
                     <TableCell>
                       <Badge variant="secondary">{u.subscriptionStatus}</Badge>
                     </TableCell>
-                    <TableCell className="text-right">
-                      <Button onClick={() => openConfirmationDialog(u)}>Approve</Button>
+                    <TableCell className="text-right space-x-2">
+                      <Button size="sm" onClick={() => openApproveDialog(u)}>Approve</Button>
+                      <Button size="sm" variant="destructive" onClick={() => openRejectDialog(u)}>Reject</Button>
                     </TableCell>
                   </TableRow>
                 ))
@@ -148,7 +193,7 @@ export default function AdminPage() {
         </CardContent>
       </Card>
       
-       <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+       <AlertDialog open={isApproveDialogOpen} onOpenChange={setIsApproveDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Confirm Approval</AlertDialogTitle>
@@ -170,6 +215,41 @@ export default function AdminPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
        </AlertDialog>
+
+      <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Rejection</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for rejecting this payment. This note will be shown to the user.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+             <div className="space-y-1 text-sm">
+                <div><strong>Name:</strong> {selectedUser?.name}</div>
+                <div><strong>Email:</strong> {selectedUser?.email}</div>
+                <div><strong>UTR:</strong> {selectedUser?.utr}</div>
+              </div>
+            <div className="space-y-2">
+              <Label htmlFor="rejection-note">Rejection Note</Label>
+              <Textarea 
+                id="rejection-note"
+                value={rejectionNote}
+                onChange={(e) => setRejectionNote(e.target.value)}
+                placeholder="e.g., UTR not found, incorrect amount paid, etc."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+                <Button variant="outline" onClick={() => { setSelectedUser(null); setRejectionNote(''); }}>Cancel</Button>
+            </DialogClose>
+            <Button variant="destructive" onClick={() => selectedUser && handleReject(selectedUser)} disabled={!rejectionNote}>
+                Reject Payment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
