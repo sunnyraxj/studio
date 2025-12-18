@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, doc, writeBatch } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,7 +35,7 @@ export default function AdminPage() {
   const router = useRouter();
   const firestore = useFirestore();
 
-  const usersCollectionRef = useMemo(() => {
+  const usersCollectionRef = useMemoFirebase(() => {
     if (!firestore) return null;
     return collection(firestore, 'users');
   }, [firestore]);
