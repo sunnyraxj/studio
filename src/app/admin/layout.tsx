@@ -101,39 +101,41 @@ export default function AdminLayout({
 
     useEffect(() => {
         if (isUserLoading || isProfileLoading) {
-            return; // Wait for user and profile data to load
+            // Still loading, don't do anything yet.
+            return;
         }
 
         if (!user) {
-            // Not logged in, redirect to login page for admin role
+            // If no user is logged in, redirect to the admin login page.
             router.push('/login?role=admin');
             return;
         }
 
-        if (userData?.role !== 'admin') {
-            // Logged in, but not an admin. Redirect to regular dashboard.
+        if (userData && userData.role !== 'admin') {
+            // If a user is logged in but is NOT an admin, redirect them away.
             router.push('/dashboard');
         }
-
+        // If the user is an admin (userData.role === 'admin'), do nothing and let them see the admin content.
     }, [user, userData, isUserLoading, isProfileLoading, router]);
 
-    // Render a loading state or nothing while checks are running
-    if (isUserLoading || isProfileLoading || !user || userData?.role !== 'admin') {
+    // Render a loading state while we verify the user's role.
+    if (isUserLoading || isProfileLoading || !user || !userData || userData.role !== 'admin') {
         return (
             <div className="flex min-h-screen w-full items-center justify-center">
-                <p>Loading...</p>
+                <p>Loading & Verifying Access...</p>
             </div>
         );
     }
-
-  return (
-    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <AdminSidebar />
-      <div className="flex flex-col">
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-          {children}
-        </main>
-      </div>
-    </div>
-  );
+    
+    // If all checks pass, render the admin layout.
+    return (
+        <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+        <AdminSidebar />
+        <div className="flex flex-col">
+            <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+            {children}
+            </main>
+        </div>
+        </div>
+    );
 }
