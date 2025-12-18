@@ -42,7 +42,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, FileUp, FileDown } from 'lucide-react';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -373,6 +373,12 @@ export default function InventoryPage() {
             </RadioGroup>
         </div>
         <div className="ml-auto flex items-center gap-2">
+            <Button variant="outline">
+              <FileDown className="mr-2 h-4 w-4" /> Download Template
+            </Button>
+            <Button variant="outline">
+              <FileUp className="mr-2 h-4 w-4" /> Import Products
+            </Button>
            <Link href="/owner/inventory/add">
             <Button>
                 <PlusCircle className="mr-2 h-4 w-4" /> Add Product
