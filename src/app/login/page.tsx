@@ -19,9 +19,10 @@ import { useAuth } from '@/firebase';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  User,
 } from 'firebase/auth';
 import { toast } from '@/hooks/use-toast.tsx';
-import { doc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { setDoc } from 'firebase/firestore';
 import { Eye, EyeOff } from 'lucide-react';
@@ -38,15 +39,23 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const roleParam = searchParams.get('role');
 
+  const handleSuccessfulLogin = async (user: User) => {
+    if (!firestore) return router.push('/dashboard');
+
+    const userDocRef = doc(firestore, "users", user.uid);
+    const userDoc = await getDoc(userDocRef);
+
+    if (userDoc.exists() && userDoc.data().role === 'superadmin') {
+      router.push('/admin');
+    } else {
+      router.push('/dashboard');
+    }
+  };
+
   const handleLogin = async () => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // After login, the layout will handle redirection based on subscription status and role
-      if (roleParam === 'superadmin') {
-        router.push('/admin');
-      } else {
-        router.push('/dashboard'); 
-      }
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      await handleSuccessfulLogin(userCredential.user);
     } catch (error: any) {
       toast({
         variant: 'destructive',
