@@ -18,6 +18,10 @@
         "ownerId": {
           "type": "string",
           "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Shop). The ID of the user who owns this shop."
+        },
+        "logoUrl": {
+          "type": "string",
+          "description": "URL of the shop's logo."
         }
       },
       "required": [

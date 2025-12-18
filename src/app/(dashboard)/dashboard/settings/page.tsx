@@ -1,8 +1,9 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -16,15 +17,18 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { useFirestore, useUser, useDoc, useMemoFirebase, useFirebaseApp } from '@/firebase';
+import { doc, setDoc, updateDoc } from 'firebase/firestore';
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { toast } from '@/hooks/use-toast.tsx';
+import { Upload, X } from 'lucide-react';
 
 type ShopSettings = {
     companyName?: string;
     companyAddress?: string;
     companyGstin?: string;
     companyPhone?: string;
+    logoUrl?: string;
     bankName?: string;
     accountNumber?: string;
     ifscCode?: string;
@@ -35,9 +39,9 @@ type UserProfile = {
   shopId?: string;
 }
 
-
 export default function SettingsPage() {
   const router = useRouter();
+  const firebaseApp = useFirebaseApp();
   const firestore = useFirestore();
   const { user } = useUser();
   const isDemoMode = !user;
@@ -61,6 +65,8 @@ export default function SettingsPage() {
   const [companyAddress, setCompanyAddress] = useState('123 Demo Street, Suite 456, Demo City, 12345');
   const [companyGstin, setCompanyGstin] = useState('29DEMOCOMPANY1Z9');
   const [companyPhone, setCompanyPhone] = useState('9876543210');
+  const [logoUrl, setLogoUrl] = useState('');
+  const [logoFile, setLogoFile] = useState<File | null>(null);
 
   // State for Bank Details
   const [bankName, setBankName] = useState('Demo Bank');
@@ -69,6 +75,8 @@ export default function SettingsPage() {
 
   // State for UPI Details
   const [upiId, setUpiId] = useState('demo@upi');
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isDemoMode && settingsData) {
@@ -76,6 +84,7 @@ export default function SettingsPage() {
         setCompanyAddress(settingsData.companyAddress || '');
         setCompanyGstin(settingsData.companyGstin || '');
         setCompanyPhone(settingsData.companyPhone || '');
+        setLogoUrl(settingsData.logoUrl || '');
         setBankName(settingsData.bankName || '');
         setAccountNumber(settingsData.accountNumber || '');
         setIfscCode(settingsData.ifscCode || '');
@@ -83,6 +92,21 @@ export default function SettingsPage() {
     }
   }, [settingsData, isDemoMode]);
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setLogoFile(file);
+      setLogoUrl(URL.createObjectURL(file)); // Show preview
+    }
+  };
+  
+  const removeLogo = () => {
+    setLogoFile(null);
+    setLogoUrl('');
+    if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+    }
+  };
 
   const handleSave = async () => {
     if (isDemoMode) {
@@ -90,15 +114,34 @@ export default function SettingsPage() {
       router.push('/login');
       return;
     }
-    if (!settingsDocRef) {
+    if (!settingsDocRef || !shopId || !firestore) {
         toast({ variant: 'destructive', title: 'Error', description: 'Cannot save settings. Shop not found.' });
         return;
     }
+
+    let finalLogoUrl = settingsData?.logoUrl || '';
+
+    // Handle logo upload
+    if (logoFile) {
+        const storage = getStorage(firebaseApp);
+        const logoStorageRef = storageRef(storage, `shops/${shopId}/logo/${logoFile.name}`);
+        try {
+            const snapshot = await uploadBytes(logoStorageRef, logoFile);
+            finalLogoUrl = await getDownloadURL(snapshot.ref);
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Logo Upload Failed', description: error.message });
+            return;
+        }
+    } else if (logoUrl === '') { // If logo was removed
+        finalLogoUrl = '';
+    }
+
     const newSettings: ShopSettings = {
       companyName,
       companyAddress,
       companyGstin,
       companyPhone,
+      logoUrl: finalLogoUrl,
       bankName,
       accountNumber,
       ifscCode,
@@ -107,7 +150,13 @@ export default function SettingsPage() {
     
     try {
         await setDoc(settingsDocRef, newSettings, { merge: true });
+        
+        // Also update the shop's name and logo in the root shop document
+        const shopDocRef = doc(firestore, `shops/${shopId}`);
+        await updateDoc(shopDocRef, { name: companyName, logoUrl: finalLogoUrl });
+
         toast({ title: 'Success', description: 'Settings saved successfully!' });
+        setLogoFile(null); // Clear file after successful upload
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Error saving settings', description: error.message });
     }
@@ -139,6 +188,28 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+               <div className="space-y-2">
+                <Label>Company Logo</Label>
+                <div className="flex items-center gap-4">
+                  <div className="relative w-24 h-24 rounded-md border border-dashed flex items-center justify-center bg-muted/50">
+                    {logoUrl ? (
+                      <>
+                        <Image src={logoUrl} alt="Company Logo" layout="fill" objectFit="contain" className="rounded-md" />
+                        <Button variant="ghost" size="icon" className="absolute -top-2 -right-2 h-6 w-6 bg-background rounded-full" onClick={removeLogo}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <Upload className="h-8 w-8 text-muted-foreground" />
+                    )}
+                  </div>
+                  <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                    {logoUrl ? 'Change Logo' : 'Upload Logo'}
+                  </Button>
+                  <Input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/png, image/jpeg, image/gif" />
+                </div>
+                <p className="text-xs text-muted-foreground">Recommended size: 200x200px. PNG, JPG, GIF up to 1MB.</p>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="company-name">Company Name</Label>
                 <Input
