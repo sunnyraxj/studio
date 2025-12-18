@@ -52,24 +52,10 @@ export default function SubscribePage() {
       });
       return;
     }
-
-    // Check if the user already has an active or pending subscription
-    const userDocRef = doc(firestore, 'users', user.uid);
-    const userDoc = await getDoc(userDocRef);
-    const userData = userDoc.data();
-
-    if (userData?.subscriptionStatus === 'active' || userData?.subscriptionStatus === 'pending_verification') {
-        toast({
-            variant: "destructive",
-            title: "Subscription Exists",
-            description: "You already have a subscription. Redirecting you..."
-        });
-        router.push('/dashboard');
-        return;
-    }
     
     // Update user's profile to pending verification
     try {
+      const userDocRef = doc(firestore, 'users', user.uid);
       await updateDoc(userDocRef, {
         subscriptionStatus: 'pending_verification',
         planName: proPlan.name,

@@ -89,7 +89,7 @@ export default function PaymentPage() {
     setIsProcessing(true);
     
     try {
-      await updateDoc(userDocRef, { utr: utr });
+      await updateDoc(userDocRef, { utr: utr, subscriptionStatus: 'pending_verification' });
       toast({
         title: 'Payment Submitted',
         description: 'Your payment is being processed and is now pending verification from an admin.',
@@ -109,10 +109,6 @@ export default function PaymentPage() {
     return <div className="flex items-center justify-center min-h-screen">Loading Payment Details...</div>;
   }
 
-  if (userData?.subscriptionStatus === 'active') {
-     router.push('/dashboard');
-     return null;
-  }
   
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">

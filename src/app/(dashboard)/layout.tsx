@@ -171,7 +171,7 @@ function AppSidebar() {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-2 pt-0 md:p-4 md:pt-0">
-              <Link href="/login" passHref>
+              <Link href="/subscribe" passHref>
                 <Button size="sm" className="w-full">
                   Upgrade
                 </Button>
@@ -269,7 +269,7 @@ function MobileSidebar() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Link href="/login" passHref>
+                <Link href="/subscribe" passHref>
                   <Button size="sm" className="w-full">
                     Upgrade
                   </Button>
@@ -305,10 +305,6 @@ export default function DashboardLayout({
       return;
     }
 
-    // If there is no user, they are not logged in.
-    // However, the POS and Inventory pages show demo data, so we don't redirect from the dashboard.
-    // Specific actions on those pages will handle redirection if needed.
-
     // If a user is logged in, check their status
     if (user && userData) {
       // Admins should not be redirected from the dashboard. They can view it in demo mode.
@@ -330,8 +326,8 @@ export default function DashboardLayout({
           break;
         case 'inactive':
         default:
-          // If inactive or any other status, they need to subscribe.
-          router.push('/subscribe');
+          // Inactive users can now browse the dashboard (in demo mode)
+          // and are not automatically redirected to /subscribe.
           break;
       }
     }
