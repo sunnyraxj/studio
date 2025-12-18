@@ -9,7 +9,9 @@ import {
   useReactTable,
   getPaginationRowModel,
   getSortedRowModel,
+  getExpandedRowModel,
   SortingState,
+  ExpandedState,
 } from '@tanstack/react-table';
 import {
   Table,
@@ -35,7 +37,7 @@ import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { format } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
-import { CaretSortIcon } from '@radix-ui/react-icons';
+import { CaretSortIcon, ChevronDownIcon, ChevronRightIcon } from '@radix-ui/react-icons';
 import { IndianRupee } from 'lucide-react';
 
 // Common Types
@@ -80,6 +82,22 @@ const DemoData = {
 // All Sales Tab Component
 const salesColumns: ColumnDef<Sale>[] = [
   {
+    id: 'expander',
+    header: () => null,
+    cell: ({ row }) => {
+      return row.getCanExpand() ? (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={row.getToggleExpandedHandler()}
+          className="h-6 w-6"
+        >
+          {row.getIsExpanded() ? <ChevronDownIcon /> : <ChevronRightIcon />}
+        </Button>
+      ) : null;
+    },
+  },
+  {
     accessorKey: 'invoiceNumber',
     header: 'Invoice #',
     cell: ({ row }) => <Badge variant="outline">{row.getValue('invoiceNumber')}</Badge>,
@@ -109,8 +127,9 @@ const salesColumns: ColumnDef<Sale>[] = [
   },
 ];
 
-function AllSalesTab({ salesData, isLoading, isDemoMode }: { salesData: Sale[] | null, isLoading: boolean, isDemoMode: boolean }) {
+function AllSalesTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoading: boolean }) {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'date', desc: true }]);
+  const [expanded, setExpanded] = useState<ExpandedState>({});
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   const filteredSalesData = useMemo(() => {
@@ -120,7 +139,9 @@ function AllSalesTab({ salesData, isLoading, isDemoMode }: { salesData: Sale[] |
       sales = sales.filter(sale => new Date(sale.date) >= dateRange.from!);
     }
     if (dateRange?.to) {
-      sales = sales.filter(sale => new Date(sale.date) <= dateRange.to!);
+      const toDate = new Date(dateRange.to);
+      toDate.setHours(23, 59, 59, 999); // Include the whole end day
+      sales = sales.filter(sale => new Date(sale.date) <= toDate);
     }
     return sales;
   }, [salesData, dateRange]);
@@ -128,11 +149,13 @@ function AllSalesTab({ salesData, isLoading, isDemoMode }: { salesData: Sale[] |
   const table = useReactTable({
     data: filteredSalesData,
     columns: salesColumns,
-    state: { sorting },
+    state: { sorting, expanded },
     onSortingChange: setSorting,
+    onExpandedChange: setExpanded,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getExpandedRowModel: getExpandedRowModel(),
   });
 
   return (
@@ -153,7 +176,42 @@ function AllSalesTab({ salesData, isLoading, isDemoMode }: { salesData: Sale[] |
             <TableBody>
               {isLoading ? <TableRow><TableCell colSpan={salesColumns.length} className="h-24 text-center">Loading sales...</TableCell></TableRow>
                 : table.getRowModel().rows?.length ? table.getRowModel().rows.map(row => (
-                  <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>{row.getVisibleCells().map(cell => <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>)}</TableRow>
+                  <React.Fragment key={row.id}>
+                    <TableRow data-state={row.getIsSelected() && 'selected'}>
+                      {row.getVisibleCells().map(cell => (
+                        <TableCell key={cell.id}>
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                    {row.getIsExpanded() && (
+                      <TableRow>
+                        <TableCell colSpan={salesColumns.length} className="p-0">
+                          <div className="p-4 bg-muted/50">
+                            <h4 className="font-bold mb-2">Items in Invoice #{row.original.invoiceNumber}</h4>
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Product</TableHead>
+                                  <TableHead className="text-center">Quantity</TableHead>
+                                  <TableHead className="text-right">Price</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {row.original.items.map((item, index) => (
+                                  <TableRow key={index}>
+                                    <TableCell>{item.name}</TableCell>
+                                    <TableCell className="text-center">{item.quantity}</TableCell>
+                                    <TableCell className="text-right">₹{item.price.toLocaleString('en-IN')}</TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </React.Fragment>
                 )) : <TableRow><TableCell colSpan={salesColumns.length} className="h-24 text-center">No sales found for the selected period.</TableCell></TableRow>}
             </TableBody>
           </Table>
@@ -173,14 +231,18 @@ const reportsColumns: ColumnDef<ReportItem>[] = [
   { accessorKey: 'saleDate', header: 'Date Sold', cell: ({ row }) => format(new Date(row.original.saleDate), 'dd MMM yyyy') },
 ];
 
-function ReportsTab({ salesData, isLoading, isDemoMode }: { salesData: Sale[] | null, isLoading: boolean, isDemoMode: boolean }) {
+function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoading: boolean }) {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   const reportData = useMemo(() => {
     if (!salesData) return [];
     let items: ReportItem[] = salesData.flatMap(sale => sale.items.map(item => ({ ...item, saleDate: sale.date })));
     if (dateRange?.from) items = items.filter(item => new Date(item.saleDate) >= dateRange.from!);
-    if (dateRange?.to) items = items.filter(item => new Date(item.saleDate) <= dateRange.to!);
+    if (dateRange?.to) {
+        const toDate = new Date(dateRange.to);
+        toDate.setHours(23, 59, 59, 999);
+        items = items.filter(item => new Date(item.saleDate) <= toDate);
+    }
     return items;
   }, [salesData, dateRange]);
 
@@ -292,10 +354,10 @@ export default function DashboardPage() {
                 </div>
             </TabsContent>
             <TabsContent value="sales">
-                <AllSalesTab salesData={salesData} isLoading={isLoading} isDemoMode={isDemoMode} />
+                <AllSalesTab salesData={salesData} isLoading={isLoading} />
             </TabsContent>
             <TabsContent value="reports">
-                <ReportsTab salesData={salesData} isLoading={isLoading} isDemoMode={isDemoMode} />
+                <ReportsTab salesData={salesData} isLoading={isLoading} />
             </TabsContent>
         </Tabs>
     </div>
