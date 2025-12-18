@@ -40,9 +40,17 @@ service cloud.firestore {
       // A shop owner can update their shop details.
       allow update: if isShopOwner(shopId) && request.resource.data.ownerId == resource.data.ownerId;
     }
+    
+    // Special rule for global admin settings to be readable by any logged-in user
+    match /shops/global/settings/details {
+      allow get: if isSignedIn();
+      allow write: if isAdmin();
+    }
 
     // Any document in a subcollection of a shop can only be accessed by the shop owner or a super admin.
     match /shops/{shopId}/{subcollection}/{docId} {
+        // Exclude the global settings from this rule
+        if shopId != 'global'
         allow read, write, delete: if isShopOwner(shopId) || isAdmin();
     }
   }
