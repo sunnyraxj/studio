@@ -91,6 +91,7 @@ const navLinks = [
 type UserProfile = {
   subscriptionStatus?: string;
   role?: 'user' | 'admin';
+  shopId?: string;
 };
 
 function AppSidebar() {
@@ -299,13 +300,12 @@ export default function DashboardLayout({
   const { data: userData, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
   useEffect(() => {
-    // Wait until both user auth state and profile data are resolved
     if (isUserLoading || isProfileLoading) {
       return;
     }
 
     if (user && userData?.role === 'admin') {
-      return; // Super admins can access the dashboard
+      return; 
     }
 
     if (user) {
@@ -313,11 +313,10 @@ export default function DashboardLayout({
         router.push('/pending-verification');
       } else if (userData?.subscriptionStatus !== 'active') {
         router.push('/subscribe');
+      } else if (userData.subscriptionStatus === 'active' && !userData.shopId) {
+        router.push('/shop-setup');
       }
     }
-    // If the user is not logged in (`user` is null), they can view the demo pages,
-    // so no redirection is needed.
-
   }, [user, userData, isUserLoading, isProfileLoading, router]);
 
   return (

@@ -69,6 +69,10 @@
             "user",
             "admin"
           ]
+        },
+        "utr": {
+            "type": "string",
+            "description": "The Unique Transaction Reference (UTR) for the subscription payment."
         }
       },
       "required": [

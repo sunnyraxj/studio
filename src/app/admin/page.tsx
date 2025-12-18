@@ -29,6 +29,7 @@ type UserProfile = {
   email?: string;
   subscriptionStatus?: 'active' | 'inactive' | 'pending_verification';
   role?: 'user' | 'admin';
+  utr?: string;
 };
 
 export default function AdminPage() {
@@ -51,26 +52,18 @@ export default function AdminPage() {
 
     const batch = writeBatch(firestore);
     
-    // 1. Create a new shop document
-    const shopDocRef = doc(collection(firestore, 'shops'));
-    batch.set(shopDocRef, {
-      id: shopDocRef.id,
-      ownerId: targetUser.id,
-      name: `${targetUser.email?.split('@')[0] || 'My'}'s Shop`,
-    });
-
-    // 2. Update the user's profile
+    // 1. Update the user's profile to active, but DO NOT create the shop yet.
+    // The shop will be created after the user completes the shop-setup flow.
     const targetUserDocRef = doc(firestore, 'users', targetUser.id);
     batch.update(targetUserDocRef, {
       subscriptionStatus: 'active',
-      shopId: shopDocRef.id,
     });
 
     try {
       await batch.commit();
       toast({
         title: 'User Approved',
-        description: `${targetUser.email} has been granted access.`,
+        description: `${targetUser.email} has been granted access. They will be prompted to set up their shop on next login.`,
       });
     } catch (error: any) {
       toast({
@@ -95,6 +88,7 @@ export default function AdminPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Email</TableHead>
+                <TableHead>UTR</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Action</TableHead>
               </TableRow>
@@ -102,12 +96,13 @@ export default function AdminPage() {
             <TableBody>
               {isUsersLoading ? (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center">Loading users...</TableCell>
+                  <TableCell colSpan={4} className="text-center">Loading users...</TableCell>
                 </TableRow>
               ) : pendingUsers && pendingUsers.length > 0 ? (
                 pendingUsers.map(u => (
                   <TableRow key={u.id}>
                     <TableCell className="font-medium">{u.email}</TableCell>
+                    <TableCell>{u.utr || 'N/A'}</TableCell>
                     <TableCell>
                       <Badge variant="secondary">{u.subscriptionStatus}</Badge>
                     </TableCell>
@@ -118,7 +113,7 @@ export default function AdminPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center">No pending verifications.</TableCell>
+                  <TableCell colSpan={4} className="text-center">No pending verifications.</TableCell>
                 </TableRow>
               )}
             </TableBody>

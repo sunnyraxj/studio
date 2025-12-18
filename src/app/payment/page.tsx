@@ -13,8 +13,11 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast.tsx';
+import Image from 'next/image';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 type UserProfile = {
   subscriptionStatus?: 'active' | 'inactive' | 'pending_verification';
@@ -35,6 +38,8 @@ export default function PaymentPage() {
   const { data: userData, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
   
   const [isProcessing, setIsProcessing] = useState(false);
+  const [utr, setUtr] = useState('');
+  const [paymentStep, setPaymentStep] = useState<'pay' | 'utr'>('pay');
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -42,21 +47,39 @@ export default function PaymentPage() {
     }
   }, [user, isUserLoading, router]);
 
-  const handleSimulatePayment = async () => {
-    setIsProcessing(true);
-    // In a real app, you would integrate a payment gateway here.
-    // For now, we'll just simulate a successful payment.
+  const handleProceedToUtr = () => {
+    setPaymentStep('utr');
+  };
+
+  const handleSubmitUtr = async () => {
+    if (!utr) {
+      toast({
+        variant: 'destructive',
+        title: 'UTR Required',
+        description: 'Please enter the transaction reference number.',
+      });
+      return;
+    }
     
-    // The user's status is already 'pending_verification' from the subscribe page.
-    // We don't need to change it here.
+    if (!userDocRef) return;
 
-    toast({
-      title: 'Payment Submitted',
-      description: 'Your payment is being processed and is now pending verification from an admin.',
-    });
-
-    // Redirect to a page that informs the user to wait for verification
-    router.push('/pending-verification');
+    setIsProcessing(true);
+    
+    try {
+      await updateDoc(userDocRef, { utr: utr });
+      toast({
+        title: 'Payment Submitted',
+        description: 'Your payment is being processed and is now pending verification from an admin.',
+      });
+      router.push('/pending-verification');
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: `Failed to save UTR. ${error.message}`,
+        });
+        setIsProcessing(false);
+    }
   };
 
   if (isUserLoading || isProfileLoading) {
@@ -70,28 +93,70 @@ export default function PaymentPage() {
   
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="w-[450px]">
-        <CardHeader>
-          <CardTitle>Complete Your Payment</CardTitle>
-          <CardDescription>
-            Review your plan details and proceed with the payment.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex justify-between items-center border rounded-md p-4">
-            <span className="font-medium">{userData?.planName || 'Pro Plan'}</span>
-            <span className="font-bold text-lg">₹{userData?.planPrice || 799}/month</span>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            This is a simulated payment process. Clicking the button below will mark your payment as submitted and notify an administrator for verification.
-          </p>
-        </CardContent>
-        <CardFooter>
-          <Button className="w-full" onClick={handleSimulatePayment} disabled={isProcessing}>
-            {isProcessing ? 'Processing...' : 'Simulate Payment'}
-          </Button>
-        </CardFooter>
-      </Card>
+      {paymentStep === 'pay' && (
+        <Card className="w-[450px]">
+          <CardHeader>
+            <CardTitle>Complete Your Payment</CardTitle>
+            <CardDescription>
+              Scan the QR code with your UPI app to complete the payment.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center border rounded-md p-4 bg-muted/20">
+              <span className="font-medium">{userData?.planName || 'Pro Plan'}</span>
+              <span className="font-bold text-lg">₹{userData?.planPrice?.toLocaleString('en-IN') || '799'}/month</span>
+            </div>
+            <div className="flex justify-center items-center p-4 border rounded-md">
+                <Image 
+                    src="https://picsum.photos/seed/qr/250/250"
+                    width={250}
+                    height={250}
+                    alt="Sample UPI QR Code"
+                    data-ai-hint="qr code"
+                />
+            </div>
+             <p className="text-sm text-muted-foreground text-center">
+                This is a sample QR code for demonstration purposes.
+             </p>
+          </CardContent>
+          <CardFooter>
+            <Button className="w-full" onClick={handleProceedToUtr}>
+              Proceed to Enter UTR
+            </Button>
+          </CardFooter>
+        </Card>
+      )}
+
+      {paymentStep === 'utr' && (
+        <Card className="w-[450px]">
+          <CardHeader>
+            <CardTitle>Submit Transaction Reference</CardTitle>
+            <CardDescription>
+              Enter the UTR / Transaction ID from your payment app to confirm your payment.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+             <div className="space-y-2">
+                <Label htmlFor="utr">UTR / Transaction ID</Label>
+                <Input
+                  id="utr"
+                  placeholder="Enter your 12-digit UTR"
+                  value={utr}
+                  onChange={(e) => setUtr(e.target.value)}
+                  maxLength={12}
+                />
+              </div>
+          </CardContent>
+          <CardFooter className="flex flex-col gap-4">
+            <Button className="w-full" onClick={handleSubmitUtr} disabled={isProcessing}>
+              {isProcessing ? 'Submitting...' : 'Submit for Verification'}
+            </Button>
+             <Button variant="outline" className="w-full" onClick={() => setPaymentStep('pay')}>
+              Back to QR Code
+            </Button>
+          </CardFooter>
+        </Card>
+      )}
     </div>
   );
 }
