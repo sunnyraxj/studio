@@ -43,10 +43,10 @@ import { IndianRupee, FileDown } from 'lucide-react';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { FaWhatsapp } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon } from 'lucide-react';
-import { InputDayPicker } from '@/components/ui/input-day-picker';
+import { Calendar } from '@/components/ui/calendar';
 
 
 // Common Types
@@ -273,7 +273,8 @@ const reportsColumns: ColumnDef<ReportItem>[] = [
 
 
 function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoading: boolean }) {
-  const [date, setDate] = useState<Date | undefined>();
+  const [startDate, setStartDate] = useState<Date | undefined>();
+  const [endDate, setEndDate] = useState<Date | undefined>();
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     hsn: false,
   });
@@ -281,12 +282,16 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
   const reportData = useMemo(() => {
     if (!salesData) return [];
     let items: ReportItem[] = salesData.flatMap(sale => sale.items.map(item => ({ ...item, saleDate: sale.date })));
-    if (date) {
-        const selectedDay = new Date(date).toDateString();
-        items = items.filter(item => new Date(item.saleDate).toDateString() === selectedDay);
+    if (startDate) {
+        items = items.filter(item => new Date(item.saleDate) >= startDate);
+    }
+    if (endDate) {
+        const toDate = new Date(endDate);
+        toDate.setHours(23, 59, 59, 999);
+        items = items.filter(item => new Date(item.saleDate) <= toDate);
     }
     return items;
-  }, [salesData, date]);
+  }, [salesData, startDate, endDate]);
 
   const totalSales = useMemo(() => {
     return reportData.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -322,91 +327,109 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle>Sales Reports</CardTitle>
-            <CardDescription>A detailed report of all items sold.</CardDescription>
-            <div className="mt-4 text-2xl font-bold">
-                Total Sales: ₹{totalSales.toLocaleString('en-IN')}
+    <TooltipProvider>
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle>Sales Reports</CardTitle>
+              <CardDescription>A detailed report of all items sold.</CardDescription>
+              <div className="mt-4 text-2xl font-bold">
+                  Total Sales: ₹{totalSales.toLocaleString('en-IN')}
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <Tooltip>
+                  <TooltipTrigger asChild>
+                      <Button variant="outline" onClick={handleExport} disabled={reportData.length === 0}>
+                          <FileDown className="mr-2 h-4 w-4" /> Export to Excel
+                      </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                      <p>Downloads an Excel file of the currently filtered sales report.</p>
+                  </TooltipContent>
+              </Tooltip>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    Columns <ChevronDownIcon className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {table
+                    .getAllColumns()
+                    .filter((column) => column.getCanHide())
+                    .map((column) => {
+                      return (
+                        <DropdownMenuCheckboxItem
+                          key={column.id}
+                          className="capitalize"
+                          checked={column.getIsVisible()}
+                          onCheckedChange={(value) =>
+                            column.toggleVisibility(!!value)
+                          }
+                        >
+                          {column.id === 'saleDate' ? 'Date Sold' : 
+                          column.id === 'name' ? 'Product Name' :
+                          column.id === 'sku' ? 'Product Code' :
+                          column.id === 'hsn' ? 'HSN Code' :
+                          column.id }
+                        </DropdownMenuCheckboxItem>
+                      );
+                    })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="justify-start text-left font-normal">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {startDate ? format(startDate, 'PPP') : <span>Start Date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                    <Calendar
+                        mode="single"
+                        selected={startDate}
+                        onSelect={setStartDate}
+                        initialFocus
+                    />
+                </PopoverContent>
+              </Popover>
+               <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="justify-start text-left font-normal">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {endDate ? format(endDate, 'PPP') : <span>End Date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                    <Calendar
+                        mode="single"
+                        selected={endDate}
+                        onSelect={setEndDate}
+                        initialFocus
+                    />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="outline" onClick={handleExport} disabled={reportData.length === 0}>
-                        <FileDown className="mr-2 h-4 w-4" /> Export to Excel
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>Downloads an Excel file of the currently filtered sales report.</p>
-                </TooltipContent>
-            </Tooltip>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  Columns <ChevronDownIcon className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {table
-                  .getAllColumns()
-                  .filter((column) => column.getCanHide())
-                  .map((column) => {
-                    return (
-                      <DropdownMenuCheckboxItem
-                        key={column.id}
-                        className="capitalize"
-                        checked={column.getIsVisible()}
-                        onCheckedChange={(value) =>
-                          column.toggleVisibility(!!value)
-                        }
-                      >
-                         <span className="flex h-3.5 w-3.5 items-center justify-center mr-2">
-                           <DropdownMenuTrigger asChild>
-                              <span className={`w-full h-full rounded-sm ${column.getIsVisible() ? 'bg-primary' : 'border border-primary'}`} />
-                           </DropdownMenuTrigger>
-                        </span>
-                        {column.id === 'saleDate' ? 'Date Sold' : 
-                         column.id === 'name' ? 'Product Name' :
-                         column.id === 'sku' ? 'Product Code' :
-                         column.id === 'hsn' ? 'HSN Code' :
-                         column.id }
-                      </DropdownMenuCheckboxItem>
-                    );
-                  })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="justify-start text-left font-normal">
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, 'PPP') : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                <InputDayPicker onDateChange={setDate} />
-              </PopoverContent>
-            </Popover>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>{table.getHeaderGroups().map(hg => <TableRow key={hg.id}>{hg.headers.map(h => <TableHead key={h.id}>{h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}</TableHead>)}</TableRow>)}</TableHeader>
+              <TableBody>
+                {isLoading ? <TableRow><TableCell colSpan={reportsColumns.length} className="h-24 text-center">Loading reports...</TableCell></TableRow>
+                  : table.getRowModel().rows?.length ? table.getRowModel().rows.map(row => (
+                    <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>{row.getVisibleCells().map(cell => <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>)}</TableRow>
+                  )) : <TableRow><TableCell colSpan={reportsColumns.length} className="h-24 text-center">No items found for the selected criteria.</TableCell></TableRow>}
+              </TableBody>
+            </Table>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>{table.getHeaderGroups().map(hg => <TableRow key={hg.id}>{hg.headers.map(h => <TableHead key={h.id}>{h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}</TableHead>)}</TableRow>)}</TableHeader>
-            <TableBody>
-              {isLoading ? <TableRow><TableCell colSpan={reportsColumns.length} className="h-24 text-center">Loading reports...</TableCell></TableRow>
-                : table.getRowModel().rows?.length ? table.getRowModel().rows.map(row => (
-                  <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>{row.getVisibleCells().map(cell => <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>)}</TableRow>
-                )) : <TableRow><TableCell colSpan={reportsColumns.length} className="h-24 text-center">No items found for the selected criteria.</TableCell></TableRow>}
-            </TableBody>
-          </Table>
-        </div>
-        <div className="py-4"><DataTablePagination table={table} /></div>
-      </CardContent>
-    </Card>
+          <div className="py-4"><DataTablePagination table={table} /></div>
+        </CardContent>
+      </Card>
+    </TooltipProvider>
   );
 }
 
@@ -678,3 +701,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
