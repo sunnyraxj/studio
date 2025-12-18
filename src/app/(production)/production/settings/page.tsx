@@ -17,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast.tsx';
 
 type ShopSettings = {
     companyName?: string;

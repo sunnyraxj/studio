@@ -4,7 +4,7 @@ import { Inter } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { FirebaseClientProvider } from '@/firebase';
 import { Toaster } from '@/components/ui/toaster';
-import { ToasterProvider } from '@/hooks/use-toast';
+import { ToasterProvider } from '@/hooks/use-toast.tsx';
 
 const inter = Inter({
   subsets: ['latin'],

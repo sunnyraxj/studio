@@ -14,8 +14,8 @@ import {
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore } from '@/firebase';
-import { doc, setDoc, writeBatch } from 'firebase/firestore';
-import { toast } from '@/hooks/use-toast';
+import { doc, writeBatch, collection } from 'firebase/firestore';
+import { toast } from '@/hooks/use-toast.tsx';
 
 const plans = [
   {

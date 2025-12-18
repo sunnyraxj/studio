@@ -25,7 +25,7 @@ import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 import { addDoc, collection, doc } from 'firebase/firestore';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast.tsx';
 
 type UserProfile = {
   shopId?: string;
