@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, doc, writeBatch } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,17 @@ import {
 } from '@/components/ui/table';
 import { toast } from '@/hooks/use-toast.tsx';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 type UserProfile = {
   id: string;
@@ -47,8 +58,11 @@ export default function AdminPage() {
     return usersData?.filter(u => u.subscriptionStatus === 'pending_verification');
   }, [usersData]);
 
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
   const handleApprove = async (targetUser: UserProfile) => {
-    if (!firestore) return;
+    if (!firestore || !targetUser) return;
 
     const batch = writeBatch(firestore);
     
@@ -71,8 +85,17 @@ export default function AdminPage() {
         title: 'Approval Failed',
         description: error.message,
       });
+    } finally {
+        setIsDialogOpen(false);
+        setSelectedUser(null);
     }
   };
+
+  const openConfirmationDialog = (user: UserProfile) => {
+    setSelectedUser(user);
+    setIsDialogOpen(true);
+  };
+
 
   return (
     <div className="flex-1 space-y-4">
@@ -111,7 +134,7 @@ export default function AdminPage() {
                       <Badge variant="secondary">{u.subscriptionStatus}</Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button onClick={() => handleApprove(u)}>Approve</Button>
+                      <Button onClick={() => openConfirmationDialog(u)}>Approve</Button>
                     </TableCell>
                   </TableRow>
                 ))
@@ -124,6 +147,29 @@ export default function AdminPage() {
           </Table>
         </CardContent>
       </Card>
+      
+       <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm Approval</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to approve this user? This will grant them full access to the platform.
+                 <div className="mt-4 space-y-2 text-sm text-foreground">
+                    <p><strong>Name:</strong> {selectedUser?.name}</p>
+                    <p><strong>Email:</strong> {selectedUser?.email}</p>
+                    <p><strong>UTR:</strong> {selectedUser?.utr}</p>
+                    <p><strong>Amount:</strong> ₹{selectedUser?.planPrice?.toLocaleString('en-IN')}</p>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setSelectedUser(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => selectedUser && handleApprove(selectedUser)}>
+                Approve
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+       </AlertDialog>
     </div>
   );
 }
