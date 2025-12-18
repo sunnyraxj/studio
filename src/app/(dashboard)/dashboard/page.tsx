@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -42,6 +43,7 @@ import { IndianRupee, FileDown } from 'lucide-react';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { FaWhatsapp } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 // Common Types
@@ -330,9 +332,16 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="outline" onClick={handleExport} disabled={reportData.length === 0}>
-                <FileDown className="mr-2 h-4 w-4" /> Export to Excel
-            </Button>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="outline" onClick={handleExport} disabled={reportData.length === 0}>
+                        <FileDown className="mr-2 h-4 w-4" /> Export to Excel
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Downloads an Excel file of the currently filtered sales report.</p>
+                </TooltipContent>
+            </Tooltip>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline">
