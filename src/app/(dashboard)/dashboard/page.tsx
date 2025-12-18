@@ -186,13 +186,15 @@ function AllSalesTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoa
     const isValidEndDate = !isNaN(endDate.getTime()) && endDay && endMonth && endYear;
     
     let applied = false;
-    if (isValidStartDate) {
-      data = data.filter(item => new Date(item.date) >= startDate);
-      applied = true;
-    }
-    if (isValidEndDate) {
-      data = data.filter(item => new Date(item.date) <= endDate);
-      applied = true;
+    if (isFilterApplied) {
+        if (isValidStartDate) {
+            data = data.filter(item => new Date(item.date) >= startDate);
+            applied = true;
+        }
+        if (isValidEndDate) {
+            data = data.filter(item => new Date(item.date) <= endDate);
+            applied = true;
+        }
     }
     
     // Search filtering
@@ -205,13 +207,11 @@ function AllSalesTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoa
     }
 
     setFilteredData(data);
-    setIsFilterApplied(applied || !!searchTerm);
+    setIsFilterApplied(applied || !!searchTerm || (isFilterApplied && (isValidStartDate || isValidEndDate)));
 
-  },[originalData, startDay, startMonth, startYear, endDay, endMonth, endYear, searchTerm]);
+  },[originalData, startDay, startMonth, startYear, endDay, endMonth, endYear, searchTerm, isFilterApplied]);
 
   const handleFilter = () => {
-    // This function will just trigger the useEffect by its presence,
-    // actual logic is now in useEffect
     setIsFilterApplied(true);
   };
   
@@ -223,7 +223,7 @@ function AllSalesTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoa
     setEndMonth('');
     setEndYear('');
     setSearchTerm('');
-    // The useEffect will handle resetting the data.
+    setIsFilterApplied(false);
   }
 
   const table = useReactTable({
@@ -366,9 +366,14 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
   
   const [filteredData, setFilteredData] = useState<ReportItem[]>([]);
   const [isFilterApplied, setIsFilterApplied] = useState(false);
-
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
+
+  const [startDay, setStartDay] = useState('');
+  const [startMonth, setStartMonth] = useState('');
+  const [startYear, setStartYear] = useState('');
+  const [endDay, setEndDay] = useState('');
+  const [endMonth, setEndMonth] = useState('');
+  const [endYear, setEndYear] = useState('');
 
   const reportData = useMemo(() => {
     if (!salesData) return [];
@@ -378,16 +383,26 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
   useEffect(() => {
     let data = reportData;
 
-    // Date filtering
-    if (dateRange?.from) {
-        const fromDate = new Date(dateRange.from);
-        fromDate.setHours(0,0,0,0);
-        data = data.filter(item => new Date(item.saleDate) >= fromDate);
-    }
-    if (dateRange?.to) {
-        const toDate = new Date(dateRange.to);
-        toDate.setHours(23,59,59,999);
-        data = data.filter(item => new Date(item.saleDate) <= toDate);
+     // Date filtering
+    const startDateStr = `${startYear}-${startMonth.padStart(2, '0')}-${startDay.padStart(2, '0')}`;
+    const endDateStr = `${endYear}-${endMonth.padStart(2, '0')}-${endDay.padStart(2, '0')}`;
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+    endDate.setHours(23, 59, 59, 999);
+
+    const isValidStartDate = !isNaN(startDate.getTime()) && startDay && startMonth && startYear;
+    const isValidEndDate = !isNaN(endDate.getTime()) && endDay && endMonth && endYear;
+    
+    let applied = false;
+    if (isFilterApplied) {
+        if (isValidStartDate) {
+            data = data.filter(item => new Date(item.saleDate) >= startDate);
+            applied = true;
+        }
+        if (isValidEndDate) {
+            data = data.filter(item => new Date(item.saleDate) <= endDate);
+            applied = true;
+        }
     }
 
     // Search filtering
@@ -396,17 +411,27 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
             item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (item.sku && item.sku.toLowerCase().includes(searchTerm.toLowerCase()))
         );
+        applied = true;
     }
     
     setFilteredData(data);
-    setIsFilterApplied(!!dateRange?.from || !!searchTerm);
+    setIsFilterApplied(applied || !!searchTerm || (isFilterApplied && (isValidStartDate || isValidEndDate)));
 
-  }, [reportData, dateRange, searchTerm]);
+  }, [reportData, startDay, startMonth, startYear, endDay, endMonth, endYear, searchTerm, isFilterApplied]);
 
+  const handleFilter = () => {
+    setIsFilterApplied(true);
+  };
   
   const handleClearFilter = () => {
-    setDateRange(undefined);
+    setStartDay('');
+    setStartMonth('');
+    setStartYear('');
+    setEndDay('');
+    setEndMonth('');
+    setEndYear('');
     setSearchTerm('');
+    setIsFilterApplied(false);
   }
 
   const totalSales = useMemo(() => {
@@ -450,8 +475,8 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
             <div>
               <CardTitle>Sales Reports</CardTitle>
               <CardDescription>A detailed report of all items sold.</CardDescription>
-              <div className="mt-4 text-lg">
-                <span className="font-bold">Total Sales (Filtered):</span> ₹{totalSales.toLocaleString('en-IN')}
+              <div className="mt-4 text-lg font-medium">
+                Total Sales (Filtered): <span className="font-bold">₹{totalSales.toLocaleString('en-IN')}</span>
               </div>
             </div>
              <div className="flex items-center gap-2">
@@ -464,13 +489,31 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
                       onChange={(e) => setSearchTerm(e.target.value)}
                   />
               </div>
-              <DateRangePicker onDateChange={setDateRange} initialDateRange={dateRange} />
-              {isFilterApplied && (
-                 <Button variant="ghost" size="icon" onClick={handleClearFilter}>
-                    <X className="h-4 w-4" />
-                    <span className="sr-only">Clear filters</span>
-                 </Button>
-              )}
+              <div className="flex items-end gap-2 p-2 border rounded-lg bg-muted/50">
+                <div className="grid gap-1.5">
+                  <Label className="text-xs">Start Date</Label>
+                  <div className="flex gap-1">
+                      <Input placeholder="DD" value={startDay} onChange={e => setStartDay(e.target.value)} className="w-12 h-8" />
+                      <Input placeholder="MM" value={startMonth} onChange={e => setStartMonth(e.target.value)} className="w-12 h-8" />
+                      <Input placeholder="YYYY" value={startYear} onChange={e => setStartYear(e.target.value)} className="w-20 h-8" />
+                  </div>
+                </div>
+                <div className="grid gap-1.5">
+                  <Label className="text-xs">End Date</Label>
+                   <div className="flex gap-1">
+                      <Input placeholder="DD" value={endDay} onChange={e => setEndDay(e.target.value)} className="w-12 h-8" />
+                      <Input placeholder="MM" value={endMonth} onChange={e => setEndMonth(e.target.value)} className="w-12 h-8" />
+                      <Input placeholder="YYYY" value={endYear} onChange={e => setEndYear(e.target.value)} className="w-20 h-8" />
+                  </div>
+                </div>
+                <Button onClick={handleFilter} size="sm">Filter</Button>
+                {isFilterApplied && (
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleClearFilter}>
+                      <X className="h-4 w-4" />
+                      <span className="sr-only">Clear Filter</span>
+                  </Button>
+                )}
+            </div>
               <Separator orientation="vertical" className="h-10" />
               <Tooltip>
                   <TooltipTrigger asChild>
