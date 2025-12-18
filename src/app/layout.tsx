@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { FirebaseClientProvider } from '@/firebase';
 import { Toaster } from '@/components/ui/toaster';
+import { ToasterProvider } from '@/hooks/use-toast';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -23,10 +24,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={cn("font-body antialiased", inter.variable)}>
-        <FirebaseClientProvider>
-          {children}
-          <Toaster />
-        </FirebaseClientProvider>
+        <ToasterProvider>
+          <FirebaseClientProvider>
+            {children}
+          </FirebaseClientProvider>
+        </ToasterProvider>
+        <Toaster />
       </body>
     </html>
   );

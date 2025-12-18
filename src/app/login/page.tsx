@@ -20,7 +20,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
 } from 'firebase/auth';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { doc, setDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
@@ -33,12 +33,11 @@ export default function LoginPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
-  const { toast } = useToast();
 
   const handleLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.push('/owner/dashboard');
+      router.push('/production/dashboard');
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -67,18 +66,21 @@ export default function LoginPage() {
       const user = userCredential.user;
 
       // Create a user profile in Firestore
-      const userDocRef = doc(firestore, 'users', user.uid);
+      if (firestore) {
+        const userDocRef = doc(firestore, 'users', user.uid);
       
-      const userProfile = {
-        id: user.uid,
-        email: user.email,
-        subscriptionStatus: 'inactive',
-      };
+        const userProfile = {
+            id: user.uid,
+            email: user.email,
+            subscriptionStatus: 'inactive',
+        };
       
-      setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
+        setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
+      }
+
 
       router.push('/subscribe');
-    } catch (error: any) {
+    } catch (error: any) => {
       toast({
         variant: 'destructive',
         title: 'Sign Up Failed',

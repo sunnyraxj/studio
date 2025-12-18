@@ -2,9 +2,9 @@
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore'
-
+import { getAuth, Auth } from 'firebase/auth';
+import { getFirestore, Firestore } from 'firebase/firestore';
+import { useMemo, DependencyList} from 'react';
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {
   if (!getApps().length) {
@@ -45,6 +45,21 @@ export * from './client-provider';
 export * from './firestore/use-collection';
 export * from './firestore/use-doc';
 export * from './non-blocking-updates';
-export * from './non-blocking-login';
 export * from './errors';
 export * from './error-emitter';
+
+/**
+ * A hook to memoize a Firestore query or document reference.
+ * This is crucial to prevent re-renders from causing infinite loops
+ * when using `useCollection` or `useDoc`.
+ */
+export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
+    const memoized = useMemo(factory, deps);
+    if (typeof memoized === 'object' && memoized !== null) {
+        // This is a bit of a hack to "tag" the memoized object.
+        // It helps `useCollection` and `useDoc` to verify that the query/ref
+        // has indeed been memoized, preventing accidental infinite loops.
+        (memoized as any).__memo = true;
+    }
+    return memoized;
+}

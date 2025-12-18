@@ -62,19 +62,19 @@ import { useFirestore } from '@/firebase';
 
 const navLinks = [
   {
-    href: '/owner/dashboard',
+    href: '/production/dashboard',
     icon: Home,
     label: 'Dashboard',
     badge: null,
   },
   {
-    href: '/owner/pos',
+    href: '/production/pos',
     icon: Printer,
     label: 'POS',
     badge: null,
   },
   {
-    href: '/owner/inventory',
+    href: '/production/inventory',
     icon: Package,
     label: 'Inventory',
     disabled: false,
@@ -186,7 +186,7 @@ function AppSidebar() {
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent className="space-y-1 pt-2">
-             <Link href="/owner/settings" passHref>
+             <Link href="/production/settings" passHref>
                 <Button variant="ghost" className="w-full justify-start gap-2">
                     <Settings className="h-4 w-4" />
                     Settings
@@ -267,11 +267,48 @@ function MobileSidebar() {
   );
 }
 
-export default function DashboardLayout({
+export default function ProductionLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
+  const firestore = useFirestore();
+
+  useEffect(() => {
+    if (!isUserLoading) {
+      if (!user) {
+        router.push('/login');
+      } else {
+        const checkSubscription = async () => {
+          if (!firestore) return;
+          const userDocRef = doc(firestore, 'users', user.uid);
+          const userDoc = await getDoc(userDocRef);
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            if (userData.subscriptionStatus !== 'active') {
+              router.push('/subscribe');
+            }
+          } else {
+            // If user profile doesn't exist, they likely haven't completed signup
+            router.push('/subscribe');
+          }
+        };
+        checkSubscription();
+      }
+    }
+  }, [user, isUserLoading, router, firestore]);
+
+  if (isUserLoading || !user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-2xl font-semibold">Loading...</div>
+      </div>
+    );
+  }
+
+
   return (
     <SidebarProvider>
       <div className="grid min-h-screen w-full md:grid-cols-[auto_1fr] lg:grid-cols-[auto_1fr]">

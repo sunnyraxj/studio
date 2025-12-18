@@ -15,8 +15,8 @@ import {
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import { useToast } from '@/hooks/use-toast';
+import { doc, setDoc } from 'firebase/firestore';
+import { toast } from '@/hooks/use-toast';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const plans = [
@@ -49,7 +49,6 @@ export default function SubscribePage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
-  const { toast } = useToast();
 
   const handleSelectPlan = (planName: string) => {
     setSelectedPlan(planName);
@@ -64,7 +63,7 @@ export default function SubscribePage() {
       });
       return;
     }
-    if (!user) {
+    if (!user || !firestore) {
        toast({
         variant: 'destructive',
         title: 'Not Authenticated',
@@ -78,18 +77,18 @@ export default function SubscribePage() {
     const planDetails = plans.find(p => p.name === selectedPlan);
 
     try {
-        updateDocumentNonBlocking(userDocRef, {
+        await setDoc(userDocRef, {
             subscriptionStatus: 'active',
             planName: planDetails?.name,
             planPrice: planDetails?.price,
             subscriptionStartDate: new Date().toISOString(),
-        });
+        }, { merge: true });
 
       toast({
         title: 'Subscription Successful!',
         description: `You are now subscribed to the ${selectedPlan} plan.`,
       });
-      router.push('/owner/dashboard');
+      router.push('/production/dashboard');
     } catch (error: any) {
       toast({
         variant: 'destructive',
