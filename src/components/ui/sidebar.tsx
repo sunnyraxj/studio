@@ -183,21 +183,21 @@ const Sidebar = React.forwardRef<
     const handleMouseEnter = React.useCallback(
       (event: React.MouseEvent<HTMLDivElement>) => {
         onMouseEnter?.(event)
-        if (state === "collapsed") {
+        if (collapsible === "icon" && state === "collapsed") {
           setOpen(true)
         }
       },
-      [onMouseEnter, setOpen, state]
+      [onMouseEnter, setOpen, state, collapsible]
     )
 
     const handleMouseLeave = React.useCallback(
       (event: React.MouseEvent<HTMLDivElement>) => {
         onMouseLeave?.(event)
-        if (state === "expanded") {
+        if (collapsible === "icon" && state === "expanded") {
           setOpen(false)
         }
       },
-      [onMouseLeave, setOpen, state]
+      [onMouseLeave, setOpen, state, collapsible]
     )
 
     if (collapsible === "none") {
