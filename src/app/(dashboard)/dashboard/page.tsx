@@ -334,8 +334,8 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
             <div>
               <CardTitle>Sales Reports</CardTitle>
               <CardDescription>A detailed report of all items sold.</CardDescription>
-              <div className="mt-4 text-2xl font-bold">
-                  Total Sales: ₹{totalSales.toLocaleString('en-IN')}
+              <div className="mt-4 text-lg">
+                <span className="font-bold">Total Sales (Filtered):</span> ₹{totalSales.toLocaleString('en-IN')}
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -701,5 +701,7 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
 
     
