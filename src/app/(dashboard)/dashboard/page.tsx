@@ -21,6 +21,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 type SaleItem = {
   productId: string;
@@ -110,136 +111,138 @@ export default function DashboardPage() {
 
   return (
     <div className="flex-1 space-y-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">
-            {isDemoMode ? 'Dashboard (Demo Mode)' : 'Dashboard'}
-        </h2>
-      </div>
-
-      {/* Overview Section */}
-      <div className="space-y-4">
-        <h3 className="text-xl font-semibold tracking-tight">Overview</h3>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Today's Sales</CardTitle>
-              <IndianRupee className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              {isLoading && !isDemoMode ? <div className="text-2xl font-bold">Loading...</div> : <div className="text-2xl font-bold">₹{todaySales.toLocaleString('en-IN')}</div>}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                This Month's Sales
-              </CardTitle>
-              <IndianRupee className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-               {isLoading && !isDemoMode ? <div className="text-2xl font-bold">Loading...</div> : <div className="text-2xl font-bold">₹{thisMonthSales.toLocaleString('en-IN')}</div>}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                This Year's Sales
-              </CardTitle>
-              <IndianRupee className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-               {isLoading && !isDemoMode ? <div className="text-2xl font-bold">Loading...</div> : <div className="text-2xl font-bold">₹{thisYearSales.toLocaleString('en-IN')}</div>}
-            </CardContent>
-          </Card>
+      <Tabs defaultValue="overview" className="space-y-4">
+        <div className="flex items-center justify-between space-y-2">
+            <h2 className="text-3xl font-bold tracking-tight">
+                {isDemoMode ? 'Dashboard (Demo Mode)' : 'Dashboard'}
+            </h2>
+            <TabsList>
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="summary">Summary</TabsTrigger>
+            </TabsList>
         </div>
-      </div>
-
-      {/* Summary Section */}
-      <div className="space-y-4">
-        <h3 className="text-xl font-semibold tracking-tight">Summary</h3>
-        <div className="grid gap-6 lg:grid-cols-2">
-           <Card>
-              <CardHeader>
-                <CardTitle>Recent Sales</CardTitle>
-                <CardDescription>
-                  Your last 5 transactions.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                 <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Invoice</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {isRecentSalesLoading && !isDemoMode ? (
-                        <TableRow><TableCell colSpan={4} className="h-24 text-center">Loading...</TableCell></TableRow>
-                    ) : recentSales && recentSales.length > 0 ? (
-                      recentSales.map((sale) => (
-                        <TableRow key={sale.id}>
-                          <TableCell>
-                            <div className="font-medium">{sale.customer.name}</div>
-                          </TableCell>
-                          <TableCell>
-                             <Badge variant="outline">{sale.invoiceNumber}</Badge>
-                          </TableCell>
-                          <TableCell>{format(new Date(sale.date), 'dd MMM yyyy')}</TableCell>
-                          <TableCell className="text-right">₹{sale.total.toLocaleString('en-IN')}</TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={4} className="h-24 text-center">
-                          No recent sales.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
+        <TabsContent value="overview" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Today's Sales</CardTitle>
+                <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                {isLoading && !isDemoMode ? <div className="text-2xl font-bold">Loading...</div> : <div className="text-2xl font-bold">₹{todaySales.toLocaleString('en-IN')}</div>}
+                </CardContent>
             </Card>
             <Card>
-              <CardHeader>
-                <CardTitle>Items Sold in Recent Sales</CardTitle>
-                 <CardDescription>
-                  Products included in your last 5 transactions.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                 <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Product</TableHead>
-                      <TableHead className="text-center">Quantity</TableHead>
-                      <TableHead className="text-right">Price</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                     {isRecentSalesLoading && !isDemoMode ? (
-                        <TableRow><TableCell colSpan={3} className="h-24 text-center">Loading...</TableCell></TableRow>
-                     ) : recentItemsSold && recentItemsSold.length > 0 ? (
-                        recentItemsSold.map((item, index) => (
-                            <TableRow key={`${item.productId}-${index}`}>
-                                <TableCell className="font-medium">{item.name}</TableCell>
-                                <TableCell className="text-center">{item.quantity}</TableCell>
-                                <TableCell className="text-right">₹{item.price.toLocaleString('en-IN')}</TableCell>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                    This Month's Sales
+                </CardTitle>
+                <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                {isLoading && !isDemoMode ? <div className="text-2xl font-bold">Loading...</div> : <div className="text-2xl font-bold">₹{thisMonthSales.toLocaleString('en-IN')}</div>}
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                    This Year's Sales
+                </CardTitle>
+                <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                {isLoading && !isDemoMode ? <div className="text-2xl font-bold">Loading...</div> : <div className="text-2xl font-bold">₹{thisYearSales.toLocaleString('en-IN')}</div>}
+                </CardContent>
+            </Card>
+            </div>
+        </TabsContent>
+        <TabsContent value="summary" className="space-y-4">
+            <div className="grid gap-6 lg:grid-cols-2">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Recent Sales</CardTitle>
+                    <CardDescription>
+                    Your last 5 transactions.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                    <TableHeader>
+                        <TableRow>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Invoice</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {isRecentSalesLoading && !isDemoMode ? (
+                            <TableRow><TableCell colSpan={4} className="h-24 text-center">Loading...</TableCell></TableRow>
+                        ) : recentSales && recentSales.length > 0 ? (
+                        recentSales.map((sale) => (
+                            <TableRow key={sale.id}>
+                            <TableCell>
+                                <div className="font-medium">{sale.customer.name}</div>
+                            </TableCell>
+                            <TableCell>
+                                <Badge variant="outline">{sale.invoiceNumber}</Badge>
+                            </TableCell>
+                            <TableCell>{format(new Date(sale.date), 'dd MMM yyyy')}</TableCell>
+                            <TableCell className="text-right">₹{sale.total.toLocaleString('en-IN')}</TableCell>
                             </TableRow>
                         ))
-                     ) : (
+                        ) : (
                         <TableRow>
-                            <TableCell colSpan={3} className="h-24 text-center">No items sold recently.</TableCell>
+                            <TableCell colSpan={4} className="h-24 text-center">
+                            No recent sales.
+                            </TableCell>
                         </TableRow>
-                     )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-        </div>
-      </div>
+                        )}
+                    </TableBody>
+                    </Table>
+                </CardContent>
+                </Card>
+                <Card>
+                <CardHeader>
+                    <CardTitle>Items Sold in Recent Sales</CardTitle>
+                    <CardDescription>
+                    Products included in your last 5 transactions.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <Table>
+                    <TableHeader>
+                        <TableRow>
+                        <TableHead>Product</TableHead>
+                        <TableHead className="text-center">Quantity</TableHead>
+                        <TableHead className="text-right">Price</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {isRecentSalesLoading && !isDemoMode ? (
+                            <TableRow><TableCell colSpan={3} className="h-24 text-center">Loading...</TableCell></TableRow>
+                        ) : recentItemsSold && recentItemsSold.length > 0 ? (
+                            recentItemsSold.map((item, index) => (
+                                <TableRow key={`${item.productId}-${index}`}>
+                                    <TableCell className="font-medium">{item.name}</TableCell>
+                                    <TableCell className="text-center">{item.quantity}</TableCell>
+                                    <TableCell className="text-right">₹{item.price.toLocaleString('en-IN')}</TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={3} className="h-24 text-center">No items sold recently.</TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                    </Table>
+                </CardContent>
+                </Card>
+            </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
+
+    
