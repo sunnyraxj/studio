@@ -94,8 +94,8 @@ type UserProfile = {
   shopId?: string;
 };
 
-type Shop = {
-    name?: string;
+type ShopSettings = {
+    companyName?: string;
 }
 
 function AppSidebar({ shopName }: { shopName: string }) {
@@ -304,51 +304,47 @@ export default function DashboardLayout({
   const { data: userData, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
   const shopId = userData?.shopId;
 
-  const shopDocRef = useMemoFirebase(() => {
+  const settingsDocRef = useMemoFirebase(() => {
     if (!shopId || !firestore) return null;
-    return doc(firestore, `shops/${shopId}`);
+    return doc(firestore, `shops/${shopId}/settings`, 'details');
   }, [shopId, firestore]);
 
-  const { data: shopData, isLoading: isShopLoading } = useDoc<Shop>(shopDocRef);
+  const { data: settingsData, isLoading: isSettingsLoading } = useDoc<ShopSettings>(settingsDocRef);
+
 
   useEffect(() => {
-    // Wait until both user and their profile data are loaded
     if (isUserLoading || isProfileLoading) {
       return;
     }
 
-    // If a user is logged in, check their status
     if (user && userData) {
-      // Admins should not be redirected from the dashboard. They can view it in demo mode.
       if (userData.role === 'admin') {
         return;
       }
       
-      // Handle redirects for regular users based on their subscription and shop status.
       switch (userData.subscriptionStatus) {
         case 'pending_verification':
           router.push('/pending-verification');
           break;
         case 'active':
-          // If active but no shop, they need to set it up.
           if (!shopId) {
             router.push('/shop-setup');
           }
-          // Otherwise, they are active and have a shop, so they can stay.
           break;
         case 'inactive':
         case 'rejected':
+          router.push('/subscribe');
+          break;
         default:
-          // Inactive or rejected users are sent to subscribe.
           router.push('/subscribe');
           break;
       }
     } else if (!user && !isUserLoading) {
-        // If not logged in and not loading, stay in demo mode on dashboard.
+        // Stay in demo mode on dashboard.
     }
   }, [user, userData, isUserLoading, isProfileLoading, router, shopId]);
 
-  const isLoading = isUserLoading || (user && (isProfileLoading || (!!shopId && isShopLoading)));
+  const isLoading = isUserLoading || (user && (isProfileLoading || (!!shopId && isSettingsLoading)));
 
   if (isLoading) {
     return (
@@ -358,7 +354,7 @@ export default function DashboardLayout({
     );
   }
 
-  const shopName = user ? (shopData?.name || 'My Shop') : 'Demo Shop';
+  const shopName = user ? (settingsData?.companyName || 'My Shop') : 'Demo Shop';
 
   return (
     <SidebarProvider>
