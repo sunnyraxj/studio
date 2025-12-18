@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -50,8 +51,9 @@ service cloud.firestore {
     // Any document in a subcollection of a shop can only be accessed by the shop owner or a super admin.
     match /shops/{shopId}/{subcollection}/{docId} {
         // Exclude the global settings from this rule
-        if shopId != 'global'
-        allow read, write, delete: if isShopOwner(shopId) || isAdmin();
+        if shopId != 'global' {
+            allow read, write, delete: if isShopOwner(shopId) || isAdmin();
+        }
     }
   }
 }
