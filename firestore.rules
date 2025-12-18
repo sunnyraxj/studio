@@ -23,22 +23,28 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
+      // Allow user to read/update their own profile
+      // Allow superadmin to read/update any profile
       allow read, update: if isOwner(userId) || isSuperAdmin();
+      // Allow user to create their own profile
       allow create: if request.auth.uid == userId;
       // Allow superadmins to list all users
       allow list: if isSuperAdmin();
     }
 
     match /shops/{shopId} {
+      // Allow shop owner to get their shop
       allow get: if isShopOwner(shopId);
-      allow create: if request.resource.data.ownerId == request.auth.uid;
+      // Allow a user to create a shop for themselves OR a superadmin to create a shop for anyone
+      allow create: if request.resource.data.ownerId == request.auth.uid || isSuperAdmin();
       // You can't change the owner of a shop.
+      // A shop owner can update their shop details.
       allow update: if isShopOwner(shopId) && request.resource.data.ownerId == resource.data.ownerId;
     }
 
-    // Any document in a subcollection of a shop can only be accessed by the shop owner.
+    // Any document in a subcollection of a shop can only be accessed by the shop owner or a super admin.
     match /shops/{shopId}/{subcollection}/{docId} {
-        allow read, write, delete: if isShopOwner(shopId) && getUserShopId() == shopId;
+        allow read, write, delete: if isShopOwner(shopId) || isSuperAdmin();
     }
   }
 }

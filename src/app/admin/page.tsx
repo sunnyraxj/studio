@@ -22,6 +22,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { toast } from '@/hooks/use-toast.tsx';
+import { Badge } from '@/components/ui/badge';
 
 type UserProfile = {
   id: string;
@@ -56,9 +57,9 @@ export default function AdminPage() {
   }, [user, currentUserProfile, isUserLoading, isProfileLoading, router]);
 
   const usersCollectionRef = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || currentUserProfile?.role !== 'superadmin' ) return null;
     return collection(firestore, 'users');
-  }, [firestore]);
+  }, [firestore, currentUserProfile]);
 
   const { data: usersData, isLoading: isUsersLoading } = useCollection<UserProfile>(usersCollectionRef);
 
@@ -106,7 +107,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="flex-1 space-y-4">
+    <div className="flex-1 space-y-4 p-8 pt-6">
       <h2 className="text-3xl font-bold tracking-tight">Super Admin Dashboard</h2>
       <Card>
         <CardHeader>
@@ -133,7 +134,9 @@ export default function AdminPage() {
                 pendingUsers.map(u => (
                   <TableRow key={u.id}>
                     <TableCell className="font-medium">{u.email}</TableCell>
-                    <TableCell>{u.subscriptionStatus}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{u.subscriptionStatus}</Badge>
+                    </TableCell>
                     <TableCell className="text-right">
                       <Button onClick={() => handleApprove(u)}>Approve</Button>
                     </TableCell>
