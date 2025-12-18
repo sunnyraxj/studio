@@ -28,7 +28,7 @@ type UserProfile = {
   id: string;
   email?: string;
   subscriptionStatus?: 'active' | 'inactive' | 'pending_verification';
-  role?: 'user' | 'superadmin';
+  role?: 'user' | 'admin';
 };
 
 export default function AdminPage() {
@@ -45,7 +45,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!isUserLoading && !isProfileLoading) {
-      if (!user || currentUserProfile?.role !== 'superadmin') {
+      if (!user || currentUserProfile?.role !== 'admin') {
         toast({
           variant: 'destructive',
           title: 'Access Denied',
@@ -57,7 +57,7 @@ export default function AdminPage() {
   }, [user, currentUserProfile, isUserLoading, isProfileLoading, router]);
 
   const usersCollectionRef = useMemoFirebase(() => {
-    if (!firestore || currentUserProfile?.role !== 'superadmin' ) return null;
+    if (!firestore || currentUserProfile?.role !== 'admin' ) return null;
     return collection(firestore, 'users');
   }, [firestore, currentUserProfile]);
 
@@ -102,13 +102,13 @@ export default function AdminPage() {
     }
   };
 
-  if (isUserLoading || isProfileLoading || currentUserProfile?.role !== 'superadmin') {
+  if (isUserLoading || isProfileLoading || currentUserProfile?.role !== 'admin') {
     return <div className="flex items-center justify-center min-h-screen">Loading Admin Dashboard...</div>;
   }
 
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
-      <h2 className="text-3xl font-bold tracking-tight">Super Admin Dashboard</h2>
+      <h2 className="text-3xl font-bold tracking-tight">Admin Dashboard</h2>
       <Card>
         <CardHeader>
           <CardTitle>Pending Verifications</CardTitle>

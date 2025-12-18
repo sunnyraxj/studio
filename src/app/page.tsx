@@ -11,7 +11,7 @@ const roles = [
     href: '/dashboard',
   },
   {
-    name: 'Super Admin',
+    name: 'Admin',
     description: 'Login to the admin panel to oversee the platform.',
     icon: Shield,
     href: '/admin',

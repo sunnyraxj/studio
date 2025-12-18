@@ -67,7 +67,7 @@
           "description": "The user's role in the system.",
           "enum": [
             "user",
-            "superadmin"
+            "admin"
           ]
         }
       },

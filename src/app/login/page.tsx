@@ -40,17 +40,24 @@ export default function LoginPage() {
   const roleParam = searchParams.get('role');
 
   const handleSuccessfulLogin = async (user: User) => {
-    if (!firestore) return router.push('/dashboard');
-
-    const userDocRef = doc(firestore, "users", user.uid);
-    const userDoc = await getDoc(userDocRef);
-
-    if (userDoc.exists() && userDoc.data().role === 'superadmin') {
-      router.push('/admin');
-    } else {
-      router.push('/dashboard');
+    if (!firestore) {
+        router.push('/dashboard');
+        return;
     }
-  };
+    const userDocRef = doc(firestore, "users", user.uid);
+    try {
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists() && userDoc.data().role === 'admin') {
+            router.push('/admin');
+        } else {
+            router.push('/dashboard');
+        }
+    } catch (error) {
+        console.error("Error fetching user document:", error);
+        // Default redirect if there's an error fetching the user role
+        router.push('/dashboard');
+    }
+};
 
   const handleLogin = async () => {
     try {
@@ -83,21 +90,37 @@ export default function LoginPage() {
       );
       const user = userCredential.user;
       
-      // Create a user profile in Firestore for a regular user
+      // Create a user profile in Firestore
       if (firestore) {
         const userDocRef = doc(firestore, 'users', user.uid);
-      
+        
+        // Check if role=admin is in the URL to create an admin user
+        const role = roleParam === 'admin' ? 'admin' : 'user';
+        
         const userProfile = {
             id: user.uid,
             email: user.email,
-            subscriptionStatus: 'inactive',
-            role: 'user',
+            subscriptionStatus: role === 'admin' ? 'active' : 'inactive',
+            role: role,
         };
       
         await setDoc(userDocRef, userProfile, { merge: true });
+
+        if (role === 'admin') {
+            toast({
+                title: "Admin Account Created",
+                description: "You can now log in with your admin credentials."
+            });
+            // Clear fields and stay on login page for the new admin to log in
+            setEmail('');
+            setPassword('');
+            setConfirmPassword('');
+            router.push('/login');
+            return;
+        }
       }
       
-      // After sign-up, always redirect to the subscription page
+      // After sign-up for a regular user, always redirect to the subscription page
       router.push('/subscribe');
     } catch (error: any) {
       toast({

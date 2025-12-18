@@ -90,7 +90,7 @@ const navLinks = [
 
 type UserProfile = {
   subscriptionStatus?: string;
-  role?: 'user' | 'superadmin';
+  role?: 'user' | 'admin';
 };
 
 function AppSidebar() {
@@ -304,7 +304,7 @@ export default function DashboardLayout({
       return;
     }
 
-    if (user && userData?.role === 'superadmin') {
+    if (user && userData?.role === 'admin') {
       return; // Super admins can access the dashboard
     }
 

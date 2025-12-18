@@ -18,25 +18,25 @@ service cloud.firestore {
         return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId;
     }
 
-    function isSuperAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'superadmin';
+    function isAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     match /users/{userId} {
       // Allow user to read/update their own profile
-      // Allow superadmin to read/update any profile
-      allow read, update: if isOwner(userId) || isSuperAdmin();
+      // Allow admin to read/update any profile
+      allow read, update: if isOwner(userId) || isAdmin();
       // Allow user to create their own profile
       allow create: if request.auth.uid == userId;
-      // Allow superadmins to list all users
-      allow list: if isSuperAdmin();
+      // Allow admins to list all users
+      allow list: if isAdmin();
     }
 
     match /shops/{shopId} {
       // Allow shop owner to get their shop
       allow get: if isShopOwner(shopId);
-      // Allow a user to create a shop for themselves OR a superadmin to create a shop for anyone
-      allow create: if request.resource.data.ownerId == request.auth.uid || isSuperAdmin();
+      // Allow a user to create a shop for themselves OR a admin to create a shop for anyone
+      allow create: if request.resource.data.ownerId == request.auth.uid || isAdmin();
       // You can't change the owner of a shop.
       // A shop owner can update their shop details.
       allow update: if isShopOwner(shopId) && request.resource.data.ownerId == resource.data.ownerId;
@@ -44,7 +44,7 @@ service cloud.firestore {
 
     // Any document in a subcollection of a shop can only be accessed by the shop owner or a super admin.
     match /shops/{shopId}/{subcollection}/{docId} {
-        allow read, write, delete: if isShopOwner(shopId) || isSuperAdmin();
+        allow read, write, delete: if isShopOwner(shopId) || isAdmin();
     }
   }
 }
