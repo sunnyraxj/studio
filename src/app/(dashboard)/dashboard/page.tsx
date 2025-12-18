@@ -12,6 +12,7 @@ import {
   getExpandedRowModel,
   SortingState,
   ExpandedState,
+  VisibilityState,
 } from '@tanstack/react-table';
 import {
   Table,
@@ -39,6 +40,7 @@ import type { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
 import { CaretSortIcon, ChevronDownIcon, ChevronRightIcon } from '@radix-ui/react-icons';
 import { IndianRupee } from 'lucide-react';
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 // Common Types
 type Sale = {
@@ -57,6 +59,9 @@ type SaleItem = {
   name: string;
   quantity: number;
   price: number;
+  sku?: string;
+  hsn?: string;
+  gst?: number;
 };
 
 type ReportItem = SaleItem & {
@@ -69,9 +74,9 @@ type UserProfile = {
 
 // Demo Data
 const demoSales: Sale[] = [
-    { id: '1', invoiceNumber: 'INV123', date: new Date().toISOString(), customer: { name: 'Ravi Kumar' }, total: 2500, items: [{ productId: '1', name: 'T-Shirt', quantity: 2, price: 500 }, { productId: '2', name: 'Jeans', quantity: 1, price: 1500 }] },
-    { id: '2', invoiceNumber: 'INV124', date: new Date(Date.now() - 86400000).toISOString(), customer: { name: 'Priya Sharma' }, total: 1200, items: [{ productId: '3', name: 'Sneakers', quantity: 1, price: 1200 }] },
-    { id: '3', invoiceNumber: 'INV125', date: new Date(Date.now() - 172800000).toISOString(), customer: { name: 'Amit Singh' }, total: 3500, items: [{ productId: '4', name: 'Watch', quantity: 1, price: 3500 }] },
+    { id: '1', invoiceNumber: 'INV123', date: new Date().toISOString(), customer: { name: 'Ravi Kumar' }, total: 2500, items: [{ productId: '1', name: 'T-Shirt', quantity: 2, price: 500, sku: 'TS-01', hsn: '6109', gst: 5 }, { productId: '2', name: 'Jeans', quantity: 1, price: 1500, sku: 'JN-01', hsn: '6203', gst: 5 }] },
+    { id: '2', invoiceNumber: 'INV124', date: new Date(Date.now() - 86400000).toISOString(), customer: { name: 'Priya Sharma' }, total: 1200, items: [{ productId: '3', name: 'Sneakers', quantity: 1, price: 1200, sku: 'SH-01', hsn: '6404', gst: 18 }] },
+    { id: '3', invoiceNumber: 'INV125', date: new Date(Date.now() - 172800000).toISOString(), customer: { name: 'Amit Singh' }, total: 3500, items: [{ productId: '4', name: 'Watch', quantity: 1, price: 3500, sku: 'WT-01', hsn: '9102', gst: 18 }] },
 ];
 const DemoData = {
     todaySales: 12345.67,
@@ -156,6 +161,7 @@ function AllSalesTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoa
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getExpandedRowModel: getExpandedRowModel(),
+    getRowCanExpand: () => true,
   });
 
   return (
@@ -226,6 +232,9 @@ function AllSalesTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoa
 // Reports Tab Component
 const reportsColumns: ColumnDef<ReportItem>[] = [
   { accessorKey: 'name', header: 'Product Name', cell: ({ row }) => <div className="font-medium">{row.getValue('name')}</div> },
+  { accessorKey: 'sku', header: 'Product Code' },
+  { accessorKey: 'hsn', header: 'HSN Code' },
+  { accessorKey: 'gst', header: 'GST (%)', cell: ({ row }) => `${row.original.gst}%`},
   { accessorKey: 'quantity', header: 'Quantity Sold' },
   { accessorKey: 'price', header: 'Price per Item', cell: ({ row }) => `₹${row.original.price.toLocaleString('en-IN')}` },
   { accessorKey: 'saleDate', header: 'Date Sold', cell: ({ row }) => format(new Date(row.original.saleDate), 'dd MMM yyyy') },
@@ -233,6 +242,9 @@ const reportsColumns: ColumnDef<ReportItem>[] = [
 
 function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoading: boolean }) {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+    hsn: false,
+  });
 
   const reportData = useMemo(() => {
     if (!salesData) return [];
@@ -249,6 +261,10 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
   const table = useReactTable({
     data: reportData,
     columns: reportsColumns,
+    state: {
+        columnVisibility,
+    },
+    onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
   });
@@ -261,7 +277,39 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
             <CardTitle>Sales Reports</CardTitle>
             <CardDescription>A detailed report of all items sold.</CardDescription>
           </div>
-          <DateRangePicker onDateChange={setDateRange} />
+          <div className="flex items-center gap-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  Columns <ChevronDownIcon className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {table
+                  .getAllColumns()
+                  .filter((column) => column.getCanHide())
+                  .map((column) => {
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        className="capitalize"
+                        checked={column.getIsVisible()}
+                        onCheckedChange={(value) =>
+                          column.toggleVisibility(!!value)
+                        }
+                      >
+                        {column.id === 'saleDate' ? 'Date Sold' : 
+                         column.id === 'name' ? 'Product Name' :
+                         column.id === 'sku' ? 'Product Code' :
+                         column.id === 'hsn' ? 'HSN Code' :
+                         column.id }
+                      </DropdownMenuCheckboxItem>
+                    );
+                  })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DateRangePicker onDateChange={setDateRange} />
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -363,3 +411,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
