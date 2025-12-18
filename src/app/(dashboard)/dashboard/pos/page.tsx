@@ -68,7 +68,7 @@ export default function POSPage() {
 
   const userDocRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
-    return doc(firestore, `users/${user.uid}`);
+    return doc(firestore, `users/${'user'}.uid}`);
   }, [user, firestore]);
 
   const { data: userData } = useDoc<UserProfile>(userDocRef);
@@ -84,6 +84,7 @@ export default function POSPage() {
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
   const [customerPin, setCustomerPin] = useState('');
   const [customerState, setCustomerState] = useState('');
@@ -165,6 +166,7 @@ export default function POSPage() {
   const clearSale = () => {
     setCart([]);
     setCustomerName('');
+    setCustomerPhone('');
     setCustomerAddress('');
     setCustomerPin('');
     setCustomerState('');
@@ -208,6 +210,7 @@ export default function POSPage() {
       })),
       customer: {
         name: customerName,
+        phone: customerPhone,
         address: customerAddress,
         pin: customerPin,
         state: customerState,
@@ -380,14 +383,25 @@ export default function POSPage() {
             <div className="w-full md:w-2/5 border-l flex flex-col">
                 <ScrollArea className="flex-1">
                     <div className="p-4 space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="customer-name">Customer Name</Label>
-                            <Input
-                                id="customer-name"
-                                placeholder="Enter customer name"
-                                value={customerName}
-                                onChange={(e) => setCustomerName(e.target.value)}
-                            />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="customer-name">Customer Name</Label>
+                                <Input
+                                    id="customer-name"
+                                    placeholder="Enter customer name"
+                                    value={customerName}
+                                    onChange={(e) => setCustomerName(e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="customer-phone">Customer Phone</Label>
+                                <Input
+                                    id="customer-phone"
+                                    placeholder="Enter phone number"
+                                    value={customerPhone}
+                                    onChange={(e) => setCustomerPhone(e.target.value)}
+                                />
+                            </div>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="customer-address">Address</Label>

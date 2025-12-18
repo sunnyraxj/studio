@@ -80,10 +80,10 @@ const navLinks = [
     badge: null,
   },
   {
-    href: '#',
+    href: '/dashboard/customers',
     icon: Users,
     label: 'Customers',
-    disabled: true,
+    disabled: false,
     badge: null,
   },
 ];
