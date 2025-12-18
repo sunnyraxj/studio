@@ -1,0 +1,166 @@
+/**
+ * Core Philosophy:
+ * This ruleset enforces a multi-tenant security model for a billing application.
+ * The primary goals are strict data isolation between different shops and role-based
+ * access control (RBAC) for administrative functions. The default posture is
+ * deny-all, granting permissions explicitly. Shop owners have full control over
+ * their own data, while a 'superadmin' role is granted read-access to most data
+ * and write-access to system-level entities like subscription plans.
+ *
+ * Data Structure:
+ * The data is organized into top-level collections for 'users', 'shops',
+ * 'subscriptions', 'payments', and 'subscriptionExpiryPredictions'. This flat
+ * structure simplifies rules and queries. There are no nested subcollections.
+ *
+ * Key Security Decisions:
+ * - User Isolation: Users can only create, read, update, and delete their own
+ *   user profile document. Listing all users is disabled.
+ * - Shop Ownership: Each 'shop' document has a denormalized 'ownerId'. All
+ *   operations on a shop and its related data (like payments) are gated by
+ *   checking this ownership.
+ * - Superadmin Role: A 'superadmin' role, defined in a user's profile, provides
+ *   read-only access across the system and write access for administrative tasks
+ *   (e.g., managing subscription plans).
+ * - No Public Listing: To prevent data leakage, broad 'list' operations on
+ *   collections containing sensitive user or shop data are disabled. Clients must
+ *   construct specific queries that are then enforced by document-level read rules.
+ *
+ * Denormalization for Authorization:
+ * To create performant and secure rules, authorization-critical data is
+ * denormalized.
+ * - `shops/{shopId}` contains an `ownerId` field. This allows rules to verify
+ *   shop ownership without any extra document reads, making write operations
+ *   fast and cheap.
+ * - `payments/{paymentId}` and `subscriptionExpiryPredictions/{predictionId}`
+ *   contain a `shopId` field. This creates a clear link back to the parent shop,
+ *   allowing rules to check for ownership on the shop document via a `get()` call.
+ *
+ * Structural Segregation:
+ * Each major data entity (Users, Shops, etc.) is stored in its own top-level
+ * collection. This separation ensures that security rules for one entity type
+ * do not unintentionally affect another and simplifies list query security.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // -------------------------------------------------------------------------
+    // Helper Functions
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns true if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Returns true if the authenticated user's UID matches the provided userId.
+     * Use for path-based ownership checks.
+     */
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    /**
+     * Returns true if the user is a 'superadmin'.
+     * This requires a document read, which has performance and cost implications.
+     */
+    function isSuperAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'superadmin';
+    }
+
+    /**
+     * Returns true if the user is the owner of the specified shop.
+     * This requires a document read to check the ownerId on the shop document.
+     */
+    function isShopOwner(shopId) {
+      let shop = get(/databases/$(database)/documents/shops/$(shopId));
+      return shop.data.ownerId == request.auth.uid;
+    }
+
+    // -------------------------------------------------------------------------
+    // Collection Rules
+    // -------------------------------------------------------------------------
+
+    /**
+     * @description A user can manage their own profile. Superadmins have read access.
+     * @path /users/{userId}
+     * @allow (create) An authenticated user creating their own profile document.
+     * @deny  (create) An anonymous user trying to create a profile.
+     * @deny  (get) A user trying to read another user's profile.
+     * @principle Restricts access to a user's own data tree (Path-Based Ownership).
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isSuperAdmin();
+      allow list: if false;
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isOwner(userId) && resource != null && request.resource.data.id == resource.data.id;
+      allow delete: if isOwner(userId) && resource != null;
+    }
+
+    /**
+     * @description A shop owner can manage their shop. Superadmins have read access.
+     * @path /shops/{shopId}
+     * @allow (create) An authenticated user creating a new shop for themselves.
+     * @deny  (update) A user trying to change the owner of an existing shop.
+     * @deny  (get) A user trying to read a shop they do not own.
+     * @principle Enforces document ownership for writes using a denormalized 'ownerId'.
+     */
+    match /shops/{shopId} {
+      allow get: if (resource != null && isOwner(resource.data.ownerId)) || isSuperAdmin();
+      allow list: if false;
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid && request.resource.data.id == shopId;
+      allow update: if resource != null && isOwner(resource.data.ownerId) && request.resource.data.ownerId == resource.data.ownerId && request.resource.data.id == resource.data.id;
+      allow delete: if resource != null && isOwner(resource.data.ownerId);
+    }
+
+    /**
+     * @description Subscription plans are public to signed-in users but only managed by superadmins.
+     * @path /subscriptions/{subscriptionId}
+     * @allow (get) Any authenticated user reading the details of a subscription plan.
+     * @deny  (create) A regular shop owner trying to create a new system-wide plan.
+     * @deny  (list) An unauthenticated user trying to see available plans.
+     * @principle Manages system-level configuration via Role-Based Access Control (RBAC).
+     */
+    match /subscriptions/{subscriptionId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSuperAdmin();
+      allow update: if isSuperAdmin() && resource != null;
+      allow delete: if isSuperAdmin() && resource != null;
+    }
+
+    /**
+     * @description Shop owners can manage their own payments. Superadmins can read and update them.
+     * @path /payments/{paymentId}
+     * @allow (create) A shop owner creating a payment record for their own shop.
+     * @deny  (get) A shop owner trying to view payments for another shop.
+     * @deny  (delete) A superadmin trying to delete a payment record.
+     * @principle Secures child documents by looking up ownership on the parent 'Shop' document.
+     */
+    match /payments/{paymentId} {
+      allow get: if (resource != null && isShopOwner(resource.data.shopId)) || isSuperAdmin();
+      allow list: if false;
+      allow create: if isShopOwner(request.resource.data.shopId) && request.resource.data.id == paymentId;
+      allow update: if resource != null && (isShopOwner(resource.data.shopId) || isSuperAdmin()) && request.resource.data.shopId == resource.data.shopId && request.resource.data.id == resource.data.id;
+      allow delete: if resource != null && isShopOwner(resource.data.shopId);
+    }
+
+    /**
+     * @description Subscription predictions are visible to the relevant shop owner and superadmins.
+     * @path /subscriptionExpiryPredictions/{predictionId}
+     * @allow (get) A shop owner viewing a prediction related to their shop.
+     * @deny  (create) A shop owner trying to create their own prediction.
+     * @deny  (list) Any user trying to list all predictions in the system.
+     * @principle Protects read-only, system-generated data, making it visible only to the data owner.
+     */
+    match /subscriptionExpiryPredictions/{predictionId} {
+      allow get: if (resource != null && isShopOwner(resource.data.shopId)) || isSuperAdmin();
+      allow list: if false;
+      allow create: if isSuperAdmin();
+      allow update: if isSuperAdmin() && resource != null;
+      allow delete: if isSuperAdmin() && resource != null;
+    }
+  }
+}
