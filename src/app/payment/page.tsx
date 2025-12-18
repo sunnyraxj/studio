@@ -168,7 +168,7 @@ export default function PaymentPage() {
               </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <Button className="w-full" onClick={handleSubmitUtr} disabled={isProcessing}>
+            <Button className="w-full" onClick={handleSubmitUtr} disabled={isProcessing || !utr}>
               {isProcessing ? 'Submitting...' : 'Submit for Verification'}
             </Button>
              <Button variant="outline" className="w-full" onClick={() => setPaymentStep('pay')}>
