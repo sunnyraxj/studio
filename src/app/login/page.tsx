@@ -41,6 +41,7 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const roleParam = searchParams.get('role');
+  const isAdminLogin = roleParam === 'admin';
 
   // Query to check if an admin user already exists.
   const adminQuery = useMemoFirebase(() => {
@@ -90,7 +91,7 @@ export default function LoginPage() {
   const handleSignUp = async () => {
     if (!auth) return;
     // Prevent new admin sign-ups if one already exists
-    if (roleParam === 'admin' && adminExists) {
+    if (isAdminLogin && adminExists) {
         toast({
             variant: 'destructive',
             title: 'Sign Up Failed',
@@ -120,7 +121,7 @@ export default function LoginPage() {
       if (firestore) {
         const userDocRef = doc(firestore, 'users', user.uid);
         
-        const role = roleParam === 'admin' && !adminExists ? 'admin' : 'user';
+        const role = isAdminLogin && !adminExists ? 'admin' : 'user';
         
         const userProfile = {
             id: user.uid,
@@ -139,10 +140,7 @@ export default function LoginPage() {
             setEmail('');
             setPassword('');
             setConfirmPassword('');
-            // Manually set default tab to login
-            const loginTrigger = document.querySelector('button[data-radix-collection-item][value="login"]') as HTMLButtonElement | null;
-            loginTrigger?.click();
-
+            // The page will now just be the login form, so no need to switch tabs
             return;
         }
       }
@@ -157,9 +155,64 @@ export default function LoginPage() {
     }
   };
 
-  const isSignupDisabled = roleParam === 'admin' && adminExists;
+  const isSignupDisabled = isAdminLogin && adminExists;
 
+  // If this is the admin login route, show only the login form.
+  if (isAdminLogin) {
+    return (
+        <div className="flex items-center justify-center min-h-screen bg-background">
+            <Card className="w-[400px]">
+                <CardHeader>
+                    <CardTitle>Admin Login</CardTitle>
+                    <CardDescription>
+                        Enter your administrator credentials to access the panel.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="login-email">Email</Label>
+                        <Input
+                            id="login-email"
+                            type="email"
+                            placeholder="m@example.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <div className="space-y-2 relative">
+                        <Label htmlFor="login-password">Password</Label>
+                        <Input
+                            id="login-password"
+                            type={showPassword ? 'text' : 'password'}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                            className="pr-10"
+                        />
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-1 top-7 h-7 w-7 text-muted-foreground"
+                            onClick={() => setShowPassword(!showPassword)}
+                        >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
+                        </Button>
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <Button className="w-full" onClick={handleLogin}>
+                        Login
+                    </Button>
+                </CardFooter>
+            </Card>
+        </div>
+    );
+  }
 
+  // Default view for regular users with Login/Sign Up tabs.
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
       <Tabs defaultValue="login" className="w-[400px]">
@@ -172,7 +225,7 @@ export default function LoginPage() {
             <CardHeader>
               <CardTitle>Login</CardTitle>
               <CardDescription>
-                {roleParam === 'admin' ? 'Enter your administrator credentials.' : 'Enter your credentials to access your account.'}
+                Enter your credentials to access your account.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -221,7 +274,7 @@ export default function LoginPage() {
                 <CardHeader>
                 <CardTitle>Sign Up</CardTitle>
                 <CardDescription>
-                   {roleParam === 'admin' ? 'Create the master administrator account.' : 'Create a new account to get started.'}
+                   Create a new account to get started.
                 </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
