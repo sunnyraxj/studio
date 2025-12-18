@@ -17,27 +17,12 @@
         "ownerId": {
           "type": "string",
           "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Shop). The ID of the user who owns this shop."
-        },
-        "subscriptionId": {
-          "type": "string",
-          "description": "Reference to Subscription. (Relationship: Subscription 1:1 Shop). The ID of the subscription associated with this shop."
-        },
-        "industry": {
-          "type": "string",
-          "description": "The industry that the shop belongs to."
-        },
-        "numberOfProducts": {
-          "type": "number",
-          "description": "The current number of products in the shop's catalog."
         }
       },
       "required": [
         "id",
         "name",
-        "ownerId",
-        "subscriptionId",
-        "industry",
-        "numberOfProducts"
+        "ownerId"
       ]
     },
     "UserProfile": {
@@ -70,6 +55,10 @@
             "active",
             "inactive"
           ]
+        },
+        "shopId": {
+            "type": "string",
+            "description": "The ID of the shop this user belongs to."
         }
       },
       "required": [
@@ -78,136 +67,65 @@
         "subscriptionStatus"
       ]
     },
-    "Subscription": {
+    "Product": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Subscription",
+      "title": "Product",
       "type": "object",
-      "description": "Represents a subscription plan and its status for a shop.",
+      "description": "Represents a product in a shop's inventory.",
       "properties": {
         "id": {
-          "type": "string",
-          "description": "Unique identifier for the Subscription entity."
+          "type": "string"
         },
-        "planName": {
-          "type": "string",
-          "description": "Name of the subscription plan (e.g., Pro, Pro Plus)."
+        "name": {
+          "type": "string"
         },
         "price": {
-          "type": "number",
-          "description": "Price of the subscription plan."
+          "type": "number"
         },
-        "startDate": {
-          "type": "string",
-          "description": "Start date of the subscription.",
-          "format": "date-time"
+        "stock": {
+          "type": "number"
         },
-        "endDate": {
-          "type": "string",
-          "description": "End date of the subscription.",
-          "format": "date-time"
+        "category": {
+          "type": "string"
+        },
+        "sku": {
+          "type": "string"
         },
         "status": {
-          "type": "string",
-          "description": "Status of the subscription (e.g., active, inactive)."
+          "type": "string"
         }
       },
-      "required": [
-        "id",
-        "planName",
-        "price",
-        "startDate",
-        "endDate",
-        "status"
-      ]
+      "required": ["id", "name", "price", "stock", "status"]
     },
-    "Payment": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Payment",
-      "type": "object",
-      "description": "Represents a payment made by a shop for their subscription.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Payment entity."
+    "Sale": {
+        "type": "object",
+        "title": "Sale",
+        "description": "Represents a single sale transaction.",
+        "properties": {
+            "id": {"type": "string"},
+            "date": {"type": "string", "format": "date-time"},
+            "total": {"type": "number"},
+            "items": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "productId": {"type": "string"},
+                        "name": {"type": "string"},
+                        "quantity": {"type": "number"},
+                        "price": {"type": "number"}
+                    },
+                    "required": ["productId", "name", "quantity", "price"]
+                }
+            }
         },
-        "shopId": {
-          "type": "string",
-          "description": "Reference to Shop. (Relationship: Shop 1:N Payment). The ID of the shop that made the payment."
-        },
-        "paymentDate": {
-          "type": "string",
-          "description": "Date of the payment.",
-          "format": "date-time"
-        },
-        "amount": {
-          "type": "number",
-          "description": "Amount paid."
-        },
-        "paymentMethod": {
-          "type": "string",
-          "description": "Method of payment (e.g., credit card, bank transfer)."
-        },
-        "utrNumber": {
-          "type": "string",
-          "description": "UTR (Unique Transaction Reference) number for the payment."
-        },
-        "status": {
-          "type": "string",
-          "description": "Status of the payment (e.g., pending, approved, rejected)."
-        }
-      },
-      "required": [
-        "id",
-        "shopId",
-        "paymentDate",
-        "amount",
-        "paymentMethod",
-        "utrNumber",
-        "status"
-      ]
-    },
-    "SubscriptionExpiryPrediction": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "SubscriptionExpiryPrediction",
-      "type": "object",
-      "description": "Represents the AI-powered prediction for subscription expiry.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Prediction entity."
-        },
-        "shopId": {
-          "type": "string",
-          "description": "Reference to Shop. The ID of the shop to whom this prediction belongs."
-        },
-        "predictedExpiryLeadTime": {
-          "type": "number",
-          "description": "Estimated lead time (in days) before the subscription is likely to expire."
-        },
-        "confidenceInterval": {
-          "type": "number",
-          "description": "Confidence level (as a percentage) of the prediction."
-        },
-        "predictionDate": {
-          "type": "string",
-          "description": "Date and time when the prediction was generated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "shopId",
-        "predictedExpiryLeadTime",
-        "confidenceInterval",
-        "predictionDate"
-      ]
+        "required": ["id", "date", "total", "items"]
     }
   },
   "auth": {
     "providers": [
       "password",
-      "anonymous",
-      "email"
+      "anonymous"
     ]
   },
   "firestore": {
@@ -215,84 +133,42 @@
       {
         "path": "/users/{userId}",
         "definition": {
-          "entityName": "UserProfile",
           "schema": {
             "$ref": "#/backend/entities/UserProfile"
           },
-          "description": "Stores user profile information. Path-based ownership ensures only the user can access their profile.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            }
-          ]
+          "description": "Stores user profile information. Path-based ownership ensures only the user can access their profile."
         }
       },
       {
         "path": "/shops/{shopId}",
         "definition": {
-          "entityName": "Shop",
           "schema": {
             "$ref": "#/backend/entities/Shop"
           },
-          "description": "Stores shop information. Includes denormalized 'ownerId' for authorization independence.",
-          "params": [
-            {
-              "name": "shopId",
-              "description": "The unique identifier of the shop."
-            }
-          ]
+          "description": "Stores shop information. Includes denormalized 'ownerId' for authorization independence."
         }
       },
       {
-        "path": "/subscriptions/{subscriptionId}",
-        "definition": {
-          "entityName": "Subscription",
-          "schema": {
-            "$ref": "#/backend/entities/Subscription"
-          },
-          "description": "Stores subscription plan information.",
-          "params": [
-            {
-              "name": "subscriptionId",
-              "description": "The unique identifier of the subscription."
-            }
-          ]
-        }
+          "path": "/shops/{shopId}/products/{productId}",
+          "definition": {
+              "schema": { "$ref": "#/backend/entities/Product"},
+              "description": "Products for a specific shop."
+          }
       },
       {
-        "path": "/payments/{paymentId}",
-        "definition": {
-          "entityName": "Payment",
-          "schema": {
-            "$ref": "#/backend/entities/Payment"
-          },
-          "description": "Stores payment information. Includes denormalized 'shopId' for authorization independence.",
-          "params": [
-            {
-              "name": "paymentId",
-              "description": "The unique identifier of the payment."
-            }
-          ]
-        }
+          "path": "/shops/{shopId}/sales/{saleId}",
+          "definition": {
+              "schema": {"$ref": "#/backend/entities/Sale"},
+              "description": "Sales records for a specific shop."
+          }
       },
-      {
-        "path": "/subscriptionExpiryPredictions/{predictionId}",
-        "definition": {
-          "entityName": "SubscriptionExpiryPrediction",
-          "schema": {
-            "$ref": "#/backend/entities/SubscriptionExpiryPrediction"
-          },
-          "description": "Stores subscription expiry predictions. Includes denormalized 'shopId' for authorization independence.",
-          "params": [
-            {
-              "name": "predictionId",
-              "description": "The unique identifier of the prediction."
-            }
-          ]
-        }
+       {
+          "path": "/shops/{shopId}/settings/{docId}",
+          "definition": {
+              "schema": { "type": "object" },
+              "description": "Settings for a specific shop."
+          }
       }
-    ],
-    "reasoning": "This Firestore data structure is designed to support a multi-tenant application, 'Apna Billing Hub', focusing on security, scalability, and ease of maintenance. The structure emphasizes Authorization Independence to enable secure and atomic operations, Role-Based Access Control (RBAC), and efficient data isolation between shops.\n\n**Authorization Independence:**\n\n*   `shops` collection: The `ownerId` is present within each shop document.  This allows security rules to be written that validate shop ownership without needing to perform a `get()` operation to retrieve the owner's ID from a parent document.\n*   `payments` collection: Each payment includes the `shopId`, enabling payment verification without external lookups.\n*   `subscriptionExpiryPredictions` collection: The `shopId` is denormalized into each document, enabling authorization rules that can limit access to predictions based on shop ownership.\n\n**Structural Segregation (Homogeneous Security Posture):**\n\n*   `users` collection: User profiles are stored in a top-level collection, segregated from shop-specific data.\n*   `shops` collection: Shop data is stored in its own collection.\n\n**Access Modeling:**\n\n*   **Path-Based Ownership:** The `/users/{userId}` collection uses path-based ownership for user profiles. This allows simple security rules to ensure that only the authenticated user can access their own profile data.\n*   **Data Isolation:** Each shop's data (products, sales, expenses, payments) are implicitly isolated via the `shopId` field in each document. Security rules enforce that users can only access data associated with their shop.\n\n**QAPs (Rules Are Not Filters):**\n\n*   List operations are secured using the structural segregation and authorization independence principles. For example, listing shops can be secured by requiring the authenticated user to be the owner of those shops, with the `ownerId` present on the shop documents avoiding the need to filter.\n\n**Additional Notes:**\n\n*   The structure facilitates the implementation of role-based access control (RBAC). The `UserProfile` includes a `role` field (e.g., 'shop_owner', 'superadmin'). Firestore security rules can be written to restrict access to certain data or functionality based on the user's role. For example, only users with the 'superadmin' role might be allowed to approve payments.\n\nThis data structure allows for clear, concise, and easily maintainable Firestore security rules, fulfilling the core design principles."
+    ]
   }
 }

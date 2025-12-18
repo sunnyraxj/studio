@@ -7,7 +7,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -31,14 +30,26 @@ type ShopSettings = {
     upiId?: string;
 }
 
+type UserProfile = {
+  shopId?: string;
+}
+
+
 export default function SettingsPage() {
   const firestore = useFirestore();
   const { user } = useUser();
 
-  const settingsDocRef = useMemoFirebase(() => {
+  const userDocRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
-    return doc(firestore, `users/${user.uid}/settings`, 'shop');
-  }, [firestore, user]);
+    return doc(firestore, `users/${user.uid}`);
+  }, [user, firestore]);
+  const { data: userData } = useDoc<UserProfile>(userDocRef);
+  const shopId = userData?.shopId;
+
+  const settingsDocRef = useMemoFirebase(() => {
+    if (!shopId || !firestore) return null;
+    return doc(firestore, `shops/${shopId}/settings`, 'details');
+  }, [firestore, shopId]);
 
   const { data: settingsData, isLoading } = useDoc<ShopSettings>(settingsDocRef);
 
@@ -72,7 +83,7 @@ export default function SettingsPage() {
 
   const handleSave = async () => {
     if (!settingsDocRef) {
-        toast({ variant: 'destructive', title: 'Error', description: 'User not logged in.' });
+        toast({ variant: 'destructive', title: 'Error', description: 'Cannot save settings. Shop not found.' });
         return;
     }
     const newSettings: ShopSettings = {

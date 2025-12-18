@@ -26,8 +26,8 @@ import {
 } from '@/components/ui/radio-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 
 
 type Product = {
@@ -42,14 +42,25 @@ type CartItem = {
   discount: number;
 };
 
+type UserProfile = {
+  shopId?: string;
+}
+
 export default function POSPage() {
   const firestore = useFirestore();
   const { user } = useUser();
 
-  const productsCollectionRef = useMemoFirebase(() => {
+  const userDocRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
-    return collection(firestore, `users/${user.uid}/products`);
-  }, [firestore, user]);
+    return doc(firestore, `users/${user.uid}`);
+  }, [user, firestore]);
+  const { data: userData } = useDoc<UserProfile>(userDocRef);
+  const shopId = userData?.shopId;
+
+  const productsCollectionRef = useMemoFirebase(() => {
+    if (!shopId || !firestore) return null;
+    return collection(firestore, `shops/${shopId}/products`);
+  }, [firestore, shopId]);
 
   const { data: productsData } = useCollection<Product>(productsCollectionRef);
   const products = productsData || [];

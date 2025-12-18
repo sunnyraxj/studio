@@ -8,16 +8,14 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, writeBatch } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
-import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const plans = [
   {
@@ -73,27 +71,43 @@ export default function SubscribePage() {
       return;
     }
 
-    const userDocRef = doc(firestore, 'users', user.uid);
     const planDetails = plans.find(p => p.name === selectedPlan);
+    
+    // Create a batch write to perform multiple operations atomically
+    const batch = writeBatch(firestore);
+
+    // 1. Create a new shop document
+    const shopDocRef = doc(collection(firestore, 'shops'));
+    batch.set(shopDocRef, {
+      id: shopDocRef.id,
+      ownerId: user.uid,
+      name: `${user.email}'s Shop`, // Default shop name
+    });
+
+    // 2. Update the user's profile with subscription and shop info
+    const userDocRef = doc(firestore, 'users', user.uid);
+    batch.update(userDocRef, {
+        subscriptionStatus: 'active',
+        planName: planDetails?.name,
+        planPrice: planDetails?.price,
+        subscriptionStartDate: new Date().toISOString(),
+        shopId: shopDocRef.id, // Link user to the new shop
+    });
 
     try {
-        await setDoc(userDocRef, {
-            subscriptionStatus: 'active',
-            planName: planDetails?.name,
-            planPrice: planDetails?.price,
-            subscriptionStartDate: new Date().toISOString(),
-        }, { merge: true });
+      await batch.commit();
 
       toast({
         title: 'Subscription Successful!',
-        description: `You are now subscribed to the ${selectedPlan} plan.`,
+        description: `You are now subscribed to the ${selectedPlan} plan. Your shop has been created.`,
       });
       router.push('/production/dashboard');
     } catch (error: any) {
+      console.error("Subscription and shop creation failed:", error);
       toast({
         variant: 'destructive',
         title: 'Subscription Failed',
-        description: error.message,
+        description: `Could not create your shop. ${error.message}`,
       });
     }
   };

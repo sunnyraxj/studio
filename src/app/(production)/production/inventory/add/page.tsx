@@ -23,15 +23,25 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
-import { useFirestore, useUser } from '@/firebase';
-import { addDoc, collection } from 'firebase/firestore';
+import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
+import { addDoc, collection, doc } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 
+type UserProfile = {
+  shopId?: string;
+}
 
 export default function AddProductPage() {
   const router = useRouter();
   const firestore = useFirestore();
   const { user } = useUser();
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return doc(firestore, `users/${user.uid}`);
+  }, [user, firestore]);
+  const { data: userData } = useDoc<UserProfile>(userDocRef);
+  const shopId = userData?.shopId;
 
   const [productName, setProductName] = useState('');
   const [mrp, setMrp] = useState('');
@@ -44,11 +54,11 @@ export default function AddProductPage() {
   const [unit, setUnit] = useState('pcs');
 
   const handleSaveProduct = async () => {
-    if (!user || !firestore) {
+    if (!user || !firestore || !shopId) {
         toast({
             variant: "destructive",
-            title: "Authentication Error",
-            description: "You must be logged in to add a product."
+            title: "Error",
+            description: "You must be logged in and have a shop to add a product."
         });
         return;
     }
@@ -63,13 +73,12 @@ export default function AddProductPage() {
       size: size,
       stock: parseInt(qty) || 0,
       unit: unit,
-      ownerId: user.uid,
       dateAdded: new Date().toISOString(),
       status: (parseInt(qty) || 0) > 10 ? 'in stock' : (parseInt(qty) || 0) > 0 ? 'low stock' : 'out of stock'
     };
 
     try {
-        const productsCollectionRef = collection(firestore, `users/${user.uid}/products`);
+        const productsCollectionRef = collection(firestore, `shops/${shopId}/products`);
         await addDoc(productsCollectionRef, productData);
         
         toast({

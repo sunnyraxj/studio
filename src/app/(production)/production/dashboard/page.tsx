@@ -9,8 +9,8 @@ import {
 } from '@/components/ui/card';
 import { DatePicker } from '@/components/ui/date-range-picker';
 import { IndianRupee } from 'lucide-react';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 
 // A placeholder type for your sales data
 type Sale = {
@@ -19,17 +19,27 @@ type Sale = {
   date: string; // ISO string
 };
 
+type UserProfile = {
+  shopId?: string;
+}
+
 export default function DashboardPage() {
   const { user } = useUser();
   const firestore = useFirestore();
 
+  const userDocRef = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return doc(firestore, `users/${user.uid}`);
+  }, [user, firestore]);
+
+  const { data: userData } = useDoc<UserProfile>(userDocRef);
+  const shopId = userData?.shopId;
+
   // A memoized reference to the sales collection
   const salesCollectionRef = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    // NOTE: This assumes your sales are stored in a 'sales' subcollection under the user.
-    // You'll need to adjust this path to match your actual Firestore structure.
-    return collection(firestore, `users/${user.uid}/sales`);
-  }, [user, firestore]);
+    if (!shopId || !firestore) return null;
+    return collection(firestore, `shops/${shopId}/sales`);
+  }, [shopId, firestore]);
 
   const { data: salesData, isLoading } = useCollection<Sale>(salesCollectionRef);
 

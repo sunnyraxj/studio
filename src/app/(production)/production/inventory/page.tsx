@@ -21,7 +21,7 @@ import {
 import * as React from 'react';
 import Link from 'next/link';
 import { format } from 'date-fns';
-import { collection } from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -47,7 +47,7 @@ import { PlusCircle, FileUp, FileDown } from 'lucide-react';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 
 export type InventoryItem = {
   id: string;
@@ -63,6 +63,10 @@ export type InventoryItem = {
   hsn: string;
   unit: string;
 };
+
+type UserProfile = {
+  shopId?: string;
+}
 
 export const columns: ColumnDef<InventoryItem>[] = [
   {
@@ -219,11 +223,18 @@ export const columns: ColumnDef<InventoryItem>[] = [
 export default function InventoryPage() {
   const firestore = useFirestore();
   const { user } = useUser();
+  
+  const userDocRef = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return doc(firestore, `users/${user.uid}`);
+  }, [user, firestore]);
+  const { data: userData } = useDoc<UserProfile>(userDocRef);
+  const shopId = userData?.shopId;
 
   const productsCollectionRef = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return collection(firestore, `users/${user.uid}/products`);
-  }, [firestore, user]);
+    if (!shopId || !firestore) return null;
+    return collection(firestore, `shops/${shopId}/products`);
+  }, [firestore, shopId]);
 
   const { data: productsData, isLoading } = useCollection<InventoryItem>(productsCollectionRef);
 

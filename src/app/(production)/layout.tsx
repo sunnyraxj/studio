@@ -56,9 +56,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { useAuth, useUser } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+
 
 const navLinks = [
   {
@@ -277,27 +277,32 @@ export default function ProductionLayout({
   const firestore = useFirestore();
 
   useEffect(() => {
-    if (!isUserLoading) {
-      if (!user) {
-        router.push('/login');
-      } else {
-        const checkSubscription = async () => {
-          if (!firestore) return;
-          const userDocRef = doc(firestore, 'users', user.uid);
-          const userDoc = await getDoc(userDocRef);
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            if (userData.subscriptionStatus !== 'active') {
-              router.push('/subscribe');
-            }
-          } else {
-            // If user profile doesn't exist, they likely haven't completed signup
-            router.push('/subscribe');
-          }
-        };
-        checkSubscription();
-      }
+    if (isUserLoading || !firestore) return;
+    if (!user) {
+      router.push('/login');
+      return;
     }
+
+    const checkSubscriptionAndShop = async () => {
+      const userDocRef = doc(firestore, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        if (userData.subscriptionStatus !== 'active') {
+          router.push('/subscribe');
+        } else if (!userData.shopId) {
+          // If the user is subscribed but has no shop, maybe they need to create one.
+          // For now, we'll redirect them to the subscription page to imply a setup step is missing.
+           router.push('/subscribe');
+        }
+      } else {
+        // If user profile doesn't exist, they need to sign up properly
+        router.push('/login');
+      }
+    };
+
+    checkSubscriptionAndShop();
   }, [user, isUserLoading, router, firestore]);
 
   if (isUserLoading || !user) {
