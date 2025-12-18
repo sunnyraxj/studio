@@ -83,7 +83,7 @@ export default function LoginPage() {
 
       // After sign-up, always redirect to the subscription page
       router.push('/subscribe');
-    } catch (error: any) => {
+    } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Sign Up Failed',
