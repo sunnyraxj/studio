@@ -171,6 +171,19 @@ function AllSalesTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoa
     return sales;
   }, [salesData, dateRange]);
 
+  const table = useReactTable({
+    data: filteredSalesData,
+    columns: salesColumns,
+    state: { sorting, expanded },
+    onSortingChange: setSorting,
+    onExpandedChange: setExpanded,
+    getRowCanExpand: () => true,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getExpandedRowModel: getExpandedRowModel(),
+  });
+
   return (
     <Card>
       <CardHeader>
@@ -669,3 +682,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
