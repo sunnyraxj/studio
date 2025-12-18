@@ -23,15 +23,14 @@ const adminNavLinks = [
     label: 'Payment Verify',
   },
   {
+    href: '/admin/shops',
+    icon: Store,
+    label: 'Shops',
+  },
+  {
     href: '/admin/settings',
     icon: Settings,
     label: 'Settings',
-  },
-  {
-    href: '#',
-    icon: Store,
-    label: 'Shops',
-    disabled: true,
   },
   {
     href: '#',
