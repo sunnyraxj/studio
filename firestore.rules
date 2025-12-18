@@ -20,38 +20,41 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      // Check if the user document exists and has the role of 'admin'.
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     match /users/{userId} {
-      // Allow public read for verification, and admins to list all users
-      allow get, list: if true;
-      // Allow user to update their own profile or an admin to update any profile
+      // Allow users to read their own profile, and admins to read any profile. List is disabled for non-admins.
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      // Allow user to create their own profile.
+      allow create: if isOwner(userId);
+      // Allow user to update their own profile or an admin to update any profile.
       allow update: if isOwner(userId) || isAdmin();
-      // Allow user to create their own profile
-      allow create: if request.auth.uid == userId;
     }
 
     match /shops/{shopId} {
-      // Allow shop owner to get their shop
-      allow get: if isShopOwner(shopId);
-      // Allow public to create shops for approval, and admins to create shops.
-      allow create: if true;
-      // You can't change the owner of a shop.
-      // A shop owner can update their shop details.
-      allow update: if isShopOwner(shopId) && request.resource.data.ownerId == resource.data.ownerId;
+      // Allow shop owner or admin to get the shop document.
+      allow get: if isShopOwner(shopId) || isAdmin();
+      // Allow any signed-in user to create a shop (for the approval flow).
+      allow create: if isSignedIn();
+      // Allow shop owner to update their shop details, but not change the ownerId. Admins can update anything.
+      allow update: if (isShopOwner(shopId) && request.resource.data.ownerId == resource.data.ownerId) || isAdmin();
     }
     
-    // Special rule for global admin settings to be readable by any logged-in user
+    // Special rule for global admin settings to be readable by any logged-in user.
     match /shops/global/settings/details {
       allow get: if isSignedIn();
       allow write: if isAdmin();
     }
 
-    // Any document in a subcollection of a shop can only be accessed by the shop owner or a super admin.
+    // Secure all subcollections within a shop (products, sales, settings, etc.)
     match /shops/{shopId}/{subcollection}/{docId} {
-        // Exclude the global settings from this rule
+        // Exclude the global settings from this rule.
         if shopId != 'global' {
+            // Only the shop owner or an admin can read, write, or delete documents in a shop's subcollections.
             allow read, write, delete: if isShopOwner(shopId) || isAdmin();
         }
     }
