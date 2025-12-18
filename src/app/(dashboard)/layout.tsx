@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -18,6 +17,7 @@ import {
   LogOut,
   Settings,
   LifeBuoy,
+  IndianRupee,
 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -64,27 +64,31 @@ const navLinks = [
     href: '/dashboard',
     icon: Home,
     label: 'Dashboard',
-    badge: null,
   },
   {
     href: '/dashboard/pos',
     icon: Printer,
     label: 'POS',
-    badge: null,
+  },
+   {
+    href: '/dashboard/sales',
+    icon: IndianRupee,
+    label: 'All Sales',
   },
   {
     href: '/dashboard/inventory',
     icon: Package,
     label: 'Inventory',
-    disabled: false,
-    badge: null,
   },
   {
     href: '/dashboard/customers',
     icon: Users,
     label: 'Customers',
-    disabled: false,
-    badge: null,
+  },
+   {
+    href: '/dashboard/reports',
+    icon: LineChart,
+    label: 'Reports',
   },
 ];
 
@@ -143,20 +147,14 @@ function AppSidebar({ shopName }: { shopName: string }) {
         <SidebarMenu>
           {navLinks.map((link) => (
             <SidebarMenuItem key={link.label}>
-              <Link href={link.disabled ? '#' : link.href}>
+              <Link href={link.href}>
                 <SidebarMenuButton
                   isActive={pathname === link.href}
-                  disabled={link.disabled}
                   className={cn(open ? '' : 'justify-center')}
                   tooltip={open ? undefined : link.label}
                 >
                   <link.icon className="h-4 w-4" />
                   {open && <span>{link.label}</span>}
-                  {link.badge && open && (
-                    <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
-                      {link.badge}
-                    </Badge>
-                  )}
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
@@ -245,20 +243,14 @@ function MobileSidebar({ shopName }: { shopName: string }) {
           {navLinks.map((link) => (
             <Link
               key={link.label}
-              href={link.disabled ? '#' : link.href}
+              href={link.href}
               className={cn(
                 'mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground',
-                pathname === link.href && 'bg-muted text-foreground',
-                link.disabled && 'pointer-events-none opacity-50'
+                pathname === link.href && 'bg-muted text-foreground'
               )}
             >
               <link.icon className="h-5 w-5" />
               {link.label}
-              {link.badge && (
-                <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
-                  {link.badge}
-                </Badge>
-              )}
             </Link>
           ))}
         </nav>
