@@ -3,26 +3,26 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { FirebaseClientProvider } from '@/firebase';
 import {
-  Sidebar,
-  SidebarHeader,
-  SidebarContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarProvider,
-} from '@/components/ui/sidebar';
-import { Package2, ShieldCheck, Store, LifeBuoy } from 'lucide-react';
+  Package2,
+  ShieldCheck,
+  Store,
+  LifeBuoy,
+  Settings,
+} from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-
 
 const adminNavLinks = [
   {
     href: '/admin',
     icon: ShieldCheck,
     label: 'Payment Verify',
+  },
+  {
+    href: '/admin/settings',
+    icon: Settings,
+    label: 'Settings',
   },
   {
     href: '#',
@@ -81,15 +81,13 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <FirebaseClientProvider>
-      <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-        <AdminSidebar />
-        <div className="flex flex-col">
-          <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-            {children}
-          </main>
-        </div>
+    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+      <AdminSidebar />
+      <div className="flex flex-col">
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+          {children}
+        </main>
       </div>
-    </FirebaseClientProvider>
+    </div>
   );
 }

@@ -25,6 +25,10 @@ type UserProfile = {
   planPrice?: number;
 };
 
+type AdminSettings = {
+    paymentUpiId?: string;
+}
+
 export default function PaymentPage() {
   const router = useRouter();
   const { user, isUserLoading } = useUser();
@@ -35,17 +39,36 @@ export default function PaymentPage() {
     return doc(firestore, 'users', user.uid);
   }, [user, firestore]);
 
+  const adminSettingsDocRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'shops/global/settings', 'details');
+  }, [firestore]);
+
   const { data: userData, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
+  const { data: adminSettingsData, isLoading: isAdminSettingsLoading } = useDoc<AdminSettings>(adminSettingsDocRef);
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [utr, setUtr] = useState('');
   const [paymentStep, setPaymentStep] = useState<'pay' | 'utr'>('pay');
+  const [qrCodeUrl, setQrCodeUrl] = useState("https://picsum.photos/seed/qr/250/250");
 
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push('/login');
     }
   }, [user, isUserLoading, router]);
+
+  useEffect(() => {
+    if (adminSettingsData?.paymentUpiId && userData?.planPrice) {
+        // This is a placeholder for a real QR code generation service.
+        // In a real app, you would call an API to generate a QR code for the UPI deeplink.
+        const upiDeepLink = `upi://pay?pa=${adminSettingsData.paymentUpiId}&pn=Acme%20Inc&am=${userData.planPrice}&cu=INR&tn=Subscription`;
+        console.log("Generated UPI Deep Link:", upiDeepLink);
+        // For demonstration, we'll continue to use a placeholder image.
+        // You would replace this with the URL of the generated QR code.
+        setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiDeepLink)}`);
+    }
+  }, [adminSettingsData, userData]);
 
   const handleProceedToUtr = () => {
     setPaymentStep('utr');
@@ -82,7 +105,7 @@ export default function PaymentPage() {
     }
   };
 
-  if (isUserLoading || isProfileLoading) {
+  if (isUserLoading || isProfileLoading || isAdminSettingsLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading Payment Details...</div>;
   }
 
@@ -108,15 +131,16 @@ export default function PaymentPage() {
             </div>
             <div className="flex justify-center items-center p-4 border rounded-md">
                 <Image 
-                    src="https://picsum.photos/seed/qr/250/250"
+                    src={qrCodeUrl}
                     width={250}
                     height={250}
-                    alt="Sample UPI QR Code"
+                    alt="UPI QR Code"
                     data-ai-hint="qr code"
+                    unoptimized // Necessary for external QR code services
                 />
             </div>
              <p className="text-sm text-muted-foreground text-center">
-                This is a sample QR code for demonstration purposes.
+                Pay to: {adminSettingsData?.paymentUpiId || 'admin@upi'}
              </p>
           </CardContent>
           <CardFooter>
