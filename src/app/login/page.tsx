@@ -24,12 +24,14 @@ import { toast } from '@/hooks/use-toast.tsx';
 import { doc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { setDoc } from 'firebase/firestore';
+import { Eye, EyeOff } from 'lucide-react';
 
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
@@ -136,15 +138,26 @@ export default function LoginPage() {
                   required
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 relative">
                 <Label htmlFor="login-password">Password</Label>
                 <Input
                   id="login-password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  className="pr-10"
                 />
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="icon" 
+                  className="absolute right-1 top-7 h-7 w-7 text-muted-foreground"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
+                </Button>
               </div>
             </CardContent>
             <CardFooter>
@@ -174,25 +187,47 @@ export default function LoginPage() {
                   required
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 relative">
                 <Label htmlFor="signup-password">Password</Label>
                 <Input
                   id="signup-password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  className="pr-10"
                 />
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="icon" 
+                  className="absolute right-1 top-7 h-7 w-7 text-muted-foreground"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
+                </Button>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 relative">
                 <Label htmlFor="confirm-password">Confirm Password</Label>
                 <Input
                   id="confirm-password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
+                  className="pr-10"
                 />
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="icon" 
+                  className="absolute right-1 top-7 h-7 w-7 text-muted-foreground"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
+                </Button>
               </div>
             </CardContent>
             <CardFooter>
