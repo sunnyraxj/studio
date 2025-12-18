@@ -7,7 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { DatePicker } from '@/components/ui/date-range-picker';
 import { IndianRupee } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
@@ -26,7 +25,7 @@ type UserProfile = {
 const DemoData = {
     todaySales: 12345.67,
     thisMonthSales: 150000,
-    rangeSales: 25000,
+    thisYearSales: 1850000,
 };
 
 export default function DashboardPage() {
@@ -63,7 +62,11 @@ export default function DashboardPage() {
         ?.filter(sale => new Date(sale.date).getMonth() === new Date().getMonth() && new Date(sale.date).getFullYear() === new Date().getFullYear())
         .reduce((sum, sale) => sum + sale.total, 0) || 0;
   
-  const rangeSales = isDemoMode ? DemoData.rangeSales : 0; // Date range logic to be implemented
+  const thisYearSales = isDemoMode
+    ? DemoData.thisYearSales
+    : salesData
+        ?.filter(sale => new Date(sale.date).getFullYear() === new Date().getFullYear())
+        .reduce((sum, sale) => sum + sale.total, 0) || 0;
 
   return (
     <div className="flex-1 space-y-4">
@@ -71,9 +74,6 @@ export default function DashboardPage() {
         <h2 className="text-3xl font-bold tracking-tight">
             {isDemoMode ? 'Dashboard (Demo Mode)' : 'Dashboard'}
         </h2>
-        <div className="flex items-center space-x-2">
-          <DatePicker />
-        </div>
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
@@ -105,14 +105,14 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Date Range Sales
+              This Year's Sales
             </CardTitle>
             <IndianRupee className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-             <div className="text-2xl font-bold">₹{rangeSales.toLocaleString('en-IN')}</div>
+             {isLoading && !isDemoMode ? <div className="text-2xl font-bold">Loading...</div> : <div className="text-2xl font-bold">₹{thisYearSales.toLocaleString('en-IN')}</div>}
             <p className="text-xs text-muted-foreground">
-             {isDemoMode ? "Sample data for demo" : "Select a date range to see sales"}
+             {isDemoMode ? "Sample data for demo" : "Live data from your store"}
             </p>
           </CardContent>
         </Card>
