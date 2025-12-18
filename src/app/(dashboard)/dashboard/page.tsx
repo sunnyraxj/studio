@@ -44,6 +44,9 @@ import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMe
 import { FaWhatsapp } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon } from 'lucide-react';
+import { InputDayPicker } from '@/components/ui/input-day-picker';
 
 
 // Common Types
@@ -270,7 +273,7 @@ const reportsColumns: ColumnDef<ReportItem>[] = [
 
 
 function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoading: boolean }) {
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [date, setDate] = useState<Date | undefined>();
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     hsn: false,
   });
@@ -278,14 +281,12 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
   const reportData = useMemo(() => {
     if (!salesData) return [];
     let items: ReportItem[] = salesData.flatMap(sale => sale.items.map(item => ({ ...item, saleDate: sale.date })));
-    if (dateRange?.from) items = items.filter(item => new Date(item.saleDate) >= dateRange.from!);
-    if (dateRange?.to) {
-        const toDate = new Date(dateRange.to);
-        toDate.setHours(23, 59, 59, 999);
-        items = items.filter(item => new Date(item.saleDate) <= toDate);
+    if (date) {
+        const selectedDay = new Date(date).toDateString();
+        items = items.filter(item => new Date(item.saleDate).toDateString() === selectedDay);
     }
     return items;
-  }, [salesData, dateRange]);
+  }, [salesData, date]);
 
   const totalSales = useMemo(() => {
     return reportData.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -377,7 +378,17 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
                   })}
               </DropdownMenuContent>
             </DropdownMenu>
-            <DateRangePicker onDateChange={setDateRange} />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="justify-start text-left font-normal">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {date ? format(date, 'PPP') : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <InputDayPicker onDateChange={setDate} />
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </CardHeader>
