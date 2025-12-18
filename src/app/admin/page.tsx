@@ -25,10 +25,12 @@ import { Badge } from '@/components/ui/badge';
 
 type UserProfile = {
   id: string;
+  name?: string;
   email?: string;
   subscriptionStatus?: 'active' | 'inactive' | 'pending_verification';
   role?: 'user' | 'admin';
   utr?: string;
+  planPrice?: number;
 };
 
 export default function AdminPage() {
@@ -85,7 +87,9 @@ export default function AdminPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
+                <TableHead>Amount</TableHead>
                 <TableHead>UTR</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Action</TableHead>
@@ -94,12 +98,14 @@ export default function AdminPage() {
             <TableBody>
               {isUsersLoading ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center">Loading users...</TableCell>
+                  <TableCell colSpan={6} className="text-center">Loading users...</TableCell>
                 </TableRow>
               ) : pendingUsers && pendingUsers.length > 0 ? (
                 pendingUsers.map(u => (
                   <TableRow key={u.id}>
-                    <TableCell className="font-medium">{u.email}</TableCell>
+                    <TableCell className="font-medium">{u.name || 'N/A'}</TableCell>
+                    <TableCell>{u.email}</TableCell>
+                    <TableCell>₹{u.planPrice?.toLocaleString('en-IN') || 'N/A'}</TableCell>
                     <TableCell>{u.utr || 'N/A'}</TableCell>
                     <TableCell>
                       <Badge variant="secondary">{u.subscriptionStatus}</Badge>
@@ -111,7 +117,7 @@ export default function AdminPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center">No pending verifications.</TableCell>
+                  <TableCell colSpan={6} className="text-center">No pending verifications.</TableCell>
                 </TableRow>
               )}
             </TableBody>

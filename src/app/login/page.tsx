@@ -32,6 +32,7 @@ type UserProfile = {
 };
 
 export default function LoginPage() {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -109,6 +110,15 @@ export default function LoginPage() {
       });
       return;
     }
+    
+    if (!name) {
+      toast({
+        variant: 'destructive',
+        title: 'Sign Up Failed',
+        description: 'Please enter your full name.',
+      });
+      return;
+    }
 
     try {
       const userCredential = await createUserWithEmailAndPassword(
@@ -125,6 +135,7 @@ export default function LoginPage() {
         
         const userProfile = {
             id: user.uid,
+            name: name,
             email: user.email,
             subscriptionStatus: role === 'admin' ? 'active' : 'inactive',
             role: role,
@@ -137,6 +148,7 @@ export default function LoginPage() {
                 title: "Admin Account Created",
                 description: "You can now log in with your admin credentials."
             });
+            setName('');
             setEmail('');
             setPassword('');
             setConfirmPassword('');
@@ -278,6 +290,17 @@ export default function LoginPage() {
                 </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                 <div className="space-y-2">
+                    <Label htmlFor="signup-name">Full Name</Label>
+                    <Input
+                    id="signup-name"
+                    type="text"
+                    placeholder="John Doe"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    />
+                </div>
                 <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>
                     <Input

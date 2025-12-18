@@ -41,9 +41,9 @@
           "description": "Email address of the user.",
           "format": "email"
         },
-        "firstName": {
+        "name": {
           "type": "string",
-          "description": "First name of the user."
+          "description": "Full name of the user."
         },
         "lastName": {
           "type": "string",
@@ -71,13 +71,18 @@
           ]
         },
         "utr": {
-            "type": "string",
-            "description": "The Unique Transaction Reference (UTR) for the subscription payment."
+          "type": "string",
+          "description": "The Unique Transaction Reference (UTR) for the subscription payment."
+        },
+        "planPrice": {
+          "type": "number",
+          "description": "The price of the plan the user is subscribing to."
         }
       },
       "required": [
         "id",
         "email",
+        "name",
         "subscriptionStatus",
         "role"
       ]
