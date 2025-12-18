@@ -45,6 +45,7 @@ import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/comp
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Calendar } from "@/components/ui/calendar";
 
 
 // Common Types
@@ -427,7 +428,10 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
                   </div>
                   <Button onClick={handleFilter} size="sm">Filter</Button>
                   {isFilterApplied && (
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleClearFilter}><X className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleClearFilter}>
+                        <X className="h-4 w-4" />
+                        <span className="sr-only">Clear Filter</span>
+                    </Button>
                   )}
               </div>
               <Separator orientation="vertical" className="h-14" />
