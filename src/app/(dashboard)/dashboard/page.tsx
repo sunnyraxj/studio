@@ -37,7 +37,7 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { CaretSortIcon, ChevronDownIcon, ChevronRightIcon } from '@radix-ui/react-icons';
-import { IndianRupee, FileDown, X } from 'lucide-react';
+import { IndianRupee, FileDown, X, Search } from 'lucide-react';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { FaWhatsapp } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
@@ -46,6 +46,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Calendar } from "@/components/ui/calendar";
+import { DateRangePicker } from '@/components/ui/date-range-picker';
 
 
 // Common Types
@@ -160,6 +161,7 @@ function AllSalesTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoa
   
   const [filteredData, setFilteredData] = useState<Sale[]>([]);
   const [isFilterApplied, setIsFilterApplied] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const [startDay, setStartDay] = useState('');
   const [startMonth, setStartMonth] = useState('');
@@ -171,10 +173,9 @@ function AllSalesTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoa
   const originalData = useMemo(() => salesData || [], [salesData]);
 
   useEffect(() => {
-    setFilteredData(originalData);
-  },[originalData]);
+    let data = originalData;
 
-  const handleFilter = () => {
+    // Date filtering
     const startDateStr = `${startYear}-${startMonth.padStart(2, '0')}-${startDay.padStart(2, '0')}`;
     const endDateStr = `${endYear}-${endMonth.padStart(2, '0')}-${endDay.padStart(2, '0')}`;
     const startDate = new Date(startDateStr);
@@ -184,9 +185,7 @@ function AllSalesTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoa
     const isValidStartDate = !isNaN(startDate.getTime()) && startDay && startMonth && startYear;
     const isValidEndDate = !isNaN(endDate.getTime()) && endDay && endMonth && endYear;
     
-    let data = originalData;
     let applied = false;
-
     if (isValidStartDate) {
       data = data.filter(item => new Date(item.date) >= startDate);
       applied = true;
@@ -195,8 +194,25 @@ function AllSalesTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoa
       data = data.filter(item => new Date(item.date) <= endDate);
       applied = true;
     }
+    
+    // Search filtering
+    if (searchTerm) {
+        data = data.filter(sale => 
+            sale.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            sale.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        applied = true;
+    }
+
     setFilteredData(data);
-    setIsFilterApplied(applied);
+    setIsFilterApplied(applied || !!searchTerm);
+
+  },[originalData, startDay, startMonth, startYear, endDay, endMonth, endYear, searchTerm]);
+
+  const handleFilter = () => {
+    // This function will just trigger the useEffect by its presence,
+    // actual logic is now in useEffect
+    setIsFilterApplied(true);
   };
   
   const handleClearFilter = () => {
@@ -206,8 +222,8 @@ function AllSalesTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoa
     setEndDay('');
     setEndMonth('');
     setEndYear('');
-    setFilteredData(originalData);
-    setIsFilterApplied(false);
+    setSearchTerm('');
+    // The useEffect will handle resetting the data.
   }
 
   const table = useReactTable({
@@ -231,7 +247,16 @@ function AllSalesTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoa
             <CardTitle>All Sales</CardTitle>
             <CardDescription>A complete list of all your transactions.</CardDescription>
           </div>
-          <div className="flex items-center gap-2">
+           <div className="flex items-center gap-4">
+             <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                    placeholder="Search by customer or invoice..."
+                    className="pl-8 w-64"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
             <div className="flex items-end gap-2 p-2 border rounded-lg bg-muted/50">
                 <div className="grid gap-1.5">
                   <Label className="text-xs">Start Date</Label>
@@ -342,12 +367,8 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
   const [filteredData, setFilteredData] = useState<ReportItem[]>([]);
   const [isFilterApplied, setIsFilterApplied] = useState(false);
 
-  const [startDay, setStartDay] = useState('');
-  const [startMonth, setStartMonth] = useState('');
-  const [startYear, setStartYear] = useState('');
-  const [endDay, setEndDay] = useState('');
-  const [endMonth, setEndMonth] = useState('');
-  const [endYear, setEndYear] = useState('');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const reportData = useMemo(() => {
     if (!salesData) return [];
@@ -355,43 +376,37 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
   }, [salesData]);
   
   useEffect(() => {
-    setFilteredData(reportData);
-  },[reportData]);
-
-  const handleFilter = () => {
-    const startDateStr = `${startYear}-${startMonth.padStart(2, '0')}-${startDay.padStart(2, '0')}`;
-    const endDateStr = `${endYear}-${endMonth.padStart(2, '0')}-${endDay.padStart(2, '0')}`;
-    const startDate = new Date(startDateStr);
-    const endDate = new Date(endDateStr);
-    endDate.setHours(23, 59, 59, 999);
-
-    const isValidStartDate = !isNaN(startDate.getTime()) && startDay && startMonth && startYear;
-    const isValidEndDate = !isNaN(endDate.getTime()) && endDay && endMonth && endYear;
-    
     let data = reportData;
-    let applied = false;
 
-    if (isValidStartDate) {
-      data = data.filter(item => new Date(item.saleDate) >= startDate);
-      applied = true;
+    // Date filtering
+    if (dateRange?.from) {
+        const fromDate = new Date(dateRange.from);
+        fromDate.setHours(0,0,0,0);
+        data = data.filter(item => new Date(item.saleDate) >= fromDate);
     }
-    if (isValidEndDate) {
-      data = data.filter(item => new Date(item.saleDate) <= endDate);
-      applied = true;
+    if (dateRange?.to) {
+        const toDate = new Date(dateRange.to);
+        toDate.setHours(23,59,59,999);
+        data = data.filter(item => new Date(item.saleDate) <= toDate);
     }
+
+    // Search filtering
+    if (searchTerm) {
+        data = data.filter(item => 
+            item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (item.sku && item.sku.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+    }
+    
     setFilteredData(data);
-    setIsFilterApplied(applied);
-  };
+    setIsFilterApplied(!!dateRange?.from || !!searchTerm);
+
+  }, [reportData, dateRange, searchTerm]);
+
   
   const handleClearFilter = () => {
-    setStartDay('');
-    setStartMonth('');
-    setStartYear('');
-    setEndDay('');
-    setEndMonth('');
-    setEndYear('');
-    setFilteredData(reportData);
-    setIsFilterApplied(false);
+    setDateRange(undefined);
+    setSearchTerm('');
   }
 
   const totalSales = useMemo(() => {
@@ -439,33 +454,24 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
                 <span className="font-bold">Total Sales (Filtered):</span> ₹{totalSales.toLocaleString('en-IN')}
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="flex items-end gap-2 p-2 border rounded-lg bg-muted/50">
-                  <div className="grid gap-1.5">
-                    <Label className="text-xs">Start Date</Label>
-                    <div className="flex gap-1">
-                        <Input placeholder="DD" value={startDay} onChange={e => setStartDay(e.target.value)} className="w-12 h-8" />
-                        <Input placeholder="MM" value={startMonth} onChange={e => setStartMonth(e.target.value)} className="w-12 h-8" />
-                        <Input placeholder="YYYY" value={startYear} onChange={e => setStartYear(e.target.value)} className="w-20 h-8" />
-                    </div>
-                  </div>
-                  <div className="grid gap-1.5">
-                    <Label className="text-xs">End Date</Label>
-                     <div className="flex gap-1">
-                        <Input placeholder="DD" value={endDay} onChange={e => setEndDay(e.target.value)} className="w-12 h-8" />
-                        <Input placeholder="MM" value={endMonth} onChange={e => setEndMonth(e.target.value)} className="w-12 h-8" />
-                        <Input placeholder="YYYY" value={endYear} onChange={e => setEndYear(e.target.value)} className="w-20 h-8" />
-                    </div>
-                  </div>
-                  <Button onClick={handleFilter} size="sm">Filter</Button>
-                  {isFilterApplied && (
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleClearFilter}>
-                        <X className="h-4 w-4" />
-                        <span className="sr-only">Clear Filter</span>
-                    </Button>
-                  )}
+             <div className="flex items-center gap-2">
+               <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                      placeholder="Search by product name or code..."
+                      className="pl-8 w-64"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                  />
               </div>
-              <Separator orientation="vertical" className="h-14" />
+              <DateRangePicker onDateChange={setDateRange} initialDateRange={dateRange} />
+              {isFilterApplied && (
+                 <Button variant="ghost" size="icon" onClick={handleClearFilter}>
+                    <X className="h-4 w-4" />
+                    <span className="sr-only">Clear filters</span>
+                 </Button>
+              )}
+              <Separator orientation="vertical" className="h-10" />
               <Tooltip>
                   <TooltipTrigger asChild>
                       <Button variant="outline" onClick={handleExport} disabled={filteredData.length === 0}>
@@ -580,7 +586,8 @@ const customerColumns: ColumnDef<Customer>[] = [
 
 function CustomersTab({ salesData, isLoading, isDemoMode }: { salesData: Sale[] | null, isLoading: boolean, isDemoMode: boolean }) {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'lastPurchaseDate', desc: true }]);
-
+  const [searchTerm, setSearchTerm] = useState('');
+  
   const customersData = useMemo(() => {
     if (isDemoMode) return demoCustomers;
     if (!salesData) return [];
@@ -623,9 +630,17 @@ function CustomersTab({ salesData, isLoading, isDemoMode }: { salesData: Sale[] 
     }));
 
   }, [salesData, isDemoMode]);
+  
+  const filteredCustomers = useMemo(() => {
+     if (!searchTerm) return customersData;
+     return customersData.filter(customer => 
+         customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         (customer.phone && customer.phone.includes(searchTerm))
+     );
+  }, [customersData, searchTerm]);
 
   const table = useReactTable({
-    data: customersData,
+    data: filteredCustomers,
     columns: customerColumns,
     state: { sorting },
     onSortingChange: setSorting,
@@ -636,11 +651,22 @@ function CustomersTab({ salesData, isLoading, isDemoMode }: { salesData: Sale[] 
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Customers</CardTitle>
-        <CardDescription>
-          A list of all your customers and their purchase history.
-        </CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>Customers</CardTitle>
+          <CardDescription>
+            A list of all your customers and their purchase history.
+          </CardDescription>
+        </div>
+        <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+                placeholder="Search by name or phone..."
+                className="pl-8 w-64"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+            />
+        </div>
       </CardHeader>
       <CardContent>
         <div className="rounded-md border">
@@ -796,7 +822,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
-
-    
