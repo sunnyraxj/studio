@@ -15,7 +15,6 @@ import {
 } from '@/components/ui/sidebar';
 import { Package2, ShieldCheck, Store, LifeBuoy } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
 
 const adminNavLinks = [
   {
