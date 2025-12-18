@@ -157,25 +157,61 @@ const salesColumns: ColumnDef<Sale>[] = [
 function AllSalesTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoading: boolean }) {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'date', desc: true }]);
   const [expanded, setExpanded] = useState<ExpandedState>({});
-  const [startDate, setStartDate] = useState<Date | undefined>();
-  const [endDate, setEndDate] = useState<Date | undefined>();
+  
+  const [filteredData, setFilteredData] = useState<Sale[]>([]);
+  const [isFilterApplied, setIsFilterApplied] = useState(false);
 
-  const filteredSalesData = useMemo(() => {
-    let sales = salesData;
-    if (!sales) return [];
-    if (startDate) {
-      sales = sales.filter(sale => new Date(sale.date) >= startDate);
+  const [startDay, setStartDay] = useState('');
+  const [startMonth, setStartMonth] = useState('');
+  const [startYear, setStartYear] = useState('');
+  const [endDay, setEndDay] = useState('');
+  const [endMonth, setEndMonth] = useState('');
+  const [endYear, setEndYear] = useState('');
+  
+  const originalData = useMemo(() => salesData || [], [salesData]);
+
+  useEffect(() => {
+    setFilteredData(originalData);
+  },[originalData]);
+
+  const handleFilter = () => {
+    const startDateStr = `${startYear}-${startMonth.padStart(2, '0')}-${startDay.padStart(2, '0')}`;
+    const endDateStr = `${endYear}-${endMonth.padStart(2, '0')}-${endDay.padStart(2, '0')}`;
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+    endDate.setHours(23, 59, 59, 999);
+
+    const isValidStartDate = !isNaN(startDate.getTime()) && startDay && startMonth && startYear;
+    const isValidEndDate = !isNaN(endDate.getTime()) && endDay && endMonth && endYear;
+    
+    let data = originalData;
+    let applied = false;
+
+    if (isValidStartDate) {
+      data = data.filter(item => new Date(item.date) >= startDate);
+      applied = true;
     }
-    if (endDate) {
-      const toDate = new Date(endDate);
-      toDate.setHours(23, 59, 59, 999); // Include the whole end day
-      sales = sales.filter(sale => new Date(sale.date) <= toDate);
+    if (isValidEndDate) {
+      data = data.filter(item => new Date(item.date) <= endDate);
+      applied = true;
     }
-    return sales;
-  }, [salesData, startDate, endDate]);
+    setFilteredData(data);
+    setIsFilterApplied(applied);
+  };
+  
+  const handleClearFilter = () => {
+    setStartDay('');
+    setStartMonth('');
+    setStartYear('');
+    setEndDay('');
+    setEndMonth('');
+    setEndYear('');
+    setFilteredData(originalData);
+    setIsFilterApplied(false);
+  }
 
   const table = useReactTable({
-    data: filteredSalesData,
+    data: filteredData,
     columns: salesColumns,
     state: { sorting, expanded },
     onSortingChange: setSorting,
@@ -196,36 +232,31 @@ function AllSalesTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoa
             <CardDescription>A complete list of all your transactions.</CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  {startDate ? format(startDate, 'dd MMM yyyy') : 'Start Date'}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <Calendar
-                  mode="single"
-                  selected={startDate}
-                  onSelect={setStartDate}
-                  initialFocus
-                />
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  {endDate ? format(endDate, 'dd MMM yyyy') : 'End Date'}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <Calendar
-                  mode="single"
-                  selected={endDate}
-                  onSelect={setEndDate}
-                  initialFocus
-                />
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex items-end gap-2 p-2 border rounded-lg bg-muted/50">
+                <div className="grid gap-1.5">
+                  <Label className="text-xs">Start Date</Label>
+                  <div className="flex gap-1">
+                      <Input placeholder="DD" value={startDay} onChange={e => setStartDay(e.target.value)} className="w-12 h-8" />
+                      <Input placeholder="MM" value={startMonth} onChange={e => setStartMonth(e.target.value)} className="w-12 h-8" />
+                      <Input placeholder="YYYY" value={startYear} onChange={e => setStartYear(e.target.value)} className="w-20 h-8" />
+                  </div>
+                </div>
+                <div className="grid gap-1.5">
+                  <Label className="text-xs">End Date</Label>
+                   <div className="flex gap-1">
+                      <Input placeholder="DD" value={endDay} onChange={e => setEndDay(e.target.value)} className="w-12 h-8" />
+                      <Input placeholder="MM" value={endMonth} onChange={e => setEndMonth(e.target.value)} className="w-12 h-8" />
+                      <Input placeholder="YYYY" value={endYear} onChange={e => setEndYear(e.target.value)} className="w-20 h-8" />
+                  </div>
+                </div>
+                <Button onClick={handleFilter} size="sm">Filter</Button>
+                {isFilterApplied && (
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleClearFilter}>
+                      <X className="h-4 w-4" />
+                      <span className="sr-only">Clear Filter</span>
+                  </Button>
+                )}
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -689,7 +720,7 @@ export default function DashboardPage() {
 
   const userDocRef = useMemoFirebase(() => {
     if (isDemoMode || !firestore) return null;
-    return doc(firestore, `users/${'user'}.uid}`);
+    return doc(firestore, `users/${user.uid}`);
   }, [user, firestore, isDemoMode]);
 
   const { data: userData } = useDoc<UserProfile>(userDocRef);
@@ -765,5 +796,7 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
 
     
