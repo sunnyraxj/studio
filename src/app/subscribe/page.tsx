@@ -17,33 +17,21 @@ import { useUser, useFirestore } from '@/firebase';
 import { doc, writeBatch, collection, getDoc } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast.tsx';
 
-const plans = [
-  {
-    name: 'Pro',
-    price: 799,
-    description: 'For small businesses and startups.',
-    features: [
-      'Full POS system',
-      'Inventory management',
-      'Customer database',
-      'Basic analytics',
-    ],
-  },
-  {
-    name: 'Pro Plus',
-    price: 1199,
-    description: 'For growing businesses with advanced needs.',
-    features: [
-      'All Pro features',
-      'Advanced analytics & reporting',
-      'Multi-user support',
-      'Priority support',
-    ],
-  },
-];
+const proPlan = {
+  name: 'Pro',
+  price: 799,
+  description: 'Full access to all ERP features for your business.',
+  features: [
+    'Full POS system',
+    'Inventory management',
+    'Customer database',
+    'Sales Analytics',
+    'Multi-user support',
+    'Priority support',
+  ],
+};
 
 export default function SubscribePage() {
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
@@ -55,19 +43,7 @@ export default function SubscribePage() {
     }
   }, [user, isUserLoading, router]);
 
-  const handleSelectPlan = (planName: string) => {
-    setSelectedPlan(planName);
-  };
-
   const handleSubscribe = async () => {
-    if (!selectedPlan) {
-      toast({
-        variant: 'destructive',
-        title: 'No Plan Selected',
-        description: 'Please select a subscription plan to continue.',
-      });
-      return;
-    }
     if (!user || !firestore) {
        toast({
         variant: 'destructive',
@@ -89,9 +65,6 @@ export default function SubscribePage() {
         router.push('/dashboard');
         return;
     }
-
-
-    const planDetails = plans.find(p => p.name === selectedPlan);
     
     // Create a batch write to perform multiple operations atomically
     const batch = writeBatch(firestore);
@@ -107,8 +80,8 @@ export default function SubscribePage() {
     // 2. Update the user's profile with subscription and shop info
     batch.update(userDocRef, {
         subscriptionStatus: 'active',
-        planName: planDetails?.name,
-        planPrice: planDetails?.price,
+        planName: proPlan.name,
+        planPrice: proPlan.price,
         subscriptionStartDate: new Date().toISOString(),
         shopId: shopDocRef.id, // Link user to the new shop
     });
@@ -118,7 +91,7 @@ export default function SubscribePage() {
 
       toast({
         title: 'Subscription Successful!',
-        description: `You are now subscribed to the ${selectedPlan} plan. Your shop has been created.`,
+        description: `You are now subscribed to the ${proPlan.name} plan. Your shop has been created.`,
       });
       router.push('/dashboard');
     } catch (error: any) {
@@ -139,35 +112,29 @@ export default function SubscribePage() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-6">
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-          Choose Your Plan
+          Subscribe to Pro
         </h1>
         <p className="mt-4 text-lg text-muted-foreground">
-          Select a subscription plan to unlock your dashboard.
+          Get started with our all-in-one ERP solution.
         </p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full">
-        {plans.map((plan) => (
+      <div className="max-w-md w-full">
           <Card
-            key={plan.name}
             className={cn(
-              'flex flex-col cursor-pointer transition-all duration-200',
-              selectedPlan === plan.name
-                ? 'border-primary ring-2 ring-primary'
-                : 'hover:border-primary/50'
+              'flex flex-col transition-all duration-200 border-primary ring-2 ring-primary'
             )}
-            onClick={() => handleSelectPlan(plan.name)}
           >
             <CardHeader>
-              <CardTitle>{plan.name}</CardTitle>
-              <CardDescription>{plan.description}</CardDescription>
+              <CardTitle>{proPlan.name}</CardTitle>
+              <CardDescription>{proPlan.description}</CardDescription>
             </CardHeader>
             <CardContent className="flex-grow space-y-4">
               <div className="flex items-baseline">
-                <span className="text-4xl font-bold">₹{plan.price}</span>
+                <span className="text-4xl font-bold">₹{proPlan.price}</span>
                 <span className="ml-1 text-muted-foreground">/month</span>
               </div>
               <ul className="space-y-2">
-                {plan.features.map((feature) => (
+                {proPlan.features.map((feature) => (
                   <li key={feature} className="flex items-center">
                     <Check className="h-4 w-4 mr-2 text-green-500" />
                     <span>{feature}</span>
@@ -176,14 +143,12 @@ export default function SubscribePage() {
               </ul>
             </CardContent>
           </Card>
-        ))}
       </div>
       <div className="mt-12 w-full max-w-xs">
         <Button
           className="w-full"
           size="lg"
           onClick={handleSubscribe}
-          disabled={!selectedPlan}
         >
           Subscribe Now
         </Button>
@@ -191,3 +156,4 @@ export default function SubscribePage() {
     </div>
   );
 }
+
