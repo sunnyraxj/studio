@@ -15,7 +15,7 @@ import { collection, doc } from 'firebase/firestore';
 // A placeholder type for your sales data
 type Sale = {
   id: string;
-  amount: number;
+  total: number;
   date: string; // ISO string
 };
 
@@ -23,40 +23,54 @@ type UserProfile = {
   shopId?: string;
 }
 
+const DemoData = {
+    todaySales: 12345.67,
+    thisMonthSales: 150000,
+    rangeSales: 25000,
+};
+
 export default function DashboardPage() {
   const { user } = useUser();
   const firestore = useFirestore();
+  const isDemoMode = !user;
 
   const userDocRef = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
+    if (isDemoMode || !firestore) return null;
     return doc(firestore, `users/${user.uid}`);
-  }, [user, firestore]);
+  }, [user, firestore, isDemoMode]);
 
   const { data: userData } = useDoc<UserProfile>(userDocRef);
   const shopId = userData?.shopId;
 
   // A memoized reference to the sales collection
   const salesCollectionRef = useMemoFirebase(() => {
-    if (!shopId || !firestore) return null;
+    if (isDemoMode || !shopId || !firestore) return null;
     return collection(firestore, `shops/${shopId}/sales`);
-  }, [shopId, firestore]);
+  }, [shopId, firestore, isDemoMode]);
 
   const { data: salesData, isLoading } = useCollection<Sale>(salesCollectionRef);
 
-  // Example logic to calculate sales figures - replace with your own logic
-  const todaySales = salesData
-    ?.filter(sale => new Date(sale.date).toDateString() === new Date().toDateString())
-    .reduce((sum, sale) => sum + sale.amount, 0) || 0;
+  // Calculate sales figures
+  const todaySales = isDemoMode
+    ? DemoData.todaySales
+    : salesData
+        ?.filter(sale => new Date(sale.date).toDateString() === new Date().toDateString())
+        .reduce((sum, sale) => sum + sale.total, 0) || 0;
 
-  const thisMonthSales = salesData
-    ?.filter(sale => new Date(sale.date).getMonth() === new Date().getMonth() && new Date(sale.date).getFullYear() === new Date().getFullYear())
-    .reduce((sum, sale) => sum + sale.amount, 0) || 0;
-
+  const thisMonthSales = isDemoMode
+    ? DemoData.thisMonthSales
+    : salesData
+        ?.filter(sale => new Date(sale.date).getMonth() === new Date().getMonth() && new Date(sale.date).getFullYear() === new Date().getFullYear())
+        .reduce((sum, sale) => sum + sale.total, 0) || 0;
+  
+  const rangeSales = isDemoMode ? DemoData.rangeSales : 0; // Date range logic to be implemented
 
   return (
     <div className="flex-1 space-y-4">
       <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Production Dashboard</h2>
+        <h2 className="text-3xl font-bold tracking-tight">
+            {isDemoMode ? 'Dashboard (Demo Mode)' : 'Dashboard'}
+        </h2>
         <div className="flex items-center space-x-2">
           <DatePicker />
         </div>
@@ -68,9 +82,9 @@ export default function DashboardPage() {
             <IndianRupee className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {isLoading ? <div className="text-2xl font-bold">Loading...</div> : <div className="text-2xl font-bold">₹{todaySales.toLocaleString('en-IN')}</div>}
+            {isLoading && !isDemoMode ? <div className="text-2xl font-bold">Loading...</div> : <div className="text-2xl font-bold">₹{todaySales.toLocaleString('en-IN')}</div>}
             <p className="text-xs text-muted-foreground">
-              Live data from your store
+              {isDemoMode ? "Sample data for demo" : "Live data from your store"}
             </p>
           </CardContent>
         </Card>
@@ -82,9 +96,9 @@ export default function DashboardPage() {
             <IndianRupee className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-             {isLoading ? <div className="text-2xl font-bold">Loading...</div> : <div className="text-2xl font-bold">₹{thisMonthSales.toLocaleString('en-IN')}</div>}
+             {isLoading && !isDemoMode ? <div className="text-2xl font-bold">Loading...</div> : <div className="text-2xl font-bold">₹{thisMonthSales.toLocaleString('en-IN')}</div>}
             <p className="text-xs text-muted-foreground">
-              Live data from your store
+              {isDemoMode ? "Sample data for demo" : "Live data from your store"}
             </p>
           </CardContent>
         </Card>
@@ -96,9 +110,9 @@ export default function DashboardPage() {
             <IndianRupee className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-             <div className="text-2xl font-bold">₹0.00</div>
+             <div className="text-2xl font-bold">₹{rangeSales.toLocaleString('en-IN')}</div>
             <p className="text-xs text-muted-foreground">
-              Select a date range to see sales
+             {isDemoMode ? "Sample data for demo" : "Select a date range to see sales"}
             </p>
           </CardContent>
         </Card>

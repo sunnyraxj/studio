@@ -2,10 +2,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
-  Card,
-  CardContent,
+  Card
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,9 +26,13 @@ import {
 } from '@/components/ui/radio-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, doc, addDoc } from 'firebase/firestore';
+import { toast } from '@/hooks/use-toast.tsx';
+
 
 type Product = {
-  id: number;
+  id: string;
   name: string;
   price: number;
 };
@@ -39,31 +43,45 @@ type CartItem = {
   discount: number;
 };
 
+type UserProfile = {
+  shopId?: string;
+}
+
 const sampleProducts: Product[] = [
-  { id: 1, name: 'T-Shirt', price: 250 },
-  { id: 2, name: 'Jeans', price: 750 },
-  { id: 3, name: 'Sneakers', price: 1200 },
-  { id: 4, name: 'Watch', price: 3500 },
-  { id: 5, name: 'Cap', price: 150 },
-  { id: 6, name: 'Socks', price: 80 },
-  { id: 7, name: 'Backpack', price: 900 },
-  { id: 8, name: 'Hoodie', price: 1100 },
-  { id: 9, name: 'Sunglasses', price: 450 },
-  { id: 10, name: 'Belt', price: 300 },
-  { id: 11, name: 'Jacket', price: 1500 },
-  { id: 12, name: 'Scarf', price: 200 },
-  { id: 13, name: 'Gloves', price: 120 },
-  { id: 14, name: 'Shorts', price: 400 },
-  { id: 15, name: 'Polo Shirt', price: 600 },
-  { id: 16, name: 'Leather Wallet', price: 550 },
-  { id: 17, name: 'Formal Shoes', price: 2500 },
-  { id: 18, name: 'Tie', price: 250 },
-  { id: 19, name: 'Sweatshirt', price: 950 },
-  { id: 20, name: 'Track Pants', price: 800 },
+  { id: "1", name: 'T-Shirt', price: 250 },
+  { id: "2", name: 'Jeans', price: 750 },
+  { id: "3", name: 'Sneakers', price: 1200 },
+  { id: "4", name: 'Watch', price: 3500 },
+  { id: "5", name: 'Cap', price: 150 },
+  { id: "6", name: 'Socks', price: 80 },
+  { id: "7", name: 'Backpack', price: 900 },
+  { id: "8", name: 'Hoodie', price: 1100 },
+  { id: "9", name: 'Sunglasses', price: 450 },
+  { id: "10", name: 'Belt', price: 300 },
 ];
 
 export default function POSPage() {
-  const [products] = useState<Product[]>(sampleProducts);
+  const router = useRouter();
+  const firestore = useFirestore();
+  const { user } = useUser();
+  const isDemoMode = !user;
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return doc(firestore, `users/${user.uid}`);
+  }, [user, firestore]);
+
+  const { data: userData } = useDoc<UserProfile>(userDocRef);
+  const shopId = userData?.shopId;
+
+  const productsCollectionRef = useMemoFirebase(() => {
+    if (isDemoMode || !shopId || !firestore) return null;
+    return collection(firestore, `shops/${shopId}/products`);
+  }, [firestore, shopId, isDemoMode]);
+
+  const { data: productsData } = useCollection<Product>(productsCollectionRef);
+  const products = isDemoMode ? sampleProducts : productsData || [];
+
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
@@ -96,7 +114,7 @@ export default function POSPage() {
     });
   };
 
-  const updateQuantity = (productId: number, amount: number) => {
+  const updateQuantity = (productId: string, amount: number) => {
     setCart((prevCart) => {
       return prevCart
         .map((item) => {
@@ -110,7 +128,7 @@ export default function POSPage() {
     });
   };
   
-  const updateDiscount = (productId: number, discount: number) => {
+  const updateDiscount = (productId: string, discount: number) => {
     setCart((prevCart) =>
       prevCart.map((item) =>
         item.product.id === productId ? { ...item, discount: isNaN(discount) ? 0 : discount } : item
@@ -118,7 +136,7 @@ export default function POSPage() {
     );
   };
 
-  const removeItem = (productId: number) => {
+  const removeItem = (productId: string) => {
     setCart((prevCart) => prevCart.filter((item) => item.product.id !== productId));
   };
 
@@ -144,7 +162,6 @@ export default function POSPage() {
     return false;
   });
 
-
   const clearSale = () => {
     setCart([]);
     setCustomerName('');
@@ -153,9 +170,71 @@ export default function POSPage() {
     setCustomerState('');
     setCustomerGstin('');
     setPaymentMode('cash');
+    setInvoiceNumber(new Date().getTime().toString().slice(-6));
   };
 
-  const getCartItemQuantity = (productId: number) => {
+  const completeSale = async () => {
+    if (isDemoMode) {
+      toast({
+        variant: 'destructive',
+        title: 'Demo Mode',
+        description: 'Log in and subscribe to record sales.'
+      });
+      router.push('/login');
+      return;
+    }
+
+    if (!firestore || !shopId) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Cannot find your shop. Please ensure you are subscribed.'
+      });
+      return;
+    }
+
+    const saleData = {
+      date: new Date().toISOString(),
+      total: total,
+      subtotal: subtotal,
+      tax: tax,
+      taxRate: taxRate,
+      items: cart.map(item => ({
+        productId: item.product.id,
+        name: item.product.name,
+        quantity: item.quantity,
+        price: item.product.price,
+        discount: item.discount,
+      })),
+      customer: {
+        name: customerName,
+        address: customerAddress,
+        pin: customerPin,
+        state: customerState,
+        gstin: customerGstin,
+      },
+      paymentMode: paymentMode,
+      invoiceNumber: `INV${invoiceNumber}`
+    };
+
+    try {
+      const salesCollectionRef = collection(firestore, `shops/${shopId}/sales`);
+      await addDoc(salesCollectionRef, saleData);
+      toast({
+        title: 'Sale Completed',
+        description: `Sale #${invoiceNumber} has been recorded.`
+      });
+      clearSale();
+    } catch(error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error completing sale',
+        description: error.message
+      })
+    }
+  };
+
+  const getCartItemQuantity = (productId: string) => {
     const item = cart.find(cartItem => cartItem.product.id === productId);
     return item ? item.quantity : 0;
   }
@@ -390,7 +469,7 @@ export default function POSPage() {
                         </div>
                     </div>
                     <div className="flex-col items-stretch space-y-2">
-                        <Button className="w-full" disabled={cart.length === 0}>Complete Sale</Button>
+                        <Button className="w-full" disabled={cart.length === 0} onClick={completeSale}>Complete Sale</Button>
                         <Button variant="destructive" className="w-full" onClick={clearSale} disabled={cart.length === 0}>
                             <Trash2 className="mr-2 h-4 w-4" /> Clear Sale
                         </Button>

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,7 +14,7 @@ import {
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore } from '@/firebase';
-import { doc, writeBatch, collection } from 'firebase/firestore';
+import { doc, writeBatch, collection, getDoc } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast.tsx';
 
 const plans = [
@@ -44,9 +44,16 @@ const plans = [
 
 export default function SubscribePage() {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+
+  // If user is not logged in, redirect them to login page.
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
 
   const handleSelectPlan = (planName: string) => {
     setSelectedPlan(planName);
@@ -67,9 +74,22 @@ export default function SubscribePage() {
         title: 'Not Authenticated',
         description: 'You must be logged in to subscribe.',
       });
-      router.push('/login');
       return;
     }
+
+    // Check if the user already has a shop to prevent creating a new one
+    const userDocRef = doc(firestore, 'users', user.uid);
+    const userDoc = await getDoc(userDocRef);
+    if (userDoc.exists() && userDoc.data()?.shopId) {
+        toast({
+            variant: "destructive",
+            title: "Already Subscribed",
+            description: "You already have an active shop. Redirecting you to the dashboard."
+        });
+        router.push('/dashboard');
+        return;
+    }
+
 
     const planDetails = plans.find(p => p.name === selectedPlan);
     
@@ -81,11 +101,10 @@ export default function SubscribePage() {
     batch.set(shopDocRef, {
       id: shopDocRef.id,
       ownerId: user.uid,
-      name: `${user.email}'s Shop`, // Default shop name
+      name: `${user.email?.split('@')[0] || 'My'}'s Shop`, // Default shop name
     });
 
     // 2. Update the user's profile with subscription and shop info
-    const userDocRef = doc(firestore, 'users', user.uid);
     batch.update(userDocRef, {
         subscriptionStatus: 'active',
         planName: planDetails?.name,
@@ -101,7 +120,7 @@ export default function SubscribePage() {
         title: 'Subscription Successful!',
         description: `You are now subscribed to the ${selectedPlan} plan. Your shop has been created.`,
       });
-      router.push('/production/dashboard');
+      router.push('/dashboard');
     } catch (error: any) {
       console.error("Subscription and shop creation failed:", error);
       toast({
@@ -111,6 +130,10 @@ export default function SubscribePage() {
       });
     }
   };
+  
+  if (isUserLoading || !user) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-6">

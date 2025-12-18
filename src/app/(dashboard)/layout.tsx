@@ -56,25 +56,24 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { useAuth, useUser } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 const navLinks = [
   {
-    href: '/owner/dashboard',
+    href: '/dashboard',
     icon: Home,
     label: 'Dashboard',
     badge: null,
   },
   {
-    href: '/owner/pos',
+    href: '/dashboard/pos',
     icon: Printer,
     label: 'POS',
     badge: null,
   },
   {
-    href: '/owner/inventory',
+    href: '/dashboard/inventory',
     icon: Package,
     label: 'Inventory',
     disabled: false,
@@ -89,11 +88,16 @@ const navLinks = [
   },
 ];
 
+type UserProfile = {
+  subscriptionStatus?: string;
+};
+
 function AppSidebar() {
   const pathname = usePathname();
   const { open } = useSidebar();
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const auth = useAuth();
+  const { user } = useUser();
   const router = useRouter();
 
   useEffect(() => {
@@ -155,7 +159,7 @@ function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="mt-auto p-2">
-        {open && (
+        {!user && open && (
           <Card className="mb-2">
             <CardHeader className="p-2 pt-0 md:p-4">
               <CardTitle>Upgrade to Pro</CardTitle>
@@ -165,43 +169,47 @@ function AppSidebar() {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-2 pt-0 md:p-4 md:pt-0">
-              <Button size="sm" className="w-full">
-                Upgrade
-              </Button>
+              <Link href="/login" passHref>
+                <Button size="sm" className="w-full">
+                  Upgrade
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         )}
-        <Collapsible open={isAccountOpen} onOpenChange={setIsAccountOpen}>
-          <CollapsibleTrigger asChild>
-             <Button
-                variant="ghost"
-                className={cn("w-full flex items-center", open ? "justify-between" : "justify-center")}
-                size={open ? "default" : "icon"}
-              >
-              <div className="flex items-center gap-2">
-                <CircleUser className="h-5 w-5" />
-                {open && <span>My Account</span>}
-              </div>
-              {open && (isAccountOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />)}
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-1 pt-2">
-             <Link href="/owner/settings" passHref>
-                <Button variant="ghost" className="w-full justify-start gap-2">
-                    <Settings className="h-4 w-4" />
-                    Settings
-                </Button>
-             </Link>
-             <Button variant="ghost" className="w-full justify-start gap-2">
-                <LifeBuoy className="h-4 w-4" />
-                Support
-             </Button>
-             <Button variant="ghost" className="w-full justify-start gap-2" onClick={handleLogout}>
-                <LogOut className="h-4 w-4" />
-                Logout
-             </Button>
-          </CollapsibleContent>
-        </Collapsible>
+        {user && (
+          <Collapsible open={isAccountOpen} onOpenChange={setIsAccountOpen}>
+            <CollapsibleTrigger asChild>
+               <Button
+                  variant="ghost"
+                  className={cn("w-full flex items-center", open ? "justify-between" : "justify-center")}
+                  size={open ? "default" : "icon"}
+                >
+                <div className="flex items-center gap-2">
+                  <CircleUser className="h-5 w-5" />
+                  {open && <span>My Account</span>}
+                </div>
+                {open && (isAccountOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />)}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-1 pt-2">
+               <Link href="/dashboard/settings" passHref>
+                  <Button variant="ghost" className="w-full justify-start gap-2">
+                      <Settings className="h-4 w-4" />
+                      Settings
+                  </Button>
+               </Link>
+               <Button variant="ghost" className="w-full justify-start gap-2">
+                  <LifeBuoy className="h-4 w-4" />
+                  Support
+               </Button>
+               <Button variant="ghost" className="w-full justify-start gap-2" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4" />
+                  Logout
+               </Button>
+            </CollapsibleContent>
+          </Collapsible>
+        )}
       </SidebarFooter>
     </Sidebar>
   );
@@ -209,6 +217,8 @@ function AppSidebar() {
 
 function MobileSidebar() {
   const pathname = usePathname();
+  const { user } = useUser();
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -246,22 +256,26 @@ function MobileSidebar() {
             </Link>
           ))}
         </nav>
-        <div className="mt-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle>Upgrade to Pro</CardTitle>
-              <CardDescription>
-                Unlock all features and get unlimited access to our support
-                team.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button size="sm" className="w-full">
-                Upgrade
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+        {!user && (
+          <div className="mt-auto">
+            <Card>
+              <CardHeader>
+                <CardTitle>Upgrade to Pro</CardTitle>
+                <CardDescription>
+                  Unlock all features and get unlimited access to our support
+                  team.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Link href="/login" passHref>
+                  <Button size="sm" className="w-full">
+                    Upgrade
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </SheetContent>
     </Sheet>
   );
@@ -272,6 +286,33 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
+  const router = useRouter();
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return doc(firestore, `users/${user.uid}`);
+  }, [user, firestore]);
+
+  const { data: userData, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
+
+  useEffect(() => {
+    // Wait until both user auth state and profile data are resolved
+    if (isUserLoading || isProfileLoading) {
+      return;
+    }
+  
+    // If there is a logged-in user but their profile indicates they aren't subscribed,
+    // redirect them to the subscription page.
+    if (user && userData?.subscriptionStatus !== 'active') {
+       router.push('/subscribe');
+    }
+    // If the user is not logged in (`user` is null), they can view the demo pages, 
+    // so no redirection is needed.
+  
+  }, [user, userData, isUserLoading, isProfileLoading, router]);
+
   return (
     <SidebarProvider>
       <div className="grid min-h-screen w-full md:grid-cols-[auto_1fr] lg:grid-cols-[auto_1fr]">

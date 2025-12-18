@@ -21,6 +21,7 @@ import {
 import * as React from 'react';
 import Link from 'next/link';
 import { format } from 'date-fns';
+import { collection, doc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -46,8 +47,9 @@ import { PlusCircle, FileUp, FileDown } from 'lucide-react';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 
-const data: InventoryItem[] = [
+const demoData: InventoryItem[] = [
   {
     id: 'm5gr84i9',
     name: "Men's Cotton T-Shirt",
@@ -60,7 +62,7 @@ const data: InventoryItem[] = [
     gst: 5,
     hsn: '610910',
     unit: 'pcs',
-    dateAdded: new Date('2023-10-15'),
+    dateAdded: new Date('2023-10-15').toISOString(),
   },
   {
     id: '3u1reuv4',
@@ -74,7 +76,7 @@ const data: InventoryItem[] = [
     gst: 5,
     hsn: '620342',
     unit: 'pcs',
-    dateAdded: new Date('2023-09-20'),
+    dateAdded: new Date('2023-09-20').toISOString(),
   },
   {
     id: 'derv1ws0',
@@ -88,7 +90,7 @@ const data: InventoryItem[] = [
     gst: 18,
     hsn: '640411',
     unit: 'pair',
-    dateAdded: new Date('2023-11-01'),
+    dateAdded: new Date('2023-11-01').toISOString(),
   },
   {
     id: '5kma53ae',
@@ -102,7 +104,7 @@ const data: InventoryItem[] = [
     gst: 18,
     hsn: '910211',
     unit: 'pcs',
-    dateAdded: new Date('2023-08-05'),
+    dateAdded: new Date('2023-08-05').toISOString(),
   },
   {
     id: 'bhqecj4p',
@@ -116,7 +118,7 @@ const data: InventoryItem[] = [
     gst: 12,
     hsn: '650500',
     unit: 'pcs',
-    dateAdded: new Date('2023-10-25'),
+    dateAdded: new Date('2023-10-25').toISOString(),
   },
 ];
 
@@ -127,13 +129,17 @@ export type InventoryItem = {
   stock: number;
   price: number;
   status: 'in stock' | 'low stock' | 'out of stock';
-  dateAdded: Date;
+  dateAdded: string; // Stored as ISO string
   category: string;
   size: string;
   gst: number;
   hsn: string;
   unit: string;
 };
+
+type UserProfile = {
+  shopId?: string;
+}
 
 export const columns: ColumnDef<InventoryItem>[] = [
   {
@@ -288,6 +294,26 @@ export const columns: ColumnDef<InventoryItem>[] = [
 ];
 
 export default function InventoryPage() {
+  const firestore = useFirestore();
+  const { user } = useUser();
+  const isDemoMode = !user;
+  
+  const userDocRef = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return doc(firestore, `users/${user.uid}`);
+  }, [user, firestore]);
+  const { data: userData } = useDoc<UserProfile>(userDocRef);
+  const shopId = userData?.shopId;
+
+  const productsCollectionRef = useMemoFirebase(() => {
+    if (isDemoMode || !shopId || !firestore) return null;
+    return collection(firestore, `shops/${shopId}/products`);
+  }, [firestore, shopId, isDemoMode]);
+
+  const { data: productsData, isLoading } = useCollection<InventoryItem>(productsCollectionRef);
+
+  const data = isDemoMode ? demoData : productsData ?? [];
+
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: 'dateAdded', desc: true }
   ]);
@@ -379,7 +405,7 @@ export default function InventoryPage() {
             <Button variant="outline">
               <FileUp className="mr-2 h-4 w-4" /> Import Products
             </Button>
-           <Link href="/owner/inventory/add">
+           <Link href="/dashboard/inventory/add">
             <Button>
                 <PlusCircle className="mr-2 h-4 w-4" /> Add Product
             </Button>
@@ -433,7 +459,16 @@ export default function InventoryPage() {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {isLoading && !isDemoMode ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  Loading products...
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
@@ -455,7 +490,7 @@ export default function InventoryPage() {
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No results.
+                  {isDemoMode ? "No demo products." : "No products found. Add your first product!"}
                 </TableCell>
               </TableRow>
             )}

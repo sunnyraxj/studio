@@ -1,19 +1,14 @@
+
 import { Building, User, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 const roles = [
   {
-    name: 'Shop Owner',
+    name: 'Shop Owner / Staff',
     description: 'Manage your shop, products, and sales.',
     icon: Building,
-    href: '/owner/select-mode',
-  },
-  {
-    name: 'Staff',
-    description: 'Access the system as a staff member.',
-    icon: User,
-    href: '/staff',
+    href: '/dashboard',
   },
   {
     name: 'Super Admin',
@@ -34,7 +29,7 @@ export default function RoleSelectionPage() {
           Select how you want to enter the application.
         </p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl w-full px-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl w-full px-6">
         {roles.map((role) => (
           <Link href={role.href} key={role.name}>
             <Card className="hover:bg-accent hover:border-primary transition-all duration-200 cursor-pointer h-full flex flex-col">

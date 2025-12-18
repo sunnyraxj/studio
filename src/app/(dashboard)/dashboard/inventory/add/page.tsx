@@ -35,6 +35,7 @@ export default function AddProductPage() {
   const router = useRouter();
   const firestore = useFirestore();
   const { user } = useUser();
+  const isDemoMode = !user;
 
   const userDocRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -54,11 +55,21 @@ export default function AddProductPage() {
   const [unit, setUnit] = useState('pcs');
 
   const handleSaveProduct = async () => {
-    if (!user || !firestore || !shopId) {
+    if (isDemoMode) {
+        toast({
+            variant: "destructive",
+            title: "Demo Mode",
+            description: "Please log in and subscribe to add products to your inventory."
+        });
+        router.push('/login');
+        return;
+    }
+
+    if (!firestore || !shopId) {
         toast({
             variant: "destructive",
             title: "Error",
-            description: "You must be logged in and have a shop to add a product."
+            description: "Cannot find your shop. Please ensure you are subscribed."
         });
         return;
     }
@@ -86,7 +97,7 @@ export default function AddProductPage() {
             description: `${productName} has been added to your inventory.`
         });
 
-        router.push('/production/inventory');
+        router.push('/dashboard/inventory');
     } catch (error: any) {
          toast({
             variant: "destructive",
@@ -210,7 +221,7 @@ export default function AddProductPage() {
           </div>
         </CardContent>
         <CardFooter className="flex justify-end gap-2">
-           <Link href="/production/inventory" passHref>
+           <Link href="/dashboard/inventory" passHref>
              <Button variant="outline">Cancel</Button>
            </Link>
           <Button onClick={handleSaveProduct}>Save Product</Button>

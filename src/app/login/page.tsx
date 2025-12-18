@@ -21,7 +21,7 @@ import {
   signInWithEmailAndPassword,
 } from 'firebase/auth';
 import { toast } from '@/hooks/use-toast.tsx';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
@@ -37,7 +37,8 @@ export default function LoginPage() {
   const handleLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.push('/production/dashboard');
+      // After login, the layout will handle redirection based on subscription status
+      router.push('/dashboard'); 
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -75,10 +76,12 @@ export default function LoginPage() {
             subscriptionStatus: 'inactive',
         };
       
+        // This is a fire-and-forget operation, which is fine for profile creation.
+        // It's wrapped in a helper to add global error handling.
         setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
       }
 
-
+      // After sign-up, always redirect to the subscription page
       router.push('/subscribe');
     } catch (error: any) => {
       toast({

@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -14,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast.tsx';
@@ -36,8 +37,10 @@ type UserProfile = {
 
 
 export default function SettingsPage() {
+  const router = useRouter();
   const firestore = useFirestore();
   const { user } = useUser();
+  const isDemoMode = !user;
 
   const userDocRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -47,28 +50,28 @@ export default function SettingsPage() {
   const shopId = userData?.shopId;
 
   const settingsDocRef = useMemoFirebase(() => {
-    if (!shopId || !firestore) return null;
+    if (isDemoMode || !shopId || !firestore) return null;
     return doc(firestore, `shops/${shopId}/settings`, 'details');
-  }, [firestore, shopId]);
+  }, [firestore, shopId, isDemoMode]);
 
   const { data: settingsData, isLoading } = useDoc<ShopSettings>(settingsDocRef);
 
   // State for Company Details
-  const [companyName, setCompanyName] = useState('');
-  const [companyAddress, setCompanyAddress] = useState('');
-  const [companyGstin, setCompanyGstin] = useState('');
-  const [companyPhone, setCompanyPhone] = useState('');
+  const [companyName, setCompanyName] = useState('Demo Company');
+  const [companyAddress, setCompanyAddress] = useState('123 Demo Street, Suite 456, Demo City, 12345');
+  const [companyGstin, setCompanyGstin] = useState('29DEMOCOMPANY1Z9');
+  const [companyPhone, setCompanyPhone] = useState('9876543210');
 
   // State for Bank Details
-  const [bankName, setBankName] = useState('');
-  const [accountNumber, setAccountNumber] = useState('');
-  const [ifscCode, setIfscCode] = useState('');
+  const [bankName, setBankName] = useState('Demo Bank');
+  const [accountNumber, setAccountNumber] = useState('1234567890');
+  const [ifscCode, setIfscCode] = useState('DEMO0001234');
 
   // State for UPI Details
-  const [upiId, setUpiId] = useState('');
+  const [upiId, setUpiId] = useState('demo@upi');
 
   useEffect(() => {
-    if (settingsData) {
+    if (!isDemoMode && settingsData) {
         setCompanyName(settingsData.companyName || '');
         setCompanyAddress(settingsData.companyAddress || '');
         setCompanyGstin(settingsData.companyGstin || '');
@@ -78,10 +81,15 @@ export default function SettingsPage() {
         setIfscCode(settingsData.ifscCode || '');
         setUpiId(settingsData.upiId || '');
     }
-  }, [settingsData]);
+  }, [settingsData, isDemoMode]);
 
 
   const handleSave = async () => {
+    if (isDemoMode) {
+      toast({ variant: 'destructive', title: 'Demo Mode', description: 'Log in and subscribe to save your settings.' });
+      router.push('/login');
+      return;
+    }
     if (!settingsDocRef) {
         toast({ variant: 'destructive', title: 'Error', description: 'Cannot save settings. Shop not found.' });
         return;
@@ -105,7 +113,7 @@ export default function SettingsPage() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading && !isDemoMode) {
     return <div>Loading settings...</div>;
   }
 
