@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Shop": {
@@ -73,7 +74,8 @@
       "required": [
         "id",
         "email",
-        "subscriptionStatus"
+        "subscriptionStatus",
+        "role"
       ]
     },
     "Product": {

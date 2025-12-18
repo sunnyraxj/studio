@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -33,12 +33,18 @@ export default function LoginPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const roleParam = searchParams.get('role');
 
   const handleLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       // After login, the layout will handle redirection based on subscription status and role
-      router.push('/dashboard'); 
+      if (roleParam === 'superadmin') {
+        router.push('/admin');
+      } else {
+        router.push('/dashboard'); 
+      }
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -65,6 +71,8 @@ export default function LoginPage() {
         password
       );
       const user = userCredential.user;
+      
+      const isSuperAdmin = roleParam === 'superadmin';
 
       // Create a user profile in Firestore
       if (firestore) {
@@ -73,15 +81,25 @@ export default function LoginPage() {
         const userProfile = {
             id: user.uid,
             email: user.email,
-            subscriptionStatus: 'inactive',
-            role: 'user', // Default role for new users
+            subscriptionStatus: isSuperAdmin ? 'active' : 'inactive',
+            role: isSuperAdmin ? 'superadmin' : 'user',
         };
       
         await setDoc(userDocRef, userProfile, { merge: true });
       }
 
-      // After sign-up, always redirect to the subscription page
-      router.push('/subscribe');
+      if (isSuperAdmin) {
+        // Superadmins get immediate access to the admin panel
+        toast({
+            title: 'Admin Account Created',
+            description: 'You now have super admin privileges.',
+        });
+        router.push('/admin');
+      } else {
+         // Regular users go to the subscription page
+        router.push('/subscribe');
+      }
+
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -101,7 +119,7 @@ export default function LoginPage() {
         <TabsContent value="login">
           <Card>
             <CardHeader>
-              <CardTitle>Login</CardTitle>
+              <CardTitle>{roleParam === 'superadmin' ? 'Admin Login' : 'Login'}</CardTitle>
               <CardDescription>
                 Enter your credentials to access your account.
               </CardDescription>
@@ -139,9 +157,9 @@ export default function LoginPage() {
         <TabsContent value="signup">
           <Card>
             <CardHeader>
-              <CardTitle>Sign Up</CardTitle>
+              <CardTitle>{roleParam === 'superadmin' ? 'Create Admin Account' : 'Sign Up'}</CardTitle>
               <CardDescription>
-                Create a new account to get started.
+                {roleParam === 'superadmin' ? 'Create a new account with admin privileges.' : 'Create a new account to get started.'}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -179,7 +197,7 @@ export default function LoginPage() {
             </CardContent>
             <CardFooter>
               <Button className="w-full" onClick={handleSignUp}>
-                Sign Up
+                {roleParam === 'superadmin' ? 'Create Admin Account' : 'Sign Up'}
               </Button>
             </CardFooter>
           </Card>

@@ -14,7 +14,7 @@ const roles = [
     name: 'Super Admin',
     description: 'Oversee the entire platform.',
     icon: Shield,
-    href: '/admin',
+    href: '/login?role=superadmin',
   },
 ];
 
