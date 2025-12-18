@@ -39,14 +39,11 @@ import { format } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
 import { CaretSortIcon, ChevronDownIcon, ChevronRightIcon } from '@radix-ui/react-icons';
-import { IndianRupee, FileDown } from 'lucide-react';
+import { IndianRupee, FileDown, X } from 'lucide-react';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { FaWhatsapp } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
-import { Calendar } from '@/components/ui/calendar';
 
 
 // Common Types
@@ -174,19 +171,6 @@ function AllSalesTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoa
     return sales;
   }, [salesData, dateRange]);
 
-  const table = useReactTable({
-    data: filteredSalesData,
-    columns: salesColumns,
-    state: { sorting, expanded },
-    onSortingChange: setSorting,
-    onExpandedChange: setExpanded,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getExpandedRowModel: getExpandedRowModel(),
-    getRowCanExpand: () => true,
-  });
-
   return (
     <Card>
       <CardHeader>
@@ -273,8 +257,7 @@ const reportsColumns: ColumnDef<ReportItem>[] = [
 
 
 function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoading: boolean }) {
-  const [startDate, setStartDate] = useState<Date | undefined>();
-  const [endDate, setEndDate] = useState<Date | undefined>();
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     hsn: false,
   });
@@ -282,16 +265,16 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
   const reportData = useMemo(() => {
     if (!salesData) return [];
     let items: ReportItem[] = salesData.flatMap(sale => sale.items.map(item => ({ ...item, saleDate: sale.date })));
-    if (startDate) {
-        items = items.filter(item => new Date(item.saleDate) >= startDate);
+    if (dateRange?.from) {
+        items = items.filter(item => new Date(item.saleDate) >= dateRange.from!);
     }
-    if (endDate) {
-        const toDate = new Date(endDate);
+    if (dateRange?.to) {
+        const toDate = new Date(dateRange.to);
         toDate.setHours(23, 59, 59, 999);
         items = items.filter(item => new Date(item.saleDate) <= toDate);
     }
     return items;
-  }, [salesData, startDate, endDate]);
+  }, [salesData, dateRange]);
 
   const totalSales = useMemo(() => {
     return reportData.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -326,6 +309,10 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
     XLSX.writeFile(workbook, `SalesReport-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
   }
 
+  const handleClearFilter = () => {
+    setDateRange(undefined);
+  }
+
   return (
     <TooltipProvider>
       <Card>
@@ -338,7 +325,7 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
                 <span className="font-bold">Total Sales (Filtered):</span> ₹{totalSales.toLocaleString('en-IN')}
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
               <Tooltip>
                   <TooltipTrigger asChild>
                       <Button variant="outline" onClick={handleExport} disabled={reportData.length === 0}>
@@ -379,38 +366,19 @@ function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoad
                     })}
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="justify-start text-left font-normal">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {startDate ? format(startDate, 'PPP') : <span>Start Date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
-                    <Calendar
-                        mode="single"
-                        selected={startDate}
-                        onSelect={setStartDate}
-                        initialFocus
-                    />
-                </PopoverContent>
-              </Popover>
-               <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="justify-start text-left font-normal">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {endDate ? format(endDate, 'PPP') : <span>End Date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
-                    <Calendar
-                        mode="single"
-                        selected={endDate}
-                        onSelect={setEndDate}
-                        initialFocus
-                    />
-                </PopoverContent>
-              </Popover>
+              <DateRangePicker onDateChange={setDateRange} initialDateRange={dateRange} />
+              {dateRange && (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" onClick={handleClearFilter}>
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Clear date filter</p>
+                    </TooltipContent>
+                </Tooltip>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -701,7 +669,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
-
-    

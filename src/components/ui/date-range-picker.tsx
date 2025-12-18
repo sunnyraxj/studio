@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -16,19 +17,29 @@ import {
 
 interface DateRangePickerProps extends React.HTMLAttributes<HTMLDivElement> {
     onDateChange: (dateRange: DateRange | undefined) => void;
+    initialDateRange?: DateRange;
 }
 
-export function DateRangePicker({ className, onDateChange }: DateRangePickerProps) {
-  const [date, setDate] = React.useState<DateRange | undefined>();
+export function DateRangePicker({ className, onDateChange, initialDateRange }: DateRangePickerProps) {
+  const [date, setDate] = React.useState<DateRange | undefined>(initialDateRange);
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    setDate(initialDateRange);
+  }, [initialDateRange]);
 
   const handleSelect = (selectedDate: DateRange | undefined) => {
     setDate(selectedDate);
     onDateChange(selectedDate);
+    // Optional: close the popover when a range is selected
+    if (selectedDate?.from && selectedDate?.to) {
+        setIsOpen(false);
+    }
   }
 
   return (
     <div className={cn('grid gap-2', className)}>
-      <Popover>
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <Button
             id="date"
