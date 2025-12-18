@@ -1,8 +1,8 @@
 
 'use client';
 
-import Link from 'next/link';
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
   Bell,
   CircleUser,
@@ -41,7 +41,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -56,6 +56,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import { useAuth, useUser } from '@/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
 
 const navLinks = [
   {
@@ -90,12 +93,17 @@ function AppSidebar() {
   const pathname = usePathname();
   const { open } = useSidebar();
   const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const auth = useAuth();
 
   useEffect(() => {
     if (!open) {
       setIsAccountOpen(false);
     }
   }, [open]);
+
+  const handleLogout = () => {
+    auth.signOut();
+  };
 
   return (
     <Sidebar>
@@ -186,7 +194,7 @@ function AppSidebar() {
                 <LifeBuoy className="h-4 w-4" />
                 Support
              </Button>
-             <Button variant="ghost" className="w-full justify-start gap-2">
+             <Button variant="ghost" className="w-full justify-start gap-2" onClick={handleLogout}>
                 <LogOut className="h-4 w-4" />
                 Logout
              </Button>
@@ -262,6 +270,42 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
+  const firestore = useFirestore();
+
+  useEffect(() => {
+    if (!isUserLoading) {
+      if (!user) {
+        router.push('/login');
+      } else {
+        const checkSubscription = async () => {
+          const userDocRef = doc(firestore, 'users', user.uid);
+          const userDoc = await getDoc(userDocRef);
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            if (userData.subscriptionStatus !== 'active') {
+              router.push('/subscribe');
+            }
+          } else {
+            // If user profile doesn't exist, they likely haven't completed signup
+            router.push('/subscribe');
+          }
+        };
+        checkSubscription();
+      }
+    }
+  }, [user, isUserLoading, router, firestore]);
+
+  if (isUserLoading || !user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-2xl font-semibold">Loading...</div>
+      </div>
+    );
+  }
+
+
   return (
     <SidebarProvider>
       <div className="grid min-h-screen w-full md:grid-cols-[auto_1fr] lg:grid-cols-[auto_1fr]">

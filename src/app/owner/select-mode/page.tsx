@@ -13,7 +13,7 @@ const modes = [
     name: 'Production',
     description: 'Manage your live shop with real data.',
     icon: VscRocket,
-    href: '/owner/dashboard',
+    href: '/login',
   },
 ];
 

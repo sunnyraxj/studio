@@ -63,17 +63,19 @@
           "type": "string",
           "description": "Last name of the user."
         },
-        "role": {
+        "subscriptionStatus": {
           "type": "string",
-          "description": "Role of the user (e.g., shop_owner, superadmin)."
+          "description": "The user's current subscription status.",
+          "enum": [
+            "active",
+            "inactive"
+          ]
         }
       },
       "required": [
         "id",
         "email",
-        "firstName",
-        "lastName",
-        "role"
+        "subscriptionStatus"
       ]
     },
     "Subscription": {
@@ -204,7 +206,8 @@
   "auth": {
     "providers": [
       "password",
-      "anonymous"
+      "anonymous",
+      "email"
     ]
   },
   "firestore": {
