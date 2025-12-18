@@ -1,8 +1,9 @@
 
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Package2,
   ShieldCheck,
@@ -12,6 +13,8 @@ import {
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 const adminNavLinks = [
   {
@@ -75,11 +78,54 @@ function AdminSidebar() {
   );
 }
 
+type UserProfile = {
+  role?: 'user' | 'admin';
+};
+
+
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+    const { user, isUserLoading } = useUser();
+    const firestore = useFirestore();
+    const router = useRouter();
+
+    const userDocRef = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return doc(firestore, `users/${user.uid}`);
+    }, [user, firestore]);
+
+    const { data: userData, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
+
+    useEffect(() => {
+        if (isUserLoading || isProfileLoading) {
+            return; // Wait for user and profile data to load
+        }
+
+        if (!user) {
+            // Not logged in, redirect to login page for admin role
+            router.push('/login?role=admin');
+            return;
+        }
+
+        if (userData?.role !== 'admin') {
+            // Logged in, but not an admin. Redirect to regular dashboard.
+            router.push('/dashboard');
+        }
+
+    }, [user, userData, isUserLoading, isProfileLoading, router]);
+
+    // Render a loading state or nothing while checks are running
+    if (isUserLoading || isProfileLoading || !user || userData?.role !== 'admin') {
+        return (
+            <div className="flex min-h-screen w-full items-center justify-center">
+                <p>Loading...</p>
+            </div>
+        );
+    }
+
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <AdminSidebar />

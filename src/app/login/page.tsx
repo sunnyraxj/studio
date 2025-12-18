@@ -54,6 +54,7 @@ export default function LoginPage() {
 
   const handleSuccessfulLogin = async (user: User) => {
     if (!firestore) {
+        // Default redirect if firestore is not available
         router.push('/dashboard');
         return;
     }
@@ -73,6 +74,7 @@ export default function LoginPage() {
 };
 
   const handleLogin = async () => {
+    if (!auth) return;
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       await handleSuccessfulLogin(userCredential.user);
@@ -86,6 +88,7 @@ export default function LoginPage() {
   };
 
   const handleSignUp = async () => {
+    if (!auth) return;
     // Prevent new admin sign-ups if one already exists
     if (roleParam === 'admin' && adminExists) {
         toast({
@@ -136,7 +139,10 @@ export default function LoginPage() {
             setEmail('');
             setPassword('');
             setConfirmPassword('');
-            router.push('/login');
+            // Manually set default tab to login
+            const loginTrigger = document.querySelector('button[data-radix-collection-item][value="login"]') as HTMLButtonElement | null;
+            loginTrigger?.click();
+
             return;
         }
       }
@@ -151,20 +157,22 @@ export default function LoginPage() {
     }
   };
 
+  const isSignupDisabled = roleParam === 'admin' && adminExists;
+
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
       <Tabs defaultValue="login" className="w-[400px]">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="login">Login</TabsTrigger>
-          {/* Conditionally render the Sign Up tab */}
-          {!adminExists && <TabsTrigger value="signup">Sign Up</TabsTrigger>}
+          <TabsTrigger value="signup" disabled={isSignupDisabled}>Sign Up</TabsTrigger>
         </TabsList>
         <TabsContent value="login">
           <Card>
             <CardHeader>
               <CardTitle>Login</CardTitle>
               <CardDescription>
-                Enter your credentials to access your account.
+                {roleParam === 'admin' ? 'Enter your administrator credentials.' : 'Enter your credentials to access your account.'}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -208,13 +216,12 @@ export default function LoginPage() {
             </CardFooter>
           </Card>
         </TabsContent>
-        {!adminExists && (
             <TabsContent value="signup">
             <Card>
                 <CardHeader>
                 <CardTitle>Sign Up</CardTitle>
                 <CardDescription>
-                    Create a new account to get started.
+                   {roleParam === 'admin' ? 'Create the master administrator account.' : 'Create a new account to get started.'}
                 </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -279,7 +286,6 @@ export default function LoginPage() {
                 </CardFooter>
             </Card>
             </TabsContent>
-        )}
       </Tabs>
     </div>
   );

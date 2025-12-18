@@ -2,7 +2,6 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useRouter } from 'next/navigation';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, doc, writeBatch } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
@@ -33,7 +32,6 @@ type UserProfile = {
 };
 
 export default function AdminPage() {
-  const router = useRouter();
   const firestore = useFirestore();
 
   const usersCollectionRef = useMemoFirebase(() => {
