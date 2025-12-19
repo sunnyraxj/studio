@@ -87,6 +87,10 @@
           "type": "number",
           "description": "The price of the plan the user is subscribing to."
         },
+        "planDurationMonths": {
+            "type": "number",
+            "description": "The duration of the subscription plan in months."
+        },
         "rejectionReason": {
           "type": "string",
           "description": "The reason provided by an admin for rejecting a payment."

@@ -35,6 +35,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { add } from 'date-fns';
 
 type UserProfile = {
   id: string;
@@ -45,6 +46,7 @@ type UserProfile = {
   utr?: string;
   planPrice?: number;
   rejectionReason?: string;
+  planDurationMonths?: number;
 };
 
 export default function AdminPage() {
@@ -73,8 +75,9 @@ export default function AdminPage() {
     
     const targetUserDocRef = doc(firestore, 'users', targetUser.id);
     const startDate = new Date();
-    const endDate = new Date(startDate);
-    endDate.setFullYear(endDate.getFullYear() + 1);
+    // Use planDurationMonths to calculate end date, default to 1 month if not present
+    const durationMonths = targetUser.planDurationMonths || 1;
+    const endDate = add(startDate, { months: durationMonths });
 
     batch.update(targetUserDocRef, {
       subscriptionStatus: 'active',
