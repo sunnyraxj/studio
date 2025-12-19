@@ -3,6 +3,7 @@
 
 import React, { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import {
   Card,
   CardContent,
@@ -15,6 +16,11 @@ import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@
 import { collection, doc } from 'firebase/firestore';
 import { IndianRupee } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { subDays } from 'date-fns';
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { PaymentBreakdownCard } from './components/payment-breakdown-card';
+import { cn } from '@/lib/utils';
+
 
 // Common Types
 export type Sale = {
@@ -116,6 +122,7 @@ export default function DashboardPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const isDemoMode = !user;
+  const [activeTab, setActiveTab] = useState('overview');
 
   const userDocRef = useMemoFirebase(() => {
     if (isDemoMode || !firestore) return null;
@@ -132,19 +139,57 @@ export default function DashboardPage() {
 
   const { data: allSalesData, isLoading: isAllSalesLoading } = useCollection<Sale>(salesCollectionRef);
   const salesData = isDemoMode ? demoSales : allSalesData;
+  const originalData = salesData || [];
 
-  const todaySales = isDemoMode ? DemoData.todaySales : salesData?.filter(s => new Date(s.date).toDateString() === new Date().toDateString()).reduce((sum, s) => sum + s.total, 0) || 0;
-  const thisMonthSales = isDemoMode ? DemoData.thisMonthSales : salesData?.filter(s => new Date(s.date).getMonth() === new Date().getMonth() && new Date(s.date).getFullYear() === new Date().getFullYear()).reduce((sum, s) => sum + s.total, 0) || 0;
-  const thisYearSales = isDemoMode ? DemoData.thisYearSales : salesData?.filter(s => new Date(s.date).getFullYear() === new Date().getFullYear()).reduce((sum, s) => sum + s.total, 0) || 0;
+  const {
+      todaySales,
+      thisMonthSales,
+      thisYearSales,
+      todayPaymentTotals,
+      yesterdayPaymentTotals,
+      allTimePaymentTotals,
+  } = useMemo(() => {
+      const todayStr = new Date().toDateString();
+      const yesterdayStr = subDays(new Date(), 1).toDateString();
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+
+      const calculateTotals = (data: Sale[]) => {
+          return data.reduce((acc, sale) => {
+              if (sale.paymentMode === 'both' && sale.paymentDetails) {
+                  acc.cash += sale.paymentDetails.cash || 0;
+                  acc.card += sale.paymentDetails.card || 0;
+                  acc.upi += sale.paymentDetails.upi || 0;
+              } else if (sale.paymentMode === 'cash' || sale.paymentMode === 'card' || sale.paymentMode === 'upi') {
+                  acc[sale.paymentMode] = (acc[sale.paymentMode] || 0) + sale.total;
+              }
+              return acc;
+          }, { cash: 0, card: 0, upi: 0 });
+      };
+
+      const todaySalesData = originalData.filter(s => new Date(s.date).toDateString() === todayStr);
+      const yesterdaySalesData = originalData.filter(s => new Date(s.date).toDateString() === yesterdayStr);
+
+      return {
+          todaySales: todaySalesData.reduce((sum, s) => sum + s.total, 0),
+          thisMonthSales: originalData.filter(s => new Date(s.date).getMonth() === currentMonth && new Date(s.date).getFullYear() === currentYear).reduce((sum, s) => sum + s.total, 0),
+          thisYearSales: originalData.filter(s => new Date(s.date).getFullYear() === currentYear).reduce((sum, s) => sum + s.total, 0),
+          todayPaymentTotals: calculateTotals(todaySalesData),
+          yesterdayPaymentTotals: calculateTotals(yesterdaySalesData),
+          allTimePaymentTotals: calculateTotals(originalData),
+      };
+  }, [originalData]);
+
 
   const isLoading = isAllSalesLoading && !isDemoMode;
 
   return (
+    <TooltipProvider>
     <div className="flex-1 space-y-6">
         <h2 className="text-3xl font-bold tracking-tight">
             {isDemoMode ? 'Dashboard (Demo Mode)' : 'Dashboard'}
         </h2>
-        <Tabs defaultValue="overview" className="space-y-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
             <TabsList>
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="sales">All Sales</TabsTrigger>
@@ -182,6 +227,38 @@ export default function DashboardPage() {
                         </CardContent>
                     </Card>
                 </div>
+                 <div className="grid gap-4 md:grid-cols-3">
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div onClick={() => setActiveTab('payments')} className="cursor-pointer">
+                                <PaymentBreakdownCard title="Today's Payments" totals={todayPaymentTotals} isLoading={isLoading} />
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Click to see more data</p>
+                        </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                           <div onClick={() => setActiveTab('payments')} className="cursor-pointer">
+                                <PaymentBreakdownCard title="Yesterday's Payments" totals={yesterdayPaymentTotals} isLoading={isLoading} />
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Click to see more data</p>
+                        </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div onClick={() => setActiveTab('payments')} className="cursor-pointer">
+                                <PaymentBreakdownCard title="All-Time Totals" totals={allTimePaymentTotals} isLoading={isLoading}/>
+                            </div>
+                        </TooltipTrigger>
+                         <TooltipContent>
+                            <p>Click to see more data</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </div>
             </TabsContent>
             <TabsContent value="sales">
                 <AllSalesTab salesData={salesData} isLoading={isLoading} />
@@ -197,5 +274,6 @@ export default function DashboardPage() {
             </TabsContent>
         </Tabs>
     </div>
+    </TooltipProvider>
   );
 }

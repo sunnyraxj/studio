@@ -39,6 +39,7 @@ import type { Sale } from '../page';
 import * as XLSX from 'xlsx';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { PaymentBreakdownCard } from './payment-breakdown-card';
 
 
 const paymentColumns: ColumnDef<Sale>[] = [
@@ -84,36 +85,6 @@ const paymentColumns: ColumnDef<Sale>[] = [
   },
 ];
 
-const PaymentBreakdownCard = ({ title, totals, className }: { title: string, totals: { cash: number; card: number; upi: number; }, className?: string }) => (
-    <Card className={className}>
-        <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center text-sm">
-                    <Banknote className="h-4 w-4 mr-2 text-muted-foreground" />
-                    Cash
-                </div>
-                <div className="font-semibold">₹{totals.cash.toLocaleString('en-IN')}</div>
-            </div>
-                <div className="flex items-center justify-between">
-                <div className="flex items-center text-sm">
-                    <CreditCard className="h-4 w-4 mr-2 text-muted-foreground" />
-                    Card
-                </div>
-                <div className="font-semibold">₹{totals.card.toLocaleString('en-IN')}</div>
-            </div>
-                <div className="flex items-center justify-between">
-                <div className="flex items-center text-sm">
-                    <Smartphone className="h-4 w-4 mr-2 text-muted-foreground" />
-                    UPI
-                </div>
-                <div className="font-semibold">₹{totals.upi.toLocaleString('en-IN')}</div>
-            </div>
-        </CardContent>
-    </Card>
-);
 
 export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoading: boolean }) {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'date', desc: true }]);
@@ -370,11 +341,12 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
               </Card>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
-            <PaymentBreakdownCard title="Today's Payments" totals={todayPaymentTotals} />
-            <PaymentBreakdownCard title="Yesterday's Payments" totals={yesterdayPaymentTotals} />
+            <PaymentBreakdownCard title="Today's Payments" totals={todayPaymentTotals} isLoading={isLoading} />
+            <PaymentBreakdownCard title="Yesterday's Payments" totals={yesterdayPaymentTotals} isLoading={isLoading} />
             <PaymentBreakdownCard 
                 title={isFilterApplied ? "Filtered Totals" : "All-Time Totals"} 
-                totals={filteredPaymentTotals} 
+                totals={filteredPaymentTotals}
+                isLoading={isLoading}
                 className={cn(
                     isFilterApplied && "bg-accent/50 border-primary ring-2 ring-primary/50"
                 )}
