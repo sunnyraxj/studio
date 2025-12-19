@@ -14,7 +14,7 @@ import { Banknote, CreditCard, Smartphone } from 'lucide-react';
 export const PaymentBreakdownCard = ({ title, totals, isLoading, className }: { title: string, totals: { cash: number; card: number; upi: number; }, isLoading: boolean, className?: string }) => (
     <Card className={className}>
         <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">{title}</CardTitle>
+            <CardTitle className="text-base font-medium">{title}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
             <div className="flex items-center justify-between">
