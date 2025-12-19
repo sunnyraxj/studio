@@ -20,6 +20,8 @@ import { subDays } from 'date-fns';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { PaymentBreakdownCard } from './components/payment-breakdown-card';
 import { cn } from '@/lib/utils';
+import { MonthlySalesChart } from './components/monthly-sales-chart';
+import { TopProductsChart } from './components/top-products-chart';
 
 
 // Common Types
@@ -258,6 +260,10 @@ export default function DashboardPage() {
                             <p className="font-bold">Click to see more data</p>
                         </TooltipContent>
                     </Tooltip>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                    <MonthlySalesChart salesData={salesData} isLoading={isLoading} />
+                    <TopProductsChart salesData={salesData} isLoading={isLoading} />
                 </div>
             </TabsContent>
             <TabsContent value="sales">
