@@ -28,12 +28,13 @@ import {
 } from '@/components/ui/card';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { CaretSortIcon } from '@radix-ui/react-icons';
-import { X, Search, IndianRupee, CreditCard, Smartphone, Banknote } from 'lucide-react';
+import { X, Search, IndianRupee, CreditCard, Smartphone, Banknote, Calendar, TrendingUp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import type { Sale } from '../page';
 
 
@@ -134,12 +135,25 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
 
   },[originalData, startDay, startMonth, startYear, endDay, endMonth, endYear, searchTerm, isFilterApplied]);
 
-  const totals = useMemo(() => {
-    return filteredData.reduce((acc, sale) => {
+  const { paymentTotals, todaySales, yesterdaySales, thisMonthSales } = useMemo(() => {
+    const data = isFilterApplied ? filteredData : originalData;
+    const paymentTotals = data.reduce((acc, sale) => {
         acc[sale.paymentMode] = (acc[sale.paymentMode] || 0) + sale.total;
         return acc;
     }, { cash: 0, card: 0, upi: 0 });
-  }, [filteredData]);
+
+    const todayStr = new Date().toDateString();
+    const yesterdayStr = subDays(new Date(), 1).toDateString();
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+
+    const todaySales = originalData.filter(s => new Date(s.date).toDateString() === todayStr).reduce((sum, s) => sum + s.total, 0);
+    const yesterdaySales = originalData.filter(s => new Date(s.date).toDateString() === yesterdayStr).reduce((sum, s) => sum + s.total, 0);
+    const thisMonthSales = originalData.filter(s => new Date(s.date).getMonth() === currentMonth && new Date(s.date).getFullYear() === currentYear).reduce((sum, s) => sum + s.total, 0);
+    
+    return { paymentTotals, todaySales, yesterdaySales, thisMonthSales };
+
+  }, [filteredData, originalData, isFilterApplied]);
 
 
   const handleFilter = () => {
@@ -214,34 +228,66 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-4 md:grid-cols-3 mb-6">
+        <div className="mb-6 space-y-4">
+          <div className="grid gap-4 md:grid-cols-3">
+              <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Today's Sales</CardTitle>
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                      <div className="text-2xl font-bold">₹{todaySales.toLocaleString('en-IN')}</div>
+                  </CardContent>
+              </Card>
+               <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Yesterday's Sales</CardTitle>
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                      <div className="text-2xl font-bold">₹{yesterdaySales.toLocaleString('en-IN')}</div>
+                  </CardContent>
+              </Card>
+              <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">This Month's Sales</CardTitle>
+                      <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                      <div className="text-2xl font-bold">₹{thisMonthSales.toLocaleString('en-IN')}</div>
+                  </CardContent>
+              </Card>
+          </div>
+          <Separator />
+           <div className="grid gap-4 md:grid-cols-3">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Cash</CardTitle>
+                    <CardTitle className="text-sm font-medium">Cash Total (Filtered)</CardTitle>
                     <Banknote className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">₹{totals.cash.toLocaleString('en-IN')}</div>
+                    <div className="text-2xl font-bold">₹{paymentTotals.cash.toLocaleString('en-IN')}</div>
                 </CardContent>
             </Card>
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Card</CardTitle>
+                    <CardTitle className="text-sm font-medium">Card Total (Filtered)</CardTitle>
                     <CreditCard className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">₹{totals.card.toLocaleString('en-IN')}</div>
+                    <div className="text-2xl font-bold">₹{paymentTotals.card.toLocaleString('en-IN')}</div>
                 </CardContent>
             </Card>
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">UPI</CardTitle>
+                    <CardTitle className="text-sm font-medium">UPI Total (Filtered)</CardTitle>
                     <Smartphone className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">₹{totals.upi.toLocaleString('en-IN')}</div>
+                    <div className="text-2xl font-bold">₹{paymentTotals.upi.toLocaleString('en-IN')}</div>
                 </CardContent>
             </Card>
+          </div>
         </div>
 
         <div className="rounded-md border">
