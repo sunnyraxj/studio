@@ -154,8 +154,7 @@ function AppSidebar({ shopName }: { shopName: string }) {
             <CardHeader className="p-2 pt-0 md:p-4">
               <CardTitle>Upgrade to Pro</CardTitle>
               <CardDescription>
-                Unlock all features and get unlimited access to our support
-                team.
+                Unlock all features for production use.
               </CardDescription>
             </CardHeader>
             <CardContent className="p-2 pt-0 md:p-4 md:pt-0">
@@ -246,8 +245,7 @@ function MobileSidebar({ shopName }: { shopName: string }) {
               <CardHeader>
                 <CardTitle>Upgrade to Pro</CardTitle>
                 <CardDescription>
-                  Unlock all features and get unlimited access to our support
-                  team.
+                  Unlock all features for production use.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -351,3 +349,5 @@ export default function DashboardLayout({
     </SidebarProvider>
   );
 }
+
+    
