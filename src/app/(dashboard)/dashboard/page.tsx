@@ -234,7 +234,7 @@ export default function DashboardPage() {
                                 <PaymentBreakdownCard title="Today's Payments" totals={todayPaymentTotals} isLoading={isLoading} />
                             </div>
                         </TooltipTrigger>
-                        <TooltipContent className="bg-yellow-100 text-yellow-900 border-yellow-300">
+                        <TooltipContent>
                             <p className="font-bold">Click to see more data</p>
                         </TooltipContent>
                     </Tooltip>
@@ -244,7 +244,7 @@ export default function DashboardPage() {
                                 <PaymentBreakdownCard title="Yesterday's Payments" totals={yesterdayPaymentTotals} isLoading={isLoading} />
                             </div>
                         </TooltipTrigger>
-                        <TooltipContent className="bg-yellow-100 text-yellow-900 border-yellow-300">
+                        <TooltipContent>
                             <p className="font-bold">Click to see more data</p>
                         </TooltipContent>
                     </Tooltip>
@@ -254,7 +254,7 @@ export default function DashboardPage() {
                                 <PaymentBreakdownCard title="All-Time Totals" totals={allTimePaymentTotals} isLoading={isLoading}/>
                             </div>
                         </TooltipTrigger>
-                         <TooltipContent className="bg-yellow-100 text-yellow-900 border-yellow-300">
+                         <TooltipContent>
                             <p className="font-bold">Click to see more data</p>
                         </TooltipContent>
                     </Tooltip>
