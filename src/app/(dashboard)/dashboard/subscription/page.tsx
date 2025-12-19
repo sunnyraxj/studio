@@ -56,11 +56,15 @@ export default function SubscriptionPage() {
       const total = differenceInDays(endDate, startDate);
 
       setDaysRemaining(remaining > 0 ? remaining : 0);
-      setTotalDuration(total > 0 ? total : 365);
+      setTotalDuration(total > 0 ? total : 1);
 
-      const elapsed = differenceInDays(now, startDate);
-      const progressPercentage = Math.max(0, Math.min(100, (elapsed / total) * 100));
-      setProgress(progressPercentage);
+      if (total > 0) {
+        const elapsed = differenceInDays(now, startDate);
+        const progressPercentage = Math.max(0, Math.min(100, (elapsed / total) * 100));
+        setProgress(progressPercentage);
+      } else {
+        setProgress(100);
+      }
     }
   }, [userData]);
 
@@ -177,7 +181,7 @@ export default function SubscriptionPage() {
                      <div>
                         <Progress value={progress} className="w-full" indicatorClassName={daysRemaining !== null && daysRemaining < 30 ? 'bg-destructive' : 'bg-primary'} />
                         <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-                            {isLoading ? <Skeleton className="h-4 w-24" /> : <span>{365 - (daysRemaining || 0)} days used</span>}
+                            {isLoading ? <Skeleton className="h-4 w-24" /> : <span>{totalDuration - (daysRemaining ?? 0)} days used</span>}
                             {isLoading ? <Skeleton className="h-4 w-24" /> : 
                                 (daysRemaining !== null && daysRemaining > 0) ? (
                                     <span className={daysRemaining < 30 ? 'font-bold text-destructive' : ''}>

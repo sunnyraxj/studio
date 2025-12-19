@@ -57,7 +57,7 @@ const plans = [
   },
   {
     name: 'Yearly',
-    price: 5000,
+    price: 7499,
     durationMonths: 12,
     description: 'Best value for established businesses.',
     features: [
