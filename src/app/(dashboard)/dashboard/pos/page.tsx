@@ -71,7 +71,7 @@ export default function POSPage() {
 
   const userDocRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
-    return doc(firestore, `users/${'user'}.uid}`);
+    return doc(firestore, `users/${user.uid}`);
   }, [user, firestore]);
 
   const { data: userData } = useDoc<UserProfile>(userDocRef);
