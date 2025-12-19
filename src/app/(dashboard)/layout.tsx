@@ -138,7 +138,7 @@ function AppSidebar({ shopName }: { shopName: string }) {
               <Link href={link.href}>
                 <SidebarMenuButton
                   isActive={pathname === link.href}
-                  className={cn(open ? '' : 'justify-center', 'font-bold uppercase')}
+                  className={cn(open ? '' : 'justify-center', 'font-bold uppercase font-sans')}
                   tooltip={open ? undefined : link.label}
                 >
                   <link.icon className="h-4 w-4" />
