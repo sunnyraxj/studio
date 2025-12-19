@@ -168,6 +168,11 @@ export function AllSalesTab({ salesData, isLoading }: { salesData: Sale[] | null
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getExpandedRowModel: getExpandedRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: 30,
+      },
+    },
   });
 
   return (

@@ -340,6 +340,11 @@ export default function InventoryPage() {
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    initialState: {
+      pagination: {
+        pageSize: 30,
+      },
+    },
     state: {
       sorting,
       columnFilters,

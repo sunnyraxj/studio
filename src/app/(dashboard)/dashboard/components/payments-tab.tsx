@@ -273,6 +273,11 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: 30,
+      },
+    },
   });
 
   return (

@@ -148,6 +148,11 @@ export function CustomersTab({ salesData, isLoading, isDemoMode }: { salesData: 
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: 30,
+      },
+    },
   });
 
   return (

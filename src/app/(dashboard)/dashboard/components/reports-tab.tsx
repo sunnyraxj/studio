@@ -146,6 +146,11 @@ export function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null,
     onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: 30,
+      },
+    },
   });
 
   const handleExport = () => {
