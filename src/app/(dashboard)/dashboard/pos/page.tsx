@@ -27,7 +27,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, doc, addDoc } from 'firebase/firestore';
+import { collection, doc, addDoc, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast.tsx';
 
 
@@ -48,6 +48,10 @@ type CartItem = {
 
 type UserProfile = {
   shopId?: string;
+}
+
+type Sale = {
+    invoiceNumber: string;
 }
 
 const sampleProducts: Product[] = [
@@ -97,10 +101,45 @@ export default function POSPage() {
   const [searchBy, setSearchBy] = useState('name');
   const [invoiceNumber, setInvoiceNumber] = useState('');
 
+  const generateNextInvoiceNumber = async () => {
+    if (isDemoMode || !firestore || !shopId) {
+        const currentYear = new Date().getFullYear();
+        setInvoiceNumber(`INV-${currentYear}-0001`);
+        return;
+    }
+
+    const currentYear = new Date().getFullYear();
+    const salesCollectionRef = collection(firestore, `shops/${shopId}/sales`);
+    
+    // Query for the last sale of the current year
+    const q = query(
+        salesCollectionRef, 
+        orderBy('date', 'desc'), 
+        limit(1)
+    );
+
+    const querySnapshot = await getDocs(q);
+    let lastInvoiceNumber = 0;
+    
+    if (!querySnapshot.empty) {
+        const lastSale = querySnapshot.docs[0].data() as Sale;
+        const lastInvoice = lastSale.invoiceNumber; // e.g., "INV-2024-0015"
+        
+        const parts = lastInvoice.split('-');
+        const yearOfLastInvoice = parseInt(parts[1], 10);
+
+        if (yearOfLastInvoice === currentYear) {
+            lastInvoiceNumber = parseInt(parts[2], 10);
+        }
+    }
+    
+    const nextInvoiceNumber = (lastInvoiceNumber + 1).toString().padStart(4, '0');
+    setInvoiceNumber(`INV-${currentYear}-${nextInvoiceNumber}`);
+};
+
   useEffect(() => {
-    // Generate invoice number only on the client-side
-    setInvoiceNumber(new Date().getTime().toString().slice(-6));
-  }, []);
+    generateNextInvoiceNumber();
+  }, [shopId, isDemoMode, firestore]);
 
   const addToCart = (productToAdd: Product) => {
     setCart((prevCart) => {
@@ -175,7 +214,7 @@ export default function POSPage() {
     setCustomerState('');
     setCustomerGstin('');
     setPaymentMode('cash');
-    setInvoiceNumber(new Date().getTime().toString().slice(-6));
+    generateNextInvoiceNumber();
   };
 
   const completeSale = async () => {
@@ -223,7 +262,7 @@ export default function POSPage() {
         gstin: customerGstin,
       },
       paymentMode: paymentMode,
-      invoiceNumber: `INV${invoiceNumber}`
+      invoiceNumber: invoiceNumber
     };
 
     try {
@@ -231,7 +270,7 @@ export default function POSPage() {
       await addDoc(salesCollectionRef, saleData);
       toast({
         title: 'Sale Completed',
-        description: `Sale #${invoiceNumber} has been recorded.`
+        description: `Sale ${invoiceNumber} has been recorded.`
       });
       clearSale();
     } catch(error: any) {
@@ -314,7 +353,7 @@ export default function POSPage() {
                 <div className="flex-none p-4 border-b border-t md:border-t-0">
                     <h2 className="text-lg font-semibold">Current Sale</h2>
                     <p className="text-sm text-muted-foreground">
-                        {invoiceNumber ? `Invoice #INV${invoiceNumber}` : '...'}
+                        {invoiceNumber ? `Invoice #${invoiceNumber}` : '...'}
                     </p>
                 </div>
                  <ScrollArea className="flex-1">
@@ -501,5 +540,7 @@ export default function POSPage() {
     </div>
   );
 }
+
+    
 
     
