@@ -31,11 +31,14 @@ import { Badge } from '@/components/ui/badge';
 import { format, subDays } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { CaretSortIcon } from '@radix-ui/react-icons';
-import { X, Search, IndianRupee, CreditCard, Smartphone, Banknote, Calendar, TrendingUp } from 'lucide-react';
+import { X, Search, IndianRupee, CreditCard, Smartphone, Banknote, Calendar, TrendingUp, FileDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import type { Sale } from '../page';
+import * as XLSX from 'xlsx';
+import { cn } from '@/lib/utils';
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 
 const paymentColumns: ColumnDef<Sale>[] = [
@@ -81,8 +84,8 @@ const paymentColumns: ColumnDef<Sale>[] = [
   },
 ];
 
-const PaymentBreakdownCard = ({ title, totals }: { title: string, totals: { cash: number; card: number; upi: number; } }) => (
-    <Card>
+const PaymentBreakdownCard = ({ title, totals, className }: { title: string, totals: { cash: number; card: number; upi: number; }, className?: string }) => (
+    <Card className={className}>
         <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">{title}</CardTitle>
         </CardHeader>
@@ -141,15 +144,13 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
     const isValidEndDate = !isNaN(endDate.getTime()) && endDay && endMonth && endYear;
     
     let applied = false;
-    if (isFilterApplied) {
-        if (isValidStartDate) {
-            data = data.filter(item => new Date(item.date) >= startDate);
-            applied = true;
-        }
-        if (isValidEndDate) {
-            data = data.filter(item => new Date(item.date) <= endDate);
-            applied = true;
-        }
+    if (isValidStartDate) {
+        data = data.filter(item => new Date(item.date) >= startDate);
+        applied = true;
+    }
+    if (isValidEndDate) {
+        data = data.filter(item => new Date(item.date) <= endDate);
+        applied = true;
     }
     
     // Search filtering
@@ -163,9 +164,9 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
     }
 
     setFilteredData(data);
-    setIsFilterApplied(applied || !!searchTerm || (isFilterApplied && (isValidStartDate || isValidEndDate)));
+    setIsFilterApplied(applied);
 
-  },[originalData, startDay, startMonth, startYear, endDay, endMonth, endYear, searchTerm, isFilterApplied]);
+  },[originalData, startDay, startMonth, startYear, endDay, endMonth, endYear, searchTerm]);
 
   const {
     filteredPaymentTotals,
@@ -186,7 +187,7 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
                 acc.cash += sale.paymentDetails.cash || 0;
                 acc.card += sale.paymentDetails.card || 0;
                 acc.upi += sale.paymentDetails.upi || 0;
-            } else if (sale.paymentMode !== 'both') {
+            } else if (sale.paymentMode === 'cash' || sale.paymentMode === 'card' || sale.paymentMode === 'upi') {
                  acc[sale.paymentMode] = (acc[sale.paymentMode] || 0) + sale.total;
             }
             return acc;
@@ -215,7 +216,14 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
 
 
   const handleFilter = () => {
-    setIsFilterApplied(true);
+    // This function is kept for explicitness, but useEffect handles the logic.
+    // We can enhance this if we only want to filter on button click.
+    // For now, we'll just ensure a state changes that triggers the effect.
+    // A simple way is to manage a filter "applied" state manually.
+    
+    // The current useEffect logic filters "live". If we want to filter only on click,
+    // we would move the filtering logic inside a function like this and remove it from useEffect.
+    // For now, let's keep live filtering as it seems to be the implemented pattern.
   };
   
   const handleClearFilter = () => {
@@ -226,11 +234,30 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
     setEndMonth('');
     setEndYear('');
     setSearchTerm('');
-    setIsFilterApplied(false);
+    setIsFilterApplied(false); // This will cause the useEffect to reset the data
+  }
+  
+  const handleExport = () => {
+    const dataToExport = (isFilterApplied ? filteredData : originalData).map(sale => ({
+        'Invoice #': sale.invoiceNumber,
+        'Date': format(new Date(sale.date), 'dd-MM-yyyy'),
+        'Customer': sale.customer.name,
+        'Payment Mode': sale.paymentMode,
+        'Amount': sale.total,
+        'Cash Paid': sale.paymentMode === 'both' ? sale.paymentDetails?.cash : (sale.paymentMode === 'cash' ? sale.total : 0),
+        'Card Paid': sale.paymentMode === 'both' ? sale.paymentDetails?.card : (sale.paymentMode === 'card' ? sale.total : 0),
+        'UPI Paid': sale.paymentMode === 'both' ? sale.paymentDetails?.upi : (sale.paymentMode === 'upi' ? sale.total : 0),
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Payments Report");
+    XLSX.writeFile(workbook, `PaymentsReport-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
   }
 
+
   const table = useReactTable({
-    data: filteredData,
+    data: isFilterApplied ? filteredData : originalData,
     columns: paymentColumns,
     state: { sorting },
     onSortingChange: setSorting,
@@ -240,6 +267,7 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
   });
 
   return (
+    <TooltipProvider>
     <Card>
       <CardHeader>
         <div className="flex justify-between items-start">
@@ -247,11 +275,11 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
             <CardTitle>Payments Received</CardTitle>
             <CardDescription>A list of all payments categorized by method.</CardDescription>
           </div>
-           <div className="flex items-center gap-4">
+           <div className="flex items-center gap-2">
              <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                    placeholder="Search by customer, invoice, mode..."
+                    placeholder="Search customer, invoice, mode..."
                     className="pl-8 w-64"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -274,14 +302,24 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
                       <Input placeholder="YYYY" value={endYear} onChange={e => setEndYear(e.target.value)} className="w-20 h-8" />
                   </div>
                 </div>
-                <Button onClick={handleFilter} size="sm">Filter</Button>
                 {isFilterApplied && (
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleClearFilter}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 self-end" onClick={handleClearFilter}>
                       <X className="h-4 w-4" />
                       <span className="sr-only">Clear Filter</span>
                   </Button>
                 )}
             </div>
+            <Separator orientation="vertical" className="h-10 self-center" />
+             <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="outline" className="self-center" onClick={handleExport} disabled={table.getRowModel().rows.length === 0}>
+                        <FileDown className="mr-2 h-4 w-4" /> Export
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Downloads an Excel file of the currently shown payments.</p>
+                </TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </CardHeader>
@@ -319,7 +357,13 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
           <div className="grid gap-4 md:grid-cols-3">
             <PaymentBreakdownCard title="Today's Payments" totals={todayPaymentTotals} />
             <PaymentBreakdownCard title="Yesterday's Payments" totals={yesterdayPaymentTotals} />
-            <PaymentBreakdownCard title="Filtered Totals" totals={filteredPaymentTotals} />
+            <PaymentBreakdownCard 
+                title={isFilterApplied ? "Filtered Totals" : "All-Time Totals"} 
+                totals={filteredPaymentTotals} 
+                className={cn(
+                    isFilterApplied && "bg-accent/50 border-primary ring-2 ring-primary/50"
+                )}
+            />
           </div>
           <Separator />
         </div>
@@ -344,5 +388,6 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
         <div className="py-4"><DataTablePagination table={table} /></div>
       </CardContent>
     </Card>
+    </TooltipProvider>
   );
 }
