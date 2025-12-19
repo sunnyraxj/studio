@@ -155,7 +155,7 @@ export default function DashboardPage() {
                         <IndianRupee className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                        {isLoading ? <div className="text-2xl font-bold">Loading...</div> : <div className="text-2xl font-bold">₹{todaySales.toLocaleString('en-IN')}</div>}
+                        {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">₹{todaySales.toLocaleString('en-IN')}</div>}
                         </CardContent>
                     </Card>
                     <Card>
@@ -164,7 +164,7 @@ export default function DashboardPage() {
                         <IndianRupee className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                        {isLoading ? <div className="text-2xl font-bold">Loading...</div> : <div className="text-2xl font-bold">₹{thisMonthSales.toLocaleString('en-IN')}</div>}
+                        {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">₹{thisMonthSales.toLocaleString('en-IN')}</div>}
                         </CardContent>
                     </Card>
                     <Card>
@@ -173,7 +173,7 @@ export default function DashboardPage() {
                         <IndianRupee className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                        {isLoading ? <div className="text-2xl font-bold">Loading...</div> : <div className="text-2xl font-bold">₹{thisYearSales.toLocaleString('en-IN')}</div>}
+                        {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">₹{thisYearSales.toLocaleString('en-IN')}</div>}
                         </CardContent>
                     </Card>
                 </div>
@@ -194,3 +194,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
