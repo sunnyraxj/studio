@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { PlusCircle, Search, Trash2, MinusCircle } from 'lucide-react';
+import { PlusCircle, Search, Trash2, MinusCircle, IndianRupee } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import {
   RadioGroup,
@@ -52,6 +52,12 @@ type UserProfile = {
 
 type Sale = {
     invoiceNumber: string;
+}
+
+type PaymentDetails = {
+    cash?: number;
+    card?: number;
+    upi?: number;
 }
 
 const sampleProducts: Product[] = [
@@ -100,6 +106,11 @@ export default function POSPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchBy, setSearchBy] = useState('name');
   const [invoiceNumber, setInvoiceNumber] = useState('');
+  const [paymentDetails, setPaymentDetails] = useState<PaymentDetails>({
+    cash: 0,
+    card: 0,
+    upi: 0,
+  });
 
   const generateNextInvoiceNumber = async () => {
     if (isDemoMode || !firestore || !shopId) {
@@ -195,6 +206,9 @@ export default function POSPage() {
   const taxRate = 0.05; // 5%
   const tax = subtotal * taxRate;
   const total = subtotal + tax;
+  
+  const totalPaid = (paymentDetails.cash || 0) + (paymentDetails.card || 0) + (paymentDetails.upi || 0);
+  const remainingBalance = total - totalPaid;
 
   const filteredProducts = products.filter((product) => {
     if (searchBy === 'name') {
@@ -214,6 +228,7 @@ export default function POSPage() {
     setCustomerState('');
     setCustomerGstin('');
     setPaymentMode('cash');
+    setPaymentDetails({ cash: 0, card: 0, upi: 0 });
     generateNextInvoiceNumber();
   };
 
@@ -227,6 +242,15 @@ export default function POSPage() {
       router.push('/login');
       return;
     }
+    
+    if (paymentMode === 'both' && remainingBalance !== 0) {
+        toast({
+            variant: 'destructive',
+            title: 'Payment Mismatch',
+            description: 'The total paid amount does not match the total sale amount.'
+        });
+        return;
+    }
 
     if (!firestore || !shopId) {
       toast({
@@ -237,7 +261,7 @@ export default function POSPage() {
       return;
     }
 
-    const saleData = {
+    const saleData: any = {
       date: new Date().toISOString(),
       total: total,
       subtotal: subtotal,
@@ -264,6 +288,14 @@ export default function POSPage() {
       paymentMode: paymentMode,
       invoiceNumber: invoiceNumber
     };
+    
+    if (paymentMode === 'both') {
+        saleData.paymentDetails = {
+            cash: paymentDetails.cash || 0,
+            card: paymentDetails.card || 0,
+            upi: paymentDetails.upi || 0,
+        }
+    }
 
     try {
       const salesCollectionRef = collection(firestore, `shops/${shopId}/sales`);
@@ -286,6 +318,11 @@ export default function POSPage() {
     const item = cart.find(cartItem => cartItem.product.id === productId);
     return item ? item.quantity : 0;
   }
+  
+  const handlePaymentDetailChange = (method: keyof PaymentDetails, value: string) => {
+    const amount = parseFloat(value) || 0;
+    setPaymentDetails(prev => ({ ...prev, [method]: amount }));
+  };
 
   return (
      <div className="flex-1 overflow-hidden h-full flex flex-col">
@@ -506,8 +543,43 @@ export default function POSPage() {
                                     <RadioGroupItem value="upi" id="upi" />
                                     <Label htmlFor="upi">UPI</Label>
                                 </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="both" id="both" />
+                                    <Label htmlFor="both">Both</Label>
+                                </div>
                             </RadioGroup>
                         </div>
+                        {paymentMode === 'both' && (
+                            <Card className="p-4 bg-muted/50">
+                                <h4 className="text-sm font-medium mb-2">Mixed Payment Details</h4>
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <Label htmlFor="cash-amount" className="w-16">Cash</Label>
+                                        <div className="relative flex-1">
+                                            <IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                            <Input id="cash-amount" type="number" placeholder="0.00" className="pl-8" value={paymentDetails.cash || ''} onChange={(e) => handlePaymentDetailChange('cash', e.target.value)} />
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Label htmlFor="card-amount" className="w-16">Card</Label>
+                                        <div className="relative flex-1">
+                                            <IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                            <Input id="card-amount" type="number" placeholder="0.00" className="pl-8" value={paymentDetails.card || ''} onChange={(e) => handlePaymentDetailChange('card', e.target.value)} />
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Label htmlFor="upi-amount" className="w-16">UPI</Label>
+                                         <div className="relative flex-1">
+                                            <IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                            <Input id="upi-amount" type="number" placeholder="0.00" className="pl-8" value={paymentDetails.upi || ''} onChange={(e) => handlePaymentDetailChange('upi', e.target.value)} />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="mt-2 text-right text-sm font-medium">
+                                    Remaining: <span className={remainingBalance !== 0 ? 'text-destructive' : 'text-green-600'}>₹{remainingBalance.toFixed(2)}</span>
+                                </div>
+                            </Card>
+                        )}
                     </div>
                 </ScrollArea>
                 
@@ -528,7 +600,7 @@ export default function POSPage() {
                         </div>
                     </div>
                     <div className="flex-col items-stretch space-y-2">
-                        <Button className="w-full" disabled={cart.length === 0} onClick={completeSale}>Complete Sale</Button>
+                        <Button className="w-full" disabled={cart.length === 0 || (paymentMode === 'both' && remainingBalance !== 0)} onClick={completeSale}>Complete Sale</Button>
                         <Button variant="destructive" className="w-full" onClick={clearSale} disabled={cart.length === 0}>
                             <Trash2 className="mr-2 h-4 w-4" /> Clear Sale
                         </Button>
@@ -540,7 +612,3 @@ export default function POSPage() {
     </div>
   );
 }
-
-    
-
-    

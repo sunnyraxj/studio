@@ -66,6 +66,7 @@ const paymentColumns: ColumnDef<Sale>[] = [
         let icon = <Banknote className="h-4 w-4 mr-2" />;
         if (mode === 'card') icon = <CreditCard className="h-4 w-4 mr-2" />;
         if (mode === 'upi') icon = <Smartphone className="h-4 w-4 mr-2" />;
+        if (mode === 'both') icon = <IndianRupee className="h-4 w-4 mr-2" />;
         return <div className="flex items-center capitalize">{icon}{mode}</div>
     },
   },
@@ -181,7 +182,13 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
 
     const calculateTotals = (data: Sale[]) => {
         return data.reduce((acc, sale) => {
-            acc[sale.paymentMode] = (acc[sale.paymentMode] || 0) + sale.total;
+            if (sale.paymentMode === 'both' && sale.paymentDetails) {
+                acc.cash += sale.paymentDetails.cash || 0;
+                acc.card += sale.paymentDetails.card || 0;
+                acc.upi += sale.paymentDetails.upi || 0;
+            } else if (sale.paymentMode !== 'both') {
+                 acc[sale.paymentMode] = (acc[sale.paymentMode] || 0) + sale.total;
+            }
             return acc;
         }, { cash: 0, card: 0, upi: 0 });
     };

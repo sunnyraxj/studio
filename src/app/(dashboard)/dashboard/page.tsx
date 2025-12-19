@@ -27,7 +27,12 @@ export type Sale = {
   date: string;
   total: number;
   items: SaleItem[];
-  paymentMode: 'cash' | 'card' | 'upi';
+  paymentMode: 'cash' | 'card' | 'upi' | 'both';
+  paymentDetails?: {
+    cash?: number;
+    card?: number;
+    upi?: number;
+  }
 };
 
 export type SaleItem = {
@@ -194,5 +199,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

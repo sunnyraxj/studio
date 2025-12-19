@@ -183,13 +183,26 @@
             "state": { "type": "string" },
             "gstin": { "type": "string" }
           }
+        },
+        "paymentMode": {
+          "type": "string",
+          "enum": ["cash", "card", "upi", "both"]
+        },
+        "paymentDetails": {
+          "type": "object",
+          "properties": {
+            "cash": { "type": "number" },
+            "card": { "type": "number" },
+            "upi": { "type": "number" }
+          }
         }
       },
       "required": [
         "id",
         "date",
         "total",
-        "items"
+        "items",
+        "paymentMode"
       ]
     }
   },
