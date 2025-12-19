@@ -48,6 +48,7 @@ import { DataTablePagination } from '@/components/data-table-pagination';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
+import * as XLSX from 'xlsx';
 
 const demoData: InventoryItem[] = [
   {
@@ -364,6 +365,28 @@ export default function InventoryPage() {
     }
   };
 
+  const handleExport = () => {
+    const dataToExport = (table.getFilteredRowModel().rows.length > 0 ? table.getFilteredRowModel().rows : table.getCoreRowModel().rows).map(row => {
+        const item = row.original;
+        return {
+          'Product Name': item.name,
+          'Category': item.category,
+          'Size': item.size,
+          'Stock': `${item.stock} ${item.unit}`,
+          'MRP': item.price,
+          'GST (%)': item.gst,
+          'HSN Code': item.hsn,
+          'SKU': item.sku,
+          'Status': item.status,
+          'Date Added': format(new Date(item.dateAdded), 'dd-MM-yyyy'),
+        }
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory");
+    XLSX.writeFile(workbook, `InventoryExport-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+  }
 
   return (
     <div className="w-full">
@@ -404,6 +427,9 @@ export default function InventoryPage() {
                 <PlusCircle className="mr-2 h-4 w-4" /> Add Product
             </Button>
            </Link>
+           <Button variant="outline" onClick={handleExport}>
+              <FileDown className="mr-2 h-4 w-4" /> Export
+           </Button>
             <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="ml-auto">

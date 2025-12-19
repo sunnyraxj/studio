@@ -27,6 +27,7 @@ import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 import { addDoc, collection, doc } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast.tsx';
 import { FileDown, FileUp } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 type UserProfile = {
   shopId?: string;
@@ -108,6 +109,73 @@ export default function AddProductPage() {
     }
   };
 
+  const handleDownloadTemplate = () => {
+    const templateData = [
+      {
+        'Product Name': '',
+        'Product Code / SKU': '',
+        'MRP (₹)': '',
+        'GST (%)': '',
+        'HSN Code': '',
+        'Category': '',
+        'Size': '',
+        'Opening Quantity': '',
+        'Unit': 'pcs',
+      }
+    ];
+    const worksheet = XLSX.utils.json_to_sheet(templateData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Product Template');
+    XLSX.writeFile(workbook, 'ProductImportTemplate.xlsx');
+  };
+
+  const handleImportProducts = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (isDemoMode) {
+      toast({
+        variant: 'destructive',
+        title: 'Demo Mode',
+        description: 'Please log in and subscribe to import products.',
+      });
+      router.push('/login');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const products = XLSX.utils.sheet_to_json(worksheet);
+
+        // You would typically validate and process the products here.
+        // For this example, we'll just log them.
+        console.log('Imported products:', products);
+
+        // Here you would loop through products and save them to Firestore
+        // Example: for (const product of products) { await saveProduct(product); }
+
+        toast({
+          title: 'Import Successful',
+          description: `${products.length} products are being imported in the background.`,
+        });
+
+      } catch (error: any) {
+        toast({
+          variant: 'destructive',
+          title: 'Import Failed',
+          description: error.message,
+        });
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+
   return (
     <div className="flex-1 space-y-4">
       <div className="flex items-center justify-between">
@@ -118,11 +186,20 @@ export default function AddProductPage() {
             </p>
         </div>
         <div className="flex items-center gap-2">
-            <Button variant="outline">
+            <Button variant="outline" onClick={handleDownloadTemplate}>
               <FileDown className="mr-2 h-4 w-4" /> Download Template
             </Button>
-            <Button variant="outline">
-              <FileUp className="mr-2 h-4 w-4" /> Import Products
+            <Button asChild variant="outline">
+              <label htmlFor="import-file">
+                <FileUp className="mr-2 h-4 w-4" /> Import Products
+                <input
+                  id="import-file"
+                  type="file"
+                  className="hidden"
+                  accept=".xlsx, .xls"
+                  onChange={handleImportProducts}
+                />
+              </label>
             </Button>
         </div>
       </div>

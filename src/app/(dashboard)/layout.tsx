@@ -103,7 +103,9 @@ function AppSidebar({ shopName }: { shopName: string }) {
   }, [open]);
 
   const handleLogout = () => {
-    auth.signOut();
+    if (auth) {
+        auth.signOut();
+    }
     router.push('/login');
   };
 
@@ -312,7 +314,10 @@ export default function DashboardLayout({
           router.push('/subscribe');
           break;
         default:
-          router.push('/subscribe');
+          // This handles new users who haven't selected a plan yet.
+          if (router.pathname !== '/subscribe') {
+              router.push('/subscribe');
+          }
           break;
       }
     } else if (!user && !isUserLoading) {
@@ -341,7 +346,7 @@ export default function DashboardLayout({
             <MobileSidebar shopName={shopName} />
             <div className="w-full flex-1" />
           </header>
-          <main className="flex flex-1 flex-col p-4 lg:p-6 overflow-hidden">
+          <main className="flex flex-1 flex-col p-4 lg:p-6 overflow-auto">
             {children}
           </main>
         </div>
@@ -349,5 +354,3 @@ export default function DashboardLayout({
     </SidebarProvider>
   );
 }
-
-    

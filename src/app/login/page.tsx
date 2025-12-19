@@ -25,6 +25,7 @@ import { toast } from '@/hooks/use-toast.tsx';
 import { doc, getDoc, setDoc, query, where, collection } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { Eye, EyeOff } from 'lucide-react';
+import Link from 'next/link';
 
 
 type UserProfile = {
@@ -214,9 +215,12 @@ export default function LoginPage() {
                         </Button>
                     </div>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="flex flex-col gap-4">
                     <Button className="w-full" onClick={handleLogin}>
                         Login
+                    </Button>
+                    <Button variant="link" size="sm" asChild>
+                        <Link href="/">Back to Home</Link>
                     </Button>
                 </CardFooter>
             </Card>
