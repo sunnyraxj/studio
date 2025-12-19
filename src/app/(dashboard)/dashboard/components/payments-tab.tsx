@@ -132,7 +132,8 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
 
   useEffect(() => {
     let data = originalData;
-
+    let applied = false;
+    
     // Date filtering
     const startDateStr = `${startYear}-${startMonth.padStart(2, '0')}-${startDay.padStart(2, '0')}`;
     const endDateStr = `${endYear}-${endMonth.padStart(2, '0')}-${endDay.padStart(2, '0')}`;
@@ -143,7 +144,6 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
     const isValidStartDate = !isNaN(startDate.getTime()) && startDay && startMonth && startYear;
     const isValidEndDate = !isNaN(endDate.getTime()) && endDay && endMonth && endYear;
     
-    let applied = false;
     if (isValidStartDate) {
         data = data.filter(item => new Date(item.date) >= startDate);
         applied = true;
@@ -216,14 +216,7 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
 
 
   const handleFilter = () => {
-    // This function is kept for explicitness, but useEffect handles the logic.
-    // We can enhance this if we only want to filter on button click.
-    // For now, we'll just ensure a state changes that triggers the effect.
-    // A simple way is to manage a filter "applied" state manually.
-    
-    // The current useEffect logic filters "live". If we want to filter only on click,
-    // we would move the filtering logic inside a function like this and remove it from useEffect.
-    // For now, let's keep live filtering as it seems to be the implemented pattern.
+    // This is now handled by the useEffect hook in response to date/search changes
   };
   
   const handleClearFilter = () => {
@@ -234,7 +227,7 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
     setEndMonth('');
     setEndYear('');
     setSearchTerm('');
-    setIsFilterApplied(false); // This will cause the useEffect to reset the data
+    setIsFilterApplied(false);
   }
   
   const handleExport = () => {
@@ -250,6 +243,22 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+
+    // Add totals row
+    const totals = filteredPaymentTotals;
+    const summaryRow = {
+      'Invoice #': "TOTALS",
+      'Date': "",
+      'Customer': "",
+      'Payment Mode': "",
+      'Amount': "",
+      'Cash Paid': totals.cash,
+      'Card Paid': totals.card,
+      'UPI Paid': totals.upi,
+    };
+
+    XLSX.utils.sheet_add_json(worksheet, [summaryRow], {skipHeader: true, origin: -1});
+
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Payments Report");
     XLSX.writeFile(workbook, `PaymentsReport-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
@@ -302,6 +311,7 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
                       <Input placeholder="YYYY" value={endYear} onChange={e => setEndYear(e.target.value)} className="w-20 h-8" />
                   </div>
                 </div>
+                <Button onClick={handleFilter} size="sm" className="self-end">Filter</Button>
                 {isFilterApplied && (
                   <Button variant="ghost" size="icon" className="h-8 w-8 self-end" onClick={handleClearFilter}>
                       <X className="h-4 w-4" />
