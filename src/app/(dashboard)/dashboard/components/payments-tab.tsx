@@ -80,6 +80,37 @@ const paymentColumns: ColumnDef<Sale>[] = [
   },
 ];
 
+const PaymentBreakdownCard = ({ title, totals }: { title: string, totals: { cash: number; card: number; upi: number; } }) => (
+    <Card>
+        <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center text-sm">
+                    <Banknote className="h-4 w-4 mr-2 text-muted-foreground" />
+                    Cash
+                </div>
+                <div className="font-semibold">₹{totals.cash.toLocaleString('en-IN')}</div>
+            </div>
+                <div className="flex items-center justify-between">
+                <div className="flex items-center text-sm">
+                    <CreditCard className="h-4 w-4 mr-2 text-muted-foreground" />
+                    Card
+                </div>
+                <div className="font-semibold">₹{totals.card.toLocaleString('en-IN')}</div>
+            </div>
+                <div className="flex items-center justify-between">
+                <div className="flex items-center text-sm">
+                    <Smartphone className="h-4 w-4 mr-2 text-muted-foreground" />
+                    UPI
+                </div>
+                <div className="font-semibold">₹{totals.upi.toLocaleString('en-IN')}</div>
+            </div>
+        </CardContent>
+    </Card>
+);
+
 export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoading: boolean }) {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'date', desc: true }]);
   const [filteredData, setFilteredData] = useState<Sale[]>([]);
@@ -135,23 +166,43 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
 
   },[originalData, startDay, startMonth, startYear, endDay, endMonth, endYear, searchTerm, isFilterApplied]);
 
-  const { paymentTotals, todaySales, yesterdaySales, thisMonthSales } = useMemo(() => {
-    const data = isFilterApplied ? filteredData : originalData;
-    const paymentTotals = data.reduce((acc, sale) => {
-        acc[sale.paymentMode] = (acc[sale.paymentMode] || 0) + sale.total;
-        return acc;
-    }, { cash: 0, card: 0, upi: 0 });
-
+  const {
+    filteredPaymentTotals,
+    todayPaymentTotals,
+    yesterdayPaymentTotals,
+    todaySales,
+    yesterdaySales,
+    thisMonthSales
+  } = useMemo(() => {
     const todayStr = new Date().toDateString();
     const yesterdayStr = subDays(new Date(), 1).toDateString();
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
 
-    const todaySales = originalData.filter(s => new Date(s.date).toDateString() === todayStr).reduce((sum, s) => sum + s.total, 0);
-    const yesterdaySales = originalData.filter(s => new Date(s.date).toDateString() === yesterdayStr).reduce((sum, s) => sum + s.total, 0);
+    const calculateTotals = (data: Sale[]) => {
+        return data.reduce((acc, sale) => {
+            acc[sale.paymentMode] = (acc[sale.paymentMode] || 0) + sale.total;
+            return acc;
+        }, { cash: 0, card: 0, upi: 0 });
+    };
+
+    const todaySalesData = originalData.filter(s => new Date(s.date).toDateString() === todayStr);
+    const yesterdaySalesData = originalData.filter(s => new Date(s.date).toDateString() === yesterdayStr);
+
+    const todaySales = todaySalesData.reduce((sum, s) => sum + s.total, 0);
+    const yesterdaySales = yesterdaySalesData.reduce((sum, s) => sum + s.total, 0);
     const thisMonthSales = originalData.filter(s => new Date(s.date).getMonth() === currentMonth && new Date(s.date).getFullYear() === currentYear).reduce((sum, s) => sum + s.total, 0);
     
-    return { paymentTotals, todaySales, yesterdaySales, thisMonthSales };
+    const dataForFilteredTotals = isFilterApplied ? filteredData : originalData;
+
+    return {
+        filteredPaymentTotals: calculateTotals(dataForFilteredTotals),
+        todayPaymentTotals: calculateTotals(todaySalesData),
+        yesterdayPaymentTotals: calculateTotals(yesterdaySalesData),
+        todaySales,
+        yesterdaySales,
+        thisMonthSales
+    };
 
   }, [filteredData, originalData, isFilterApplied]);
 
@@ -229,10 +280,10 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
       </CardHeader>
       <CardContent>
         <div className="mb-6 space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Today's Sales</CardTitle>
+                      <CardTitle className="text-sm font-medium">Total Sales (Today)</CardTitle>
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
@@ -241,7 +292,7 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
               </Card>
                <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Yesterday's Sales</CardTitle>
+                      <CardTitle className="text-sm font-medium">Total Sales (Yesterday)</CardTitle>
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
@@ -250,41 +301,18 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
               </Card>
               <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">This Month's Sales</CardTitle>
+                      <CardTitle className="text-sm font-medium">Total Sales (This Month)</CardTitle>
                       <TrendingUp className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
                       <div className="text-2xl font-bold">₹{thisMonthSales.toLocaleString('en-IN')}</div>
                   </CardContent>
               </Card>
-               <Card>
-                <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Filtered Payment Totals</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center text-sm">
-                            <Banknote className="h-4 w-4 mr-2 text-muted-foreground" />
-                            Cash
-                        </div>
-                        <div className="text-base font-bold">₹{paymentTotals.cash.toLocaleString('en-IN')}</div>
-                    </div>
-                     <div className="flex items-center justify-between">
-                        <div className="flex items-center text-sm">
-                            <CreditCard className="h-4 w-4 mr-2 text-muted-foreground" />
-                            Card
-                        </div>
-                        <div className="text-base font-bold">₹{paymentTotals.card.toLocaleString('en-IN')}</div>
-                    </div>
-                     <div className="flex items-center justify-between">
-                        <div className="flex items-center text-sm">
-                            <Smartphone className="h-4 w-4 mr-2 text-muted-foreground" />
-                            UPI
-                        </div>
-                        <div className="text-base font-bold">₹{paymentTotals.upi.toLocaleString('en-IN')}</div>
-                    </div>
-                </CardContent>
-              </Card>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            <PaymentBreakdownCard title="Today's Payments" totals={todayPaymentTotals} />
+            <PaymentBreakdownCard title="Yesterday's Payments" totals={yesterdayPaymentTotals} />
+            <PaymentBreakdownCard title="Filtered Totals" totals={filteredPaymentTotals} />
           </div>
           <Separator />
         </div>
