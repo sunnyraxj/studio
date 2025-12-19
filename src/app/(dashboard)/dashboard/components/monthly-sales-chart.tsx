@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { subMonths, startOfMonth, endOfMonth, format, startOfYear, endOfYear, subYears } from 'date-fns';
+import { subMonths, startOfMonth, endOfMonth, format, startOfYear, endOfYear, subYears, eachDayOfInterval, isValid } from 'date-fns';
 import type { Sale } from '../page';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -35,7 +35,7 @@ const chartConfig = {
 };
 
 export function MonthlySalesChart({ salesData, isLoading }: { salesData: Sale[] | null, isLoading: boolean }) {
-  const [timeRange, setTimeRange] = useState('this-year');
+  const [timeRange, setTimeRange] = useState('this-month');
 
   const chartData = useMemo(() => {
     const now = new Date();
@@ -69,21 +69,26 @@ export function MonthlySalesChart({ salesData, isLoading }: { salesData: Sale[] 
         return saleDate >= startDate && saleDate <= endDate;
     });
 
-    const monthlySales: { [key: string]: number } = {};
+    const dailySales: { [key: string]: number } = {};
+
+    if (isValid(startDate) && isValid(endDate)) {
+        const dateInterval = eachDayOfInterval({ start: startDate, end: endDate });
+        dateInterval.forEach(day => {
+            const dayKey = format(day, 'yyyy-MM-dd');
+            dailySales[dayKey] = 0;
+        });
+    }
 
     filteredSales.forEach(sale => {
-      const month = format(new Date(sale.date), 'MMM yyyy');
-      if (!monthlySales[month]) {
-        monthlySales[month] = 0;
+      const dayKey = format(new Date(sale.date), 'yyyy-MM-dd');
+      if (dailySales.hasOwnProperty(dayKey)) {
+          dailySales[dayKey] += sale.total;
       }
-      monthlySales[month] += sale.total;
     });
 
-    const sortedMonths = Object.keys(monthlySales).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
-
-    return sortedMonths.map(month => ({
-      month: format(new Date(month), 'MMM'),
-      sales: monthlySales[month],
+    return Object.keys(dailySales).map(date => ({
+      date: date,
+      sales: dailySales[date],
     }));
   }, [salesData, timeRange]);
 
@@ -91,7 +96,7 @@ export function MonthlySalesChart({ salesData, isLoading }: { salesData: Sale[] 
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-            <CardTitle>Monthly Sales Overview</CardTitle>
+            <CardTitle>Daily Sales Overview</CardTitle>
             <CardDescription>A summary of sales over time.</CardDescription>
         </div>
         <Select value={timeRange} onValueChange={setTimeRange}>
@@ -117,11 +122,11 @@ export function MonthlySalesChart({ salesData, isLoading }: { salesData: Sale[] 
           <BarChart accessibilityLayer data={chartData}>
             <CartesianGrid vertical={false} />
             <XAxis
-              dataKey="month"
+              dataKey="date"
               tickLine={false}
               tickMargin={10}
               axisLine={false}
-              tickFormatter={(value) => value.slice(0, 3)}
+              tickFormatter={(value) => format(new Date(value), 'dd MMM')}
             />
             <YAxis
               tickFormatter={(value) => `₹${Number(value) / 1000}k`}
@@ -133,7 +138,7 @@ export function MonthlySalesChart({ salesData, isLoading }: { salesData: Sale[] 
               content={<ChartTooltipContent
                 labelFormatter={(label, payload) => {
                     if (payload && payload[0]) {
-                        return `${payload[0].payload.month}`;
+                        return format(new Date(payload[0].payload.date), 'EEE, dd MMM yyyy');
                     }
                     return label;
                 }}
