@@ -229,7 +229,7 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
       </CardHeader>
       <CardContent>
         <div className="mb-6 space-y-4">
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Today's Sales</CardTitle>
@@ -257,37 +257,36 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
                       <div className="text-2xl font-bold">₹{thisMonthSales.toLocaleString('en-IN')}</div>
                   </CardContent>
               </Card>
+               <Card>
+                <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Filtered Payment Totals</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center text-sm">
+                            <Banknote className="h-4 w-4 mr-2 text-muted-foreground" />
+                            Cash
+                        </div>
+                        <div className="text-base font-bold">₹{paymentTotals.cash.toLocaleString('en-IN')}</div>
+                    </div>
+                     <div className="flex items-center justify-between">
+                        <div className="flex items-center text-sm">
+                            <CreditCard className="h-4 w-4 mr-2 text-muted-foreground" />
+                            Card
+                        </div>
+                        <div className="text-base font-bold">₹{paymentTotals.card.toLocaleString('en-IN')}</div>
+                    </div>
+                     <div className="flex items-center justify-between">
+                        <div className="flex items-center text-sm">
+                            <Smartphone className="h-4 w-4 mr-2 text-muted-foreground" />
+                            UPI
+                        </div>
+                        <div className="text-base font-bold">₹{paymentTotals.upi.toLocaleString('en-IN')}</div>
+                    </div>
+                </CardContent>
+              </Card>
           </div>
           <Separator />
-           <div className="grid gap-4 md:grid-cols-3">
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Cash Total (Filtered)</CardTitle>
-                    <Banknote className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">₹{paymentTotals.cash.toLocaleString('en-IN')}</div>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Card Total (Filtered)</CardTitle>
-                    <CreditCard className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">₹{paymentTotals.card.toLocaleString('en-IN')}</div>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">UPI Total (Filtered)</CardTitle>
-                    <Smartphone className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">₹{paymentTotals.upi.toLocaleString('en-IN')}</div>
-                </CardContent>
-            </Card>
-          </div>
         </div>
 
         <div className="rounded-md border">
