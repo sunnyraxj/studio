@@ -27,6 +27,7 @@ export type Sale = {
   date: string;
   total: number;
   items: SaleItem[];
+  paymentMode: 'cash' | 'card' | 'upi';
 };
 
 export type SaleItem = {
@@ -57,9 +58,9 @@ type UserProfile = {
 
 // Demo Data
 const demoSales: Sale[] = [
-    { id: '1', invoiceNumber: 'INV123', date: new Date().toISOString(), customer: { name: 'Ravi Kumar', phone: '9876543210' }, total: 2500, items: [{ productId: '1', name: 'T-Shirt', quantity: 2, price: 500, sku: 'TS-01', hsn: '6109', gst: 5 }, { productId: '2', name: 'Jeans', quantity: 1, price: 1500, sku: 'JN-01', hsn: '6203', gst: 5 }] },
-    { id: '2', invoiceNumber: 'INV124', date: new Date(Date.now() - 86400000).toISOString(), customer: { name: 'Priya Sharma', phone: '9876543211' }, total: 1200, items: [{ productId: '3', name: 'Sneakers', quantity: 1, price: 1200, sku: 'SH-01', hsn: '6404', gst: 18 }] },
-    { id: '3', invoiceNumber: 'INV125', date: new Date(Date.now() - 172800000).toISOString(), customer: { name: 'Amit Singh', phone: '9876543212' }, total: 3500, items: [{ productId: '4', name: 'Watch', quantity: 1, price: 3500, sku: 'WT-01', hsn: '9102', gst: 18 }] },
+    { id: '1', invoiceNumber: 'INV123', date: new Date().toISOString(), customer: { name: 'Ravi Kumar', phone: '9876543210' }, total: 2500, paymentMode: 'upi', items: [{ productId: '1', name: 'T-Shirt', quantity: 2, price: 500, sku: 'TS-01', hsn: '6109', gst: 5 }, { productId: '2', name: 'Jeans', quantity: 1, price: 1500, sku: 'JN-01', hsn: '6203', gst: 5 }] },
+    { id: '2', invoiceNumber: 'INV124', date: new Date(Date.now() - 86400000).toISOString(), customer: { name: 'Priya Sharma', phone: '9876543211' }, total: 1200, paymentMode: 'card', items: [{ productId: '3', name: 'Sneakers', quantity: 1, price: 1200, sku: 'SH-01', hsn: '6404', gst: 18 }] },
+    { id: '3', invoiceNumber: 'INV125', date: new Date(Date.now() - 172800000).toISOString(), customer: { name: 'Amit Singh', phone: '9876543212' }, total: 3500, paymentMode: 'cash', items: [{ productId: '4', name: 'Watch', quantity: 1, price: 3500, sku: 'WT-01', hsn: '9102', gst: 18 }] },
 ];
 
 export const demoCustomers: Customer[] = [
@@ -98,6 +99,9 @@ const ReportsTab = dynamic(() => import('./components/reports-tab').then(mod => 
   loading: () => <LoadingComponent />,
 });
 const CustomersTab = dynamic(() => import('./components/customers-tab').then(mod => mod.CustomersTab), {
+  loading: () => <LoadingComponent />,
+});
+const PaymentsTab = dynamic(() => import('./components/payments-tab').then(mod => mod.PaymentsTab), {
   loading: () => <LoadingComponent />,
 });
 
@@ -140,6 +144,7 @@ export default function DashboardPage() {
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="sales">All Sales</TabsTrigger>
                 <TabsTrigger value="reports">Reports</TabsTrigger>
+                <TabsTrigger value="payments">Payments</TabsTrigger>
                 <TabsTrigger value="customers">Customers</TabsTrigger>
             </TabsList>
             <TabsContent value="overview" className="space-y-4">
@@ -178,6 +183,9 @@ export default function DashboardPage() {
             </TabsContent>
             <TabsContent value="reports">
                 <ReportsTab salesData={salesData} isLoading={isLoading} />
+            </TabsContent>
+            <TabsContent value="payments">
+                <PaymentsTab salesData={salesData} isLoading={isLoading} />
             </TabsContent>
             <TabsContent value="customers">
                 <CustomersTab salesData={salesData} isLoading={isLoading} isDemoMode={isDemoMode} />
