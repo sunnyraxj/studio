@@ -52,6 +52,7 @@ type UserProfile = {
 
 type Sale = {
     invoiceNumber: string;
+    date: string;
 }
 
 type PaymentDetails = {
@@ -137,10 +138,11 @@ export default function POSPage() {
         const lastInvoice = lastSale.invoiceNumber; // e.g., "INV-2024-0015"
         
         const parts = lastInvoice.split('-');
-        const yearOfLastInvoice = parseInt(parts[1], 10);
-
-        if (yearOfLastInvoice === currentYear) {
-            lastInvoiceNumber = parseInt(parts[2], 10);
+        if (parts.length === 3) {
+            const yearOfLastInvoice = parseInt(parts[1], 10);
+            if (yearOfLastInvoice === currentYear) {
+                lastInvoiceNumber = parseInt(parts[2], 10);
+            }
         }
     }
     
