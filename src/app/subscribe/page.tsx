@@ -69,6 +69,18 @@ const plans = [
       'Priority support',
     ],
   },
+  {
+    name: 'Permanent',
+    price: 29999,
+    durationMonths: 1200, // 100 years to simulate permanence
+    description: 'One-time payment for lifetime access.',
+    features: [
+      'All features included',
+      'Lifetime updates',
+      'Dedicated support',
+      '₹500 yearly service fee applies',
+    ],
+  }
 ];
 
 
@@ -132,7 +144,7 @@ export default function SubscribePage() {
           Choose the plan that's right for your business.
         </p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl w-full">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 max-w-7xl w-full">
          {plans.map(plan => (
             <Card
                 key={plan.name}
@@ -154,12 +166,12 @@ export default function SubscribePage() {
                 <CardContent className="flex-grow space-y-4">
                 <div className="flex items-baseline">
                     <span className="text-4xl font-bold">₹{plan.price.toLocaleString('en-IN')}</span>
-                     <span className="ml-1 text-muted-foreground">/{plan.durationMonths === 1 ? 'month' : `${plan.durationMonths} months`}</span>
+                     {plan.name !== 'Permanent' && <span className="ml-1 text-muted-foreground">/{plan.durationMonths === 1 ? 'month' : `${plan.durationMonths} months`}</span>}
                 </div>
                 <ul className="space-y-2">
                     {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-center">
-                        <Check className="h-4 w-4 mr-2 text-green-500" />
+                    <li key={feature} className="flex items-center text-sm">
+                        <Check className="h-4 w-4 mr-2 text-green-500 flex-shrink-0" />
                         <span>{feature}</span>
                     </li>
                     ))}

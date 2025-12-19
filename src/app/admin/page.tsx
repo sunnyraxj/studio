@@ -75,8 +75,8 @@ export default function AdminPage() {
     
     const targetUserDocRef = doc(firestore, 'users', targetUser.id);
     const startDate = new Date();
-    // Use planDurationMonths to calculate end date, default to 1 month if not present
-    const durationMonths = targetUser.planDurationMonths || 1;
+    // Use planDurationMonths to calculate end date, default to 12 months if not present
+    const durationMonths = targetUser.planDurationMonths || 12;
     const endDate = add(startDate, { months: durationMonths });
 
     batch.update(targetUserDocRef, {
@@ -208,7 +208,7 @@ export default function AdminPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>Confirm Approval</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to approve this user? This will grant them full access to the platform for one year.
+                Are you sure you want to approve this user? This will grant them full access to the platform for the selected duration.
               </AlertDialogDescription>
               <div className="mt-4 space-y-2 text-sm text-foreground pt-4">
                   <div><strong>Name:</strong> {selectedUser?.name}</div>
