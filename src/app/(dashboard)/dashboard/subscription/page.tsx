@@ -145,12 +145,12 @@ export default function SubscriptionPage() {
             <div className="flex items-center space-x-4 rounded-md border p-4">
                 {isLoading ? <Skeleton className="h-8 w-8" /> : statusInfo.icon}
                 <div className="flex-1 space-y-1">
-                    <p className="text-sm font-medium leading-none">
+                    <div className="text-sm font-medium leading-none">
                         {isLoading ? <Skeleton className="h-5 w-32" /> : statusInfo.title}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
+                    </div>
+                    <div className="text-sm text-muted-foreground">
                         {isLoading ? <Skeleton className="h-4 w-64" /> : statusInfo.description}
-                    </p>
+                    </div>
                 </div>
             </div>
 
