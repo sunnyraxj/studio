@@ -72,8 +72,14 @@ export default function AdminPage() {
     const batch = writeBatch(firestore);
     
     const targetUserDocRef = doc(firestore, 'users', targetUser.id);
+    const startDate = new Date();
+    const endDate = new Date(startDate);
+    endDate.setFullYear(endDate.getFullYear() + 1);
+
     batch.update(targetUserDocRef, {
       subscriptionStatus: 'active',
+      subscriptionStartDate: startDate.toISOString(),
+      subscriptionEndDate: endDate.toISOString(),
     });
 
     try {
@@ -199,7 +205,7 @@ export default function AdminPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>Confirm Approval</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to approve this user? This will grant them full access to the platform.
+                Are you sure you want to approve this user? This will grant them full access to the platform for one year.
               </AlertDialogDescription>
               <div className="mt-4 space-y-2 text-sm text-foreground pt-4">
                   <div><strong>Name:</strong> {selectedUser?.name}</div>

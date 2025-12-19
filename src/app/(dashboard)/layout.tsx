@@ -19,6 +19,7 @@ import {
   Settings,
   LifeBuoy,
   IndianRupee,
+  CreditCard,
 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -76,6 +77,11 @@ const navLinks = [
     icon: Package,
     label: 'Inventory',
   },
+  {
+    href: '/dashboard/subscription',
+    icon: CreditCard,
+    label: 'Subscription'
+  }
 ];
 
 type UserProfile = {

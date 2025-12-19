@@ -79,6 +79,10 @@
           "type": "string",
           "description": "The Unique Transaction Reference (UTR) for the subscription payment."
         },
+        "planName": {
+            "type": "string",
+            "description": "The name of the subscription plan."
+        },
         "planPrice": {
           "type": "number",
           "description": "The price of the plan the user is subscribing to."
@@ -86,6 +90,21 @@
         "rejectionReason": {
           "type": "string",
           "description": "The reason provided by an admin for rejecting a payment."
+        },
+        "subscriptionRequestDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the user requested the subscription."
+        },
+        "subscriptionStartDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the subscription started."
+        },
+        "subscriptionEndDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the subscription ends."
         }
       },
       "required": [
