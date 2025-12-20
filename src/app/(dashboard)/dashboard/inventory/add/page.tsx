@@ -24,13 +24,17 @@ import {
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
-import { addDoc, collection, doc } from 'firebase/firestore';
+import { addDoc, collection, doc, query, orderBy, limit, getDocs, writeBatch } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast.tsx';
 import { FileDown, FileUp } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 type UserProfile = {
   shopId?: string;
+}
+
+type ShopSettings = {
+    companyName?: string;
 }
 
 export default function AddProductPage() {
@@ -45,6 +49,13 @@ export default function AddProductPage() {
   }, [user, firestore]);
   const { data: userData } = useDoc<UserProfile>(userDocRef);
   const shopId = userData?.shopId;
+  
+  const settingsDocRef = useMemoFirebase(() => {
+    if (isDemoMode || !shopId || !firestore) return null;
+    return doc(firestore, `shops/${shopId}/settings`, 'details');
+  }, [firestore, shopId, isDemoMode]);
+  const { data: settingsData } = useDoc<ShopSettings>(settingsDocRef);
+
 
   const [productName, setProductName] = useState('');
   const [mrp, setMrp] = useState('');
@@ -56,6 +67,34 @@ export default function AddProductPage() {
   const [size, setSize] = useState('');
   const [qty, setQty] = useState('');
   const [unit, setUnit] = useState('pcs');
+  
+  const generateNextProductCode = async (prefix: string): Promise<string> => {
+    if (!firestore || !shopId) return `${prefix}-001`;
+
+    const productsCollectionRef = collection(firestore, `shops/${shopId}/products`);
+    const q = query(
+      productsCollectionRef,
+      orderBy('sku', 'desc'),
+      limit(1)
+    );
+
+    const querySnapshot = await getDocs(q);
+    let lastSkuNumber = 0;
+    if (!querySnapshot.empty) {
+        const lastProduct = querySnapshot.docs[0].data();
+        const lastSku = lastProduct.sku as string;
+        if (lastSku && lastSku.startsWith(prefix + '-')) {
+            const parts = lastSku.split('-');
+            const lastNum = parseInt(parts[parts.length - 1], 10);
+            if (!isNaN(lastNum)) {
+                lastSkuNumber = lastNum;
+            }
+        }
+    }
+    const newSkuNumber = (lastSkuNumber + 1).toString().padStart(3, '0');
+    return `${prefix}-${newSkuNumber}`;
+  }
+
 
   const handleSaveProduct = async () => {
     if (isDemoMode) {
@@ -86,13 +125,20 @@ export default function AddProductPage() {
         return;
     }
 
+    let finalSku = productCode;
+    if (!finalSku) {
+        const shopName = settingsData?.companyName || 'SHOP';
+        const prefix = shopName.substring(0, 2).toUpperCase();
+        finalSku = await generateNextProductCode(prefix);
+    }
+
     const productData = {
       name: productName,
       price: parseFloat(mrp) || 0,
       margin: parseFloat(margin) || 0,
       gst: parseInt(gst) || 0,
       hsn: hsn,
-      sku: productCode,
+      sku: finalSku,
       category: category,
       size: size,
       stock: parseInt(qty) || 0,
@@ -107,7 +153,7 @@ export default function AddProductPage() {
         
         toast({
             title: "Product Saved",
-            description: `${productName} has been added to your inventory.`
+            description: `${productName} has been added to your inventory with SKU ${finalSku}.`
         });
 
         router.push('/dashboard/inventory');
@@ -154,6 +200,11 @@ export default function AddProductPage() {
       router.push('/login');
       return;
     }
+    
+    if (!firestore || !shopId) {
+       toast({ variant: 'destructive', title: 'Error', description: 'Shop not found.' });
+       return;
+    }
 
     const reader = new FileReader();
     reader.onload = async (e) => {
@@ -162,19 +213,53 @@ export default function AddProductPage() {
         const workbook = XLSX.read(data, { type: 'array' });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        const products = XLSX.utils.sheet_to_json(worksheet);
+        const productsToImport = XLSX.utils.sheet_to_json(worksheet) as any[];
 
-        // You would typically validate and process the products here.
-        // For this example, we'll just log them.
-        console.log('Imported products:', products);
+        const batch = writeBatch(firestore);
+        const productsCollectionRef = collection(firestore, `shops/${shopId}/products`);
+        
+        const shopName = settingsData?.companyName || 'SHOP';
+        const prefix = shopName.substring(0, 2).toUpperCase();
 
-        // Here you would loop through products and save them to Firestore
-        // Example: for (const product of products) { await saveProduct(product); }
+        for (const product of productsToImport) {
+            let sku = product['Product Code / SKU'];
+            if (!sku) {
+                sku = await generateNextProductCode(prefix);
+            }
+            
+            const stock = parseInt(product['Opening Quantity']) || 0;
+            
+            const productData = {
+              name: product['Product Name'] || '',
+              sku: sku,
+              price: parseFloat(product['MRP (₹)']) || 0,
+              margin: parseFloat(product['Margin (%)']) || 0,
+              gst: parseInt(product['GST (%)']) || 0,
+              hsn: product['HSN Code'] || '',
+              category: product['Category'] || '',
+              size: product['Size'] || '',
+              stock: stock,
+              unit: product['Unit'] || 'pcs',
+              dateAdded: new Date().toISOString(),
+              status: stock > 10 ? 'in stock' : stock > 0 ? 'low stock' : 'out of stock',
+            };
+            
+            if (!productData.name || !productData.margin) {
+                console.warn("Skipping product with missing name or margin:", product);
+                continue;
+            }
+            
+            const newDocRef = doc(productsCollectionRef);
+            batch.set(newDocRef, productData);
+        }
+
+        await batch.commit();
 
         toast({
           title: 'Import Successful',
-          description: `${products.length} products are being imported in the background.`,
+          description: `${productsToImport.length} products have been imported.`,
         });
+        router.push('/dashboard/inventory');
 
       } catch (error: any) {
         toast({
@@ -220,7 +305,7 @@ export default function AddProductPage() {
         <CardHeader>
           <CardTitle>Product Details</CardTitle>
           <CardDescription>
-            Provide essential information about the new product.
+            Provide essential information about the new product. SKU is optional and will be auto-generated.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -234,7 +319,7 @@ export default function AddProductPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="product-code">Product Code / SKU</Label>
+            <Label htmlFor="product-code">Product Code / SKU (Optional)</Label>
             <Input
               id="product-code"
               placeholder="e.g., TSHIRT-BLK-L"
@@ -339,3 +424,5 @@ export default function AddProductPage() {
     </div>
   );
 }
+
+    
