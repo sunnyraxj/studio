@@ -97,7 +97,7 @@ export default function SubscribePage() {
     if (!user || !firestore) return null;
     return doc(firestore, 'users', user.uid);
   }, [user, firestore]);
-  const { data: userData } = useDoc<UserProfile>(userDocRef);
+  const { data: userData, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
   const [selectedPlan, setSelectedPlan] = useState(plans.find(p => p.highlight));
 
@@ -118,8 +118,8 @@ export default function SubscribePage() {
       return;
     }
     
-    const isRenewing = userData?.subscriptionStatus === 'active' || userData?.subscriptionStatus === 'inactive' || userData?.subscriptionStatus === 'rejected';
-    const subscriptionType = isRenewing ? 'Renew' : 'New';
+    const hasSubscription = userData?.subscriptionStatus && userData.subscriptionStatus !== 'inactive';
+    const subscriptionType = hasSubscription ? 'Renew' : 'New';
 
     try {
       const userDocRef = doc(firestore, 'users', user.uid);
@@ -132,6 +132,7 @@ export default function SubscribePage() {
         subscriptionType: subscriptionType,
       };
 
+      // Only move to pending verification if they are not already an active user renewing.
       if (userData?.subscriptionStatus !== 'active') {
         updateData.subscriptionStatus = 'pending_verification';
       }
@@ -149,7 +150,7 @@ export default function SubscribePage() {
     }
   };
   
-  if (isUserLoading || !user) {
+  if (isUserLoading || isProfileLoading || !user) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
