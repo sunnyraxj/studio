@@ -159,26 +159,25 @@ export default function SubscriptionPage() {
             </div>
 
             {userData?.subscriptionStatus === 'active' && (
-                 <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div className="space-y-1">
-                            <dt className="text-muted-foreground">Plan</dt>
-                            <dd className="font-medium">{isLoading ? <Skeleton className="h-5 w-20" /> : userData.planName || 'Pro'}</dd>
-                        </div>
-                        <div className="space-y-1 text-right">
-                            <dt className="text-muted-foreground">Price</dt>
-                            <dd className="font-medium">{isLoading ? <Skeleton className="h-5 w-24" /> : `₹${userData.planPrice || 0}/year`}</dd>
-                        </div>
-                        <div className="space-y-1">
-                            <dt className="text-muted-foreground">Start Date</dt>
-                            <dd className="font-medium">{isLoading ? <Skeleton className="h-5 w-28" /> : userData.subscriptionStartDate ? format(new Date(userData.subscriptionStartDate), 'dd MMM, yyyy') : 'N/A'}</dd>
-                        </div>
-                        <div className="space-y-1 text-right">
-                            <dt className="text-muted-foreground">End Date</dt>
-                            <dd className="font-medium">{isLoading ? <Skeleton className="h-5 w-28" /> : userData.subscriptionEndDate ? format(new Date(userData.subscriptionEndDate), 'dd MMM, yyyy') : 'N/A'}</dd>
-                        </div>
+                <div className="space-y-4 rounded-md border p-4">
+                    <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Current Plan</span>
+                        {isLoading ? <Skeleton className="h-5 w-20" /> : <span className="font-bold">{userData.planName || 'Pro'}</span>}
                     </div>
-                     <div>
+                     <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Price</span>
+                        {isLoading ? <Skeleton className="h-5 w-24" /> : <span className="font-bold">₹{userData.planPrice || 0}/year</span>}
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Activation Date</span>
+                         {isLoading ? <Skeleton className="h-5 w-28" /> : <span className="font-medium">{userData.subscriptionStartDate ? format(new Date(userData.subscriptionStartDate), 'dd MMM, yyyy') : 'N/A'}</span>}
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Expiry Date</span>
+                         {isLoading ? <Skeleton className="h-5 w-28" /> : <span className="font-medium">{userData.subscriptionEndDate ? format(new Date(userData.subscriptionEndDate), 'dd MMM, yyyy') : 'N/A'}</span>}
+                    </div>
+                    
+                     <div className="pt-2">
                         <Progress value={progress} className="w-full" indicatorClassName={daysRemaining !== null && daysRemaining < 30 ? 'bg-destructive' : 'bg-primary'} />
                         <div className="mt-2 flex justify-between text-xs text-muted-foreground">
                             {isLoading ? <Skeleton className="h-4 w-24" /> : <span>{totalDuration - (daysRemaining ?? 0)} days used</span>}
@@ -199,9 +198,9 @@ export default function SubscriptionPage() {
                 {userData?.subscriptionStatus === 'rejected' || userData?.subscriptionStatus === 'inactive' ? 'Subscribe Now' : 'Renew Subscription'}
             </Button>
             {daysRemaining !== null && daysRemaining > 30 && (
-                <p className="text-sm text-muted-foreground ml-4">
-                    You can renew your subscription within 30 days of expiry.
-                </p>
+                <div className="text-sm text-muted-foreground ml-4">
+                   You can renew your subscription within 30 days of expiry.
+                </div>
             )}
         </CardFooter>
       </Card>
