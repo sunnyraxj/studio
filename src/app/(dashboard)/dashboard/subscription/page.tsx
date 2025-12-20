@@ -74,7 +74,7 @@ export default function SubscriptionPage() {
   };
 
   const getStatusInfo = () => {
-    // If a renewal is pending, show that status first.
+    // If a renewal is pending for an active user, show that status first.
     if (userData?.subscriptionStatus === 'active' && userData?.subscriptionType === 'Renew') {
         return {
           icon: <Clock className="h-6 w-6 text-yellow-500" />,
@@ -169,22 +169,22 @@ export default function SubscriptionPage() {
                 </div>
             </div>
 
-            {userData?.subscriptionStatus === 'active' && (
+            {(userData?.subscriptionStatus === 'active' || (userData?.subscriptionStatus === 'inactive' && userData?.planName)) && (
                 <div className="space-y-4 rounded-md border p-4">
-                    <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-                        <div className="flex justify-between items-center text-sm">
+                    <div className="grid grid-cols-1 gap-y-2 text-sm md:grid-cols-2">
+                        <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">Current Plan</span>
-                            {isLoading ? <Skeleton className="h-5 w-20" /> : <span className="font-bold">{userData.planName || 'Pro'}</span>}
+                            {isLoading ? <Skeleton className="h-5 w-20" /> : <span className="font-bold">{userData.planName || 'N/A'}</span>}
                         </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">Price</span>
-                            {isLoading ? <Skeleton className="h-5 w-24" /> : <span className="font-bold">₹{userData.planPrice?.toLocaleString('en-IN') || 0}/{userData.planName}</span>}
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
+                         <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">Activation Date</span>
                             {isLoading ? <Skeleton className="h-5 w-28" /> : <span className="font-medium">{userData.subscriptionStartDate ? format(new Date(userData.subscriptionStartDate), 'dd MMM, yyyy') : 'N/A'}</span>}
                         </div>
-                        <div className="flex justify-between items-center text-sm">
+                        <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Price</span>
+                            {isLoading ? <Skeleton className="h-5 w-24" /> : <span className="font-bold">₹{userData.planPrice?.toLocaleString('en-IN') || 0}</span>}
+                        </div>
+                        <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">Expiry Date</span>
                             {isLoading ? <Skeleton className="h-5 w-28" /> : <span className="font-medium">{userData.subscriptionEndDate ? format(new Date(userData.subscriptionEndDate), 'dd MMM, yyyy') : 'N/A'}</span>}
                         </div>
@@ -199,7 +199,7 @@ export default function SubscriptionPage() {
                                     <span className={daysRemaining < 30 ? 'font-bold text-destructive' : ''}>
                                         {daysRemaining} days remaining
                                     </span>
-                                ) : <span>Expired</span>
+                                ) : userData?.subscriptionStatus === 'active' ? <span>Expired</span> : null
                             }
                         </div>
                     </div>
@@ -212,9 +212,9 @@ export default function SubscriptionPage() {
             </Button>
             {userData?.subscriptionType === 'Renew' ? (
                 <div className="text-sm text-muted-foreground ml-4">
-                   Your renewal is pending.
+                   Your renewal is pending verification.
                 </div>
-            ) : daysRemaining !== null && daysRemaining > 30 && (
+            ) : daysRemaining !== null && daysRemaining > 30 && userData?.subscriptionStatus === 'active' && (
                 <div className="text-sm text-muted-foreground ml-4">
                    You can renew your subscription within 30 days of expiry.
                 </div>
