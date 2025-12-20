@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/card';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast.tsx';
 
@@ -83,11 +83,22 @@ const plans = [
   }
 ];
 
+type UserProfile = {
+  subscriptionStatus?: 'active' | 'inactive' | 'pending_verification' | 'rejected';
+}
+
 
 export default function SubscribePage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [user, firestore]);
+  const { data: userData } = useDoc<UserProfile>(userDocRef);
+
   const [selectedPlan, setSelectedPlan] = useState(plans.find(p => p.highlight));
 
   // If user is not logged in, redirect them to login page.
@@ -107,6 +118,10 @@ export default function SubscribePage() {
       return;
     }
     
+    // Check if the user is renewing or a new subscriber
+    const isRenewing = userData?.subscriptionStatus === 'active' || userData?.subscriptionStatus === 'inactive';
+    const subscriptionType = isRenewing ? 'Renew' : 'New';
+
     // Update user's profile to pending verification
     try {
       const userDocRef = doc(firestore, 'users', user.uid);
@@ -116,6 +131,7 @@ export default function SubscribePage() {
         planPrice: selectedPlan.price,
         planDurationMonths: selectedPlan.durationMonths, // Store duration
         subscriptionRequestDate: new Date().toISOString(),
+        subscriptionType: subscriptionType,
       });
 
       // Redirect to payment simulation page

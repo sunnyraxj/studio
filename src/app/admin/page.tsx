@@ -48,7 +48,9 @@ type UserProfile = {
   rejectionReason?: string;
   planDurationMonths?: number;
   subscriptionEndDate?: string;
+  subscriptionStartDate?: string;
   planName?: string;
+  subscriptionType?: 'New' | 'Renew';
 };
 
 type ExpiringUser = UserProfile & {
@@ -94,15 +96,22 @@ export default function AdminPage() {
     const batch = writeBatch(firestore);
     
     const targetUserDocRef = doc(firestore, 'users', targetUser.id);
-    const startDate = new Date();
-    // Use planDurationMonths to calculate end date, default to 12 months if not present
     const durationMonths = targetUser.planDurationMonths || 12;
+
+    let startDate = new Date();
+    // If it's a renewal and the current subscription hasn't expired yet, extend from the end date.
+    // Otherwise, start from today.
+    if (targetUser.subscriptionType === 'Renew' && targetUser.subscriptionEndDate && new Date(targetUser.subscriptionEndDate) > startDate) {
+      startDate = new Date(targetUser.subscriptionEndDate);
+    }
+    
     const endDate = add(startDate, { months: durationMonths });
 
     batch.update(targetUserDocRef, {
       subscriptionStatus: 'active',
       subscriptionStartDate: startDate.toISOString(),
       subscriptionEndDate: endDate.toISOString(),
+      subscriptionType: '', // Clear the request type after processing
     });
 
     try {
@@ -188,6 +197,7 @@ export default function AdminPage() {
                 <TableHead>Email</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>UTR</TableHead>
+                <TableHead>Type</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -195,7 +205,7 @@ export default function AdminPage() {
             <TableBody>
               {isUsersLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center">Loading users...</TableCell>
+                  <TableCell colSpan={7} className="text-center">Loading users...</TableCell>
                 </TableRow>
               ) : pendingUsers && pendingUsers.length > 0 ? (
                 pendingUsers.map(u => (
@@ -205,7 +215,14 @@ export default function AdminPage() {
                     <TableCell>₹{u.planPrice?.toLocaleString('en-IN') || 'N/A'}</TableCell>
                     <TableCell>{u.utr || 'N/A'}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{u.subscriptionStatus}</Badge>
+                      {u.subscriptionType === 'Renew' ? (
+                        <Badge variant="default">Renew</Badge>
+                      ) : (
+                        <Badge variant="outline">New</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{u.subscriptionStatus?.replace('_', ' ')}</Badge>
                     </TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button size="sm" onClick={() => openApproveDialog(u)}>Approve</Button>
@@ -215,7 +232,7 @@ export default function AdminPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center">No pending verifications.</TableCell>
+                  <TableCell colSpan={7} className="text-center">No pending verifications.</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -276,6 +293,7 @@ export default function AdminPage() {
                   <div><strong>Email:</strong> {selectedUser?.email}</div>
                   <div><strong>UTR:</strong> {selectedUser?.utr}</div>
                   <div><strong>Amount:</strong> ₹{selectedUser?.planPrice?.toLocaleString('en-IN')}</div>
+                  <div><strong>Type:</strong> <Badge variant={selectedUser?.subscriptionType === 'Renew' ? 'default' : 'outline'}>{selectedUser?.subscriptionType}</Badge></div>
               </div>
             </AlertDialogHeader>
             <AlertDialogFooter>

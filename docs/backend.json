@@ -109,6 +109,11 @@
             "type": "string",
             "format": "date-time",
             "description": "The date the subscription ends."
+        },
+        "subscriptionType": {
+            "type": "string",
+            "description": "Indicates if the subscription request is new or a renewal.",
+            "enum": ["New", "Renew"]
         }
       },
       "required": [
