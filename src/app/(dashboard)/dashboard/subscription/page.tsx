@@ -26,6 +26,7 @@ type UserProfile = {
   planPrice?: number;
   subscriptionStartDate?: string;
   subscriptionEndDate?: string;
+  subscriptionType?: 'New' | 'Renew';
 };
 
 export default function SubscriptionPage() {
@@ -73,6 +74,16 @@ export default function SubscriptionPage() {
   };
 
   const getStatusInfo = () => {
+    // If a renewal is pending, show that status first.
+    if (userData?.subscriptionStatus === 'active' && userData?.subscriptionType === 'Renew') {
+        return {
+          icon: <Clock className="h-6 w-6 text-yellow-500" />,
+          title: 'Renewal Pending Verification',
+          description: 'Your renewal payment is being verified. Your current plan remains active.',
+          badgeVariant: 'secondary',
+        }
+    }
+
     switch (userData?.subscriptionStatus) {
       case 'active':
         return {
@@ -160,21 +171,23 @@ export default function SubscriptionPage() {
 
             {userData?.subscriptionStatus === 'active' && (
                 <div className="space-y-4 rounded-md border p-4">
-                    <div className="flex justify-between items-center text-sm">
-                        <span className="text-muted-foreground">Current Plan</span>
-                        {isLoading ? <Skeleton className="h-5 w-20" /> : <span className="font-bold">{userData.planName || 'Pro'}</span>}
-                    </div>
-                     <div className="flex justify-between items-center text-sm">
-                        <span className="text-muted-foreground">Price</span>
-                        {isLoading ? <Skeleton className="h-5 w-24" /> : <span className="font-bold">₹{userData.planPrice || 0}/year</span>}
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                        <span className="text-muted-foreground">Activation Date</span>
-                         {isLoading ? <Skeleton className="h-5 w-28" /> : <span className="font-medium">{userData.subscriptionStartDate ? format(new Date(userData.subscriptionStartDate), 'dd MMM, yyyy') : 'N/A'}</span>}
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                        <span className="text-muted-foreground">Expiry Date</span>
-                         {isLoading ? <Skeleton className="h-5 w-28" /> : <span className="font-medium">{userData.subscriptionEndDate ? format(new Date(userData.subscriptionEndDate), 'dd MMM, yyyy') : 'N/A'}</span>}
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Current Plan</span>
+                            {isLoading ? <Skeleton className="h-5 w-20" /> : <span className="font-bold">{userData.planName || 'Pro'}</span>}
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Price</span>
+                            {isLoading ? <Skeleton className="h-5 w-24" /> : <span className="font-bold">₹{userData.planPrice?.toLocaleString('en-IN') || 0}/{userData.planName}</span>}
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Activation Date</span>
+                            {isLoading ? <Skeleton className="h-5 w-28" /> : <span className="font-medium">{userData.subscriptionStartDate ? format(new Date(userData.subscriptionStartDate), 'dd MMM, yyyy') : 'N/A'}</span>}
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Expiry Date</span>
+                            {isLoading ? <Skeleton className="h-5 w-28" /> : <span className="font-medium">{userData.subscriptionEndDate ? format(new Date(userData.subscriptionEndDate), 'dd MMM, yyyy') : 'N/A'}</span>}
+                        </div>
                     </div>
                     
                      <div className="pt-2">
@@ -194,10 +207,14 @@ export default function SubscriptionPage() {
             )}
         </CardContent>
         <CardFooter>
-            <Button onClick={handleRenew} disabled={isLoading || (daysRemaining !== null && daysRemaining > 30)}>
+            <Button onClick={handleRenew} disabled={isLoading || (daysRemaining !== null && daysRemaining > 30) || userData?.subscriptionType === 'Renew'}>
                 {userData?.subscriptionStatus === 'rejected' || userData?.subscriptionStatus === 'inactive' ? 'Subscribe Now' : 'Renew Subscription'}
             </Button>
-            {daysRemaining !== null && daysRemaining > 30 && (
+            {userData?.subscriptionType === 'Renew' ? (
+                <div className="text-sm text-muted-foreground ml-4">
+                   Your renewal is pending.
+                </div>
+            ) : daysRemaining !== null && daysRemaining > 30 && (
                 <div className="text-sm text-muted-foreground ml-4">
                    You can renew your subscription within 30 days of expiry.
                 </div>

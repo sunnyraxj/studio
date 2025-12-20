@@ -55,6 +55,7 @@ export default function PaymentPage() {
   const [paymentStep, setPaymentStep] = useState<'pay' | 'utr'>('pay');
   const [qrCodeUrl, setQrCodeUrl] = useState("https://picsum.photos/seed/qr/250/250");
   const isRejected = userData?.subscriptionStatus === 'rejected';
+  const isRenewingWhileActive = userData?.subscriptionStatus === 'active';
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -96,12 +97,32 @@ export default function PaymentPage() {
     
     try {
       // When resubmitting, clear the old rejection reason.
-      await updateDoc(userDocRef, { utr: utr, subscriptionStatus: 'pending_verification', rejectionReason: '' });
-      toast({
-        title: 'Payment Submitted',
-        description: 'Your payment is being processed and is now pending verification from an admin.',
-      });
-      router.push('/pending-verification');
+      // Do not change status if user is already active (renewal case).
+      const updateData: { utr: string; subscriptionStatus?: string; rejectionReason?: string } = {
+        utr: utr,
+        rejectionReason: ''
+      };
+
+      if (!isRenewingWhileActive) {
+        updateData.subscriptionStatus = 'pending_verification';
+      }
+
+      await updateDoc(userDocRef, updateData);
+
+      if (isRenewingWhileActive) {
+        toast({
+            title: 'Renewal Submitted',
+            description: 'Your renewal is pending verification. You can continue using the app.',
+        });
+        router.push('/dashboard');
+      } else {
+         toast({
+            title: 'Payment Submitted',
+            description: 'Your payment is being processed and is now pending verification from an admin.',
+        });
+        router.push('/pending-verification');
+      }
+      
     } catch (error: any) {
         toast({
             variant: 'destructive',

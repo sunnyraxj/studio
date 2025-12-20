@@ -118,23 +118,26 @@ export default function SubscribePage() {
       return;
     }
     
-    // Check if the user is renewing or a new subscriber
-    const isRenewing = userData?.subscriptionStatus === 'active' || userData?.subscriptionStatus === 'inactive';
+    const isRenewing = userData?.subscriptionStatus === 'active' || userData?.subscriptionStatus === 'inactive' || userData?.subscriptionStatus === 'rejected';
     const subscriptionType = isRenewing ? 'Renew' : 'New';
 
-    // Update user's profile to pending verification
     try {
       const userDocRef = doc(firestore, 'users', user.uid);
-      await updateDoc(userDocRef, {
-        subscriptionStatus: 'pending_verification',
+      
+      const updateData: any = {
         planName: selectedPlan.name,
         planPrice: selectedPlan.price,
-        planDurationMonths: selectedPlan.durationMonths, // Store duration
+        planDurationMonths: selectedPlan.durationMonths,
         subscriptionRequestDate: new Date().toISOString(),
         subscriptionType: subscriptionType,
-      });
+      };
 
-      // Redirect to payment simulation page
+      if (userData?.subscriptionStatus !== 'active') {
+        updateData.subscriptionStatus = 'pending_verification';
+      }
+
+      await updateDoc(userDocRef, updateData);
+
       router.push('/payment');
     } catch (error: any) {
       console.error("Subscription update failed:", error);
@@ -198,7 +201,7 @@ export default function SubscribePage() {
       </div>
       <div className="mt-12 w-full max-w-xs">
         <Button
-          className="w-full shadow-lg shadow-yellow-500/50 sparkle"
+          className="w-full shadow-lg shadow-primary/50 sparkle"
           size="lg"
           onClick={handleSubscribe}
           disabled={!selectedPlan}
