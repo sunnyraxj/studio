@@ -182,7 +182,7 @@ export default function SubscribePage() {
       </div>
       <div className="mt-12 w-full max-w-xs">
         <Button
-          className="w-full shadow-lg shadow-yellow-500/50"
+          className="w-full shadow-lg shadow-yellow-500/50 sparkle"
           size="lg"
           onClick={handleSubscribe}
           disabled={!selectedPlan}
