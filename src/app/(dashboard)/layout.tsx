@@ -44,7 +44,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -217,70 +216,6 @@ function AppSidebar({ shopName, isExpired }: { shopName: string, isExpired: bool
   );
 }
 
-function MobileSidebar({ shopName, isExpired }: { shopName: string, isExpired: boolean }) {
-  const pathname = usePathname();
-  const { user } = useUser();
-
-  return (
-    <Sheet>
-      <SheetTrigger asChild>
-        <Button variant="outline" size="icon" className="shrink-0 md:hidden">
-          <Menu className="h-5 w-5" />
-          <span className="sr-only">Toggle navigation menu</span>
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="left" className="flex flex-col">
-        <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-        <SheetDescription className="sr-only">
-          Main navigation links for the dashboard.
-        </SheetDescription>
-        <nav className="grid gap-2 text-lg font-medium">
-          <Link
-            href="#"
-            className="flex items-center gap-2 text-lg font-semibold"
-          >
-            <Package2 className="h-6 w-6" />
-            <span className="truncate">{shopName}</span>
-          </Link>
-          {navLinks.map((link) => (
-            <Link
-              key={link.label}
-              href={isExpired && link.href !== '/dashboard/subscription' ? '#' : link.href}
-              className={cn(
-                'mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground',
-                pathname === link.href && 'bg-muted text-foreground',
-                isExpired && link.href !== '/dashboard/subscription' && 'opacity-50 pointer-events-none'
-              )}
-            >
-              <link.icon className="h-5 w-5" />
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-        {!user && (
-          <div className="mt-auto">
-            <Card>
-              <CardHeader>
-                <CardTitle>Upgrade to Pro</CardTitle>
-                <CardDescription>
-                  Unlock all features for production use.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Link href="/subscribe" passHref>
-                  <Button size="sm" className="w-full">
-                    Upgrade
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-      </SheetContent>
-    </Sheet>
-  );
-}
-
 function SubscriptionExpiredModal({ open, onRenew }: { open: boolean, onRenew: () => void }) {
   return (
     <Dialog open={open}>
@@ -389,12 +324,11 @@ export default function DashboardLayout({
 
   return (
     <SidebarProvider>
-      <div className="grid min-h-screen w-full md:grid-cols-[auto_1fr] lg:grid-cols-[auto_1fr]">
+      <div className="grid min-h-screen w-full" style={{gridTemplateColumns: 'auto 1fr'}}>
         <AppSidebar shopName={shopName} isExpired={isUIBlocked} />
         <div className="flex flex-col">
           <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
-            <MobileSidebar shopName={shopName} isExpired={isUIBlocked} />
-            <div className="w-full flex-1" />
+             <div className="w-full flex-1" />
           </header>
           <main className={cn("flex flex-1 flex-col p-4 lg:p-6 overflow-auto", isUIBlocked && "pointer-events-none opacity-50")}>
             {children}
