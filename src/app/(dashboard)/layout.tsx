@@ -303,11 +303,17 @@ export default function DashboardLayout({
 
     if (user && userData) {
       if (userData.role === 'admin') {
+        // Admins should not be in the dashboard layout.
+        router.push('/admin');
         return;
       }
       
       switch (userData.subscriptionStatus) {
         case 'pending_verification':
+           // If a renewal is pending, let them stay.
+          if (userData.shopId) {
+            break;
+          }
           router.push('/pending-verification');
           break;
         case 'active':
@@ -321,7 +327,7 @@ export default function DashboardLayout({
           break;
         default:
           // This handles new users who haven't selected a plan yet.
-          if (router.pathname !== '/subscribe') {
+           if (router.pathname !== '/subscribe') {
               router.push('/subscribe');
           }
           break;

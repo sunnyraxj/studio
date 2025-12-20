@@ -51,6 +51,7 @@ type UserProfile = {
   subscriptionStartDate?: string;
   planName?: string;
   subscriptionType?: 'New' | 'Renew';
+  shopId?: string;
 };
 
 type ExpiringUser = UserProfile & {
@@ -68,7 +69,7 @@ export default function AdminPage() {
   const { data: usersData, isLoading: isUsersLoading } = useCollection<UserProfile>(usersCollectionRef);
 
   const pendingUsers = useMemo(() => {
-    return usersData?.filter(u => u.subscriptionStatus === 'pending_verification');
+    return usersData?.filter(u => u.subscriptionStatus === 'pending_verification' || u.subscriptionType === 'Renew');
   }, [usersData]);
 
   const expiringUsers = useMemo(() => {
@@ -92,28 +93,50 @@ export default function AdminPage() {
 
   const handleApprove = async (targetUser: UserProfile) => {
     if (!firestore || !targetUser) return;
-
+  
     const batch = writeBatch(firestore);
-    
     const targetUserDocRef = doc(firestore, 'users', targetUser.id);
     const durationMonths = targetUser.planDurationMonths || 12;
+  
+    const updateData: any = {
+      subscriptionStatus: 'active',
+      subscriptionType: '', // Clear the request type after processing
+    };
+  
+    // For new users, create a new shop
+    if (targetUser.subscriptionType === 'New' || !targetUser.shopId) {
+      const shopDocRef = doc(collection(firestore, 'shops'));
+      batch.set(shopDocRef, {
+        id: shopDocRef.id,
+        ownerId: targetUser.id,
+        name: `${targetUser.name}'s Shop`, // A default name
+      });
+      updateData.shopId = shopDocRef.id;
+      
+      // Set start and end date for new subscription
+      const startDate = new Date();
+      const endDate = add(startDate, { months: durationMonths });
+      updateData.subscriptionStartDate = startDate.toISOString();
+      updateData.subscriptionEndDate = endDate.toISOString();
 
-    let startDate = new Date();
-    // If it's a renewal and the current subscription hasn't expired yet, extend from the end date.
-    // Otherwise, start from today.
-    if (targetUser.subscriptionType === 'Renew' && targetUser.subscriptionEndDate && new Date(targetUser.subscriptionEndDate) > startDate) {
-      startDate = new Date(targetUser.subscriptionEndDate);
+    } else if (targetUser.subscriptionType === 'Renew') {
+      // For renewals, extend the existing end date
+      let startDate = new Date();
+      // If the current subscription hasn't expired yet, extend from the end date.
+      // Otherwise, start from today.
+      if (targetUser.subscriptionEndDate && new Date(targetUser.subscriptionEndDate) > startDate) {
+        startDate = new Date(targetUser.subscriptionEndDate);
+      }
+      const endDate = add(startDate, { months: durationMonths });
+      updateData.subscriptionEndDate = endDate.toISOString();
+      // No need to change start date for renewals unless it's a lapsed one.
+      if (!targetUser.subscriptionEndDate || new Date(targetUser.subscriptionEndDate) <= new Date()) {
+         updateData.subscriptionStartDate = new Date().toISOString();
+      }
     }
     
-    const endDate = add(startDate, { months: durationMonths });
-
-    batch.update(targetUserDocRef, {
-      subscriptionStatus: 'active',
-      subscriptionStartDate: startDate.toISOString(),
-      subscriptionEndDate: endDate.toISOString(),
-      subscriptionType: '', // Clear the request type after processing
-    });
-
+    batch.update(targetUserDocRef, updateData);
+  
     try {
       await batch.commit();
       toast({
@@ -144,11 +167,21 @@ export default function AdminPage() {
     const batch = writeBatch(firestore);
     
     const targetUserDocRef = doc(firestore, 'users', targetUser.id);
-    batch.update(targetUserDocRef, {
-      subscriptionStatus: 'rejected',
+
+    const updateData: any = {
       rejectionReason: rejectionNote,
       utr: '', // Clear UTR so they must re-enter it
-    });
+      subscriptionType: '', // Clear the request type
+    };
+    
+    // Only change status if they are not already active
+    // This allows active users to continue using the app after a failed renewal
+    if(targetUser.subscriptionStatus !== 'active') {
+        updateData.subscriptionStatus = 'rejected';
+    }
+
+
+    batch.update(targetUserDocRef, updateData);
 
     try {
       await batch.commit();
@@ -186,7 +219,7 @@ export default function AdminPage() {
         <CardHeader>
           <CardTitle>Pending Verifications</CardTitle>
           <CardDescription>
-            The following users have completed payment and are waiting for account activation.
+            The following users have completed payment and are waiting for account activation or renewal.
           </CardDescription>
         </CardHeader>
         <CardContent>
