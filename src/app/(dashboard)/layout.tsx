@@ -20,6 +20,7 @@ import {
   LifeBuoy,
   IndianRupee,
   CreditCard,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -42,6 +43,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -60,6 +62,7 @@ import {
 } from '@/components/ui/collapsible';
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { isAfter } from 'date-fns';
 
 const navLinks = [
   {
@@ -86,6 +89,7 @@ const navLinks = [
 
 type UserProfile = {
   subscriptionStatus?: string;
+  subscriptionEndDate?: string;
   role?: 'user' | 'admin';
   shopId?: string;
 };
@@ -94,7 +98,7 @@ type ShopSettings = {
     companyName?: string;
 }
 
-function AppSidebar({ shopName }: { shopName: string }) {
+function AppSidebar({ shopName, isExpired }: { shopName: string, isExpired: boolean }) {
   const pathname = usePathname();
   const { open } = useSidebar();
   const [isAccountOpen, setIsAccountOpen] = useState(false);
@@ -141,11 +145,12 @@ function AppSidebar({ shopName }: { shopName: string }) {
         <SidebarMenu>
           {navLinks.map((link) => (
             <SidebarMenuItem key={link.label}>
-              <Link href={link.href}>
+              <Link href={isExpired && link.href !== '/dashboard/subscription' ? '#' : link.href} aria-disabled={isExpired && link.href !== '/dashboard/subscription'}>
                 <SidebarMenuButton
                   isActive={pathname === link.href}
                   className={cn(open ? '' : 'justify-center', 'font-bold uppercase font-sans')}
                   tooltip={open ? undefined : link.label}
+                  disabled={isExpired && link.href !== '/dashboard/subscription'}
                 >
                   <link.icon className="h-4 w-4" />
                   {open && <span>{link.label}</span>}
@@ -190,13 +195,13 @@ function AppSidebar({ shopName }: { shopName: string }) {
               </Button>
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-1 pt-2">
-               <Link href="/dashboard/settings" passHref>
-                  <Button variant="ghost" className="w-full justify-start gap-2">
+               <Link href={isExpired ? '#' : "/dashboard/settings"} passHref aria-disabled={isExpired}>
+                  <Button variant="ghost" className="w-full justify-start gap-2" disabled={isExpired}>
                       <Settings className="h-4 w-4" />
                       Settings
                   </Button>
                </Link>
-               <Button variant="ghost" className="w-full justify-start gap-2">
+               <Button variant="ghost" className="w-full justify-start gap-2" disabled={isExpired}>
                   <LifeBuoy className="h-4 w-4" />
                   Support
                </Button>
@@ -212,7 +217,7 @@ function AppSidebar({ shopName }: { shopName: string }) {
   );
 }
 
-function MobileSidebar({ shopName }: { shopName: string }) {
+function MobileSidebar({ shopName, isExpired }: { shopName: string, isExpired: boolean }) {
   const pathname = usePathname();
   const { user } = useUser();
 
@@ -236,10 +241,11 @@ function MobileSidebar({ shopName }: { shopName: string }) {
           {navLinks.map((link) => (
             <Link
               key={link.label}
-              href={link.href}
+              href={isExpired && link.href !== '/dashboard/subscription' ? '#' : link.href}
               className={cn(
                 'mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground',
-                pathname === link.href && 'bg-muted text-foreground'
+                pathname === link.href && 'bg-muted text-foreground',
+                isExpired && link.href !== '/dashboard/subscription' && 'opacity-50 pointer-events-none'
               )}
             >
               <link.icon className="h-5 w-5" />
@@ -271,6 +277,27 @@ function MobileSidebar({ shopName }: { shopName: string }) {
   );
 }
 
+function SubscriptionExpiredModal({ open, onRenew }: { open: boolean, onRenew: () => void }) {
+  return (
+    <Dialog open={open}>
+      <DialogContent className="sm:max-w-[425px]" hideCloseButton>
+        <DialogHeader className="text-center">
+            <div className="mx-auto bg-destructive/10 text-destructive p-3 rounded-full w-fit mb-4">
+                <AlertTriangle className="h-8 w-8" />
+            </div>
+          <DialogTitle className="text-2xl">Subscription Expired</DialogTitle>
+          <DialogDescription>
+            Your plan has expired. Please renew your subscription to continue using all features.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="py-4">
+            <Button className="w-full" onClick={onRenew}>Renew Subscription</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export default function DashboardLayout({
   children,
 }: {
@@ -279,6 +306,7 @@ export default function DashboardLayout({
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+  const pathname = usePathname();
 
   const userDocRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -294,6 +322,13 @@ export default function DashboardLayout({
   }, [shopId, firestore]);
 
   const { data: settingsData, isLoading: isSettingsLoading } = useDoc<ShopSettings>(settingsDocRef);
+  
+  const isSubscriptionExpired = React.useMemo(() => {
+    if (userData?.subscriptionStatus === 'active' && userData?.subscriptionEndDate) {
+        return !isAfter(new Date(userData.subscriptionEndDate), new Date());
+    }
+    return false;
+  }, [userData]);
 
 
   useEffect(() => {
@@ -303,15 +338,13 @@ export default function DashboardLayout({
 
     if (user && userData) {
       if (userData.role === 'admin') {
-        // Admins should not be in the dashboard layout.
         router.push('/admin');
         return;
       }
       
       switch (userData.subscriptionStatus) {
         case 'pending_verification':
-           // If a renewal is pending, let them stay.
-          if (userData.shopId) {
+          if (userData.shopId && userData.subscriptionType === 'Renew') {
             break;
           }
           router.push('/pending-verification');
@@ -326,16 +359,15 @@ export default function DashboardLayout({
           router.push('/subscribe');
           break;
         default:
-          // This handles new users who haven't selected a plan yet.
-           if (router.pathname !== '/subscribe') {
+           if (pathname !== '/subscribe') {
               router.push('/subscribe');
           }
           break;
       }
     } else if (!user && !isUserLoading) {
-        // Stay in demo mode on dashboard.
+        // Demo mode
     }
-  }, [user, userData, isUserLoading, isProfileLoading, router, shopId]);
+  }, [user, userData, isUserLoading, isProfileLoading, router, shopId, pathname]);
 
   const isLoading = isUserLoading || (user && (isProfileLoading || (!!shopId && isSettingsLoading)));
 
@@ -349,20 +381,28 @@ export default function DashboardLayout({
 
   const shopName = user ? (settingsData?.companyName || 'My Shop') : 'Demo Shop';
 
+  const isUIBlocked = isSubscriptionExpired && pathname !== '/dashboard/subscription';
+
   return (
     <SidebarProvider>
       <div className="grid min-h-screen w-full md:grid-cols-[auto_1fr] lg:grid-cols-[auto_1fr]">
-        <AppSidebar shopName={shopName} />
+        <AppSidebar shopName={shopName} isExpired={isUIBlocked} />
         <div className="flex flex-col">
           <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
-            <MobileSidebar shopName={shopName} />
+            <MobileSidebar shopName={shopName} isExpired={isUIBlocked} />
             <div className="w-full flex-1" />
           </header>
-          <main className="flex flex-1 flex-col p-4 lg:p-6 overflow-auto">
+          <main className={cn("flex flex-1 flex-col p-4 lg:p-6 overflow-auto", isUIBlocked && "pointer-events-none opacity-50")}>
             {children}
           </main>
         </div>
+        <SubscriptionExpiredModal 
+            open={isUIBlocked}
+            onRenew={() => router.push('/dashboard/subscription')}
+        />
       </div>
     </SidebarProvider>
   );
 }
+
+    
