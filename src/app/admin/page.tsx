@@ -35,7 +35,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { add } from 'date-fns';
+import { add, differenceInDays } from 'date-fns';
 
 type UserProfile = {
   id: string;
@@ -47,7 +47,13 @@ type UserProfile = {
   planPrice?: number;
   rejectionReason?: string;
   planDurationMonths?: number;
+  subscriptionEndDate?: string;
+  planName?: string;
 };
+
+type ExpiringUser = UserProfile & {
+    daysRemaining: number;
+}
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -61,6 +67,20 @@ export default function AdminPage() {
 
   const pendingUsers = useMemo(() => {
     return usersData?.filter(u => u.subscriptionStatus === 'pending_verification');
+  }, [usersData]);
+
+  const expiringUsers = useMemo(() => {
+    if (!usersData) return [];
+    const now = new Date();
+    return usersData
+        .filter(u => u.subscriptionStatus === 'active' && u.subscriptionEndDate)
+        .map(u => {
+            const endDate = new Date(u.subscriptionEndDate!);
+            const daysRemaining = differenceInDays(endDate, now);
+            return { ...u, daysRemaining };
+        })
+        .filter(u => u.daysRemaining >= 0 && u.daysRemaining < 10)
+        .sort((a,b) => a.daysRemaining - b.daysRemaining);
   }, [usersData]);
 
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
@@ -196,6 +216,47 @@ export default function AdminPage() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center">No pending verifications.</TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+       <Card>
+        <CardHeader>
+          <CardTitle>Subscriptions Expiring Soon</CardTitle>
+          <CardDescription>
+            These users' subscriptions will expire in less than 10 days.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Plan</TableHead>
+                <TableHead className="text-right">Days Remaining</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isUsersLoading ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center">Loading users...</TableCell>
+                </TableRow>
+              ) : expiringUsers && expiringUsers.length > 0 ? (
+                expiringUsers.map(u => (
+                  <TableRow key={u.id}>
+                    <TableCell className="font-medium">{u.name || 'N/A'}</TableCell>
+                    <TableCell>{u.email}</TableCell>
+                    <TableCell>{u.planName || 'N/A'}</TableCell>
+                    <TableCell className="text-right font-bold text-destructive">{u.daysRemaining}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center">No subscriptions are expiring soon.</TableCell>
                 </TableRow>
               )}
             </TableBody>
