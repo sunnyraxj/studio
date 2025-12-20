@@ -44,7 +44,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -230,6 +230,10 @@ function MobileSidebar({ shopName, isExpired }: { shopName: string, isExpired: b
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="flex flex-col">
+        <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+        <SheetDescription className="sr-only">
+          Main navigation links for the dashboard.
+        </SheetDescription>
         <nav className="grid gap-2 text-lg font-medium">
           <Link
             href="#"
@@ -404,5 +408,3 @@ export default function DashboardLayout({
     </SidebarProvider>
   );
 }
-
-    
