@@ -10,11 +10,13 @@ import {
   Store,
   LifeBuoy,
   Settings,
+  LogOut,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { Button } from '@/components/ui/button';
 
 const adminNavLinks = [
   {
@@ -42,6 +44,16 @@ const adminNavLinks = [
 
 function AdminSidebar() {
   const pathname = usePathname();
+  const auth = useAuth();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    if (auth) {
+        auth.signOut();
+    }
+    router.push('/login?role=admin');
+  };
+
 
   return (
     <div className="hidden border-r bg-muted/40 md:block">
@@ -71,6 +83,12 @@ function AdminSidebar() {
               </Link>
             ))}
           </nav>
+        </div>
+         <div className="mt-auto p-4">
+            <Button variant="ghost" className="w-full justify-start gap-2" onClick={handleLogout}>
+                <LogOut className="h-4 w-4" />
+                Logout
+            </Button>
         </div>
       </div>
     </div>
