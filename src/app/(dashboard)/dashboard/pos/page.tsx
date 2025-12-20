@@ -35,6 +35,7 @@ type Product = {
   id: string;
   name: string;
   price: number;
+  margin: number;
   sku?: string;
   hsn?: string;
   gst?: number;
@@ -62,16 +63,16 @@ type PaymentDetails = {
 }
 
 const sampleProducts: Product[] = [
-  { id: "1", name: 'T-Shirt', price: 250, sku: 'TS-01', hsn: '6109', gst: 5 },
-  { id: "2", name: 'Jeans', price: 750, sku: 'JN-01', hsn: '6203', gst: 5 },
-  { id: "3", name: 'Sneakers', price: 1200, sku: 'SH-01', hsn: '6404', gst: 18 },
-  { id: "4", name: 'Watch', price: 3500, sku: 'WT-01', hsn: '9102', gst: 18 },
-  { id: "5", name: 'Cap', price: 150, sku: 'CP-01', hsn: '6505', gst: 12 },
-  { id: "6", name: 'Socks', price: 80, sku: 'SK-01', hsn: '6115', gst: 5 },
-  { id: "7", name: 'Backpack', price: 900, sku: 'BP-01', hsn: '4202', gst: 18 },
-  { id: "8", name: 'Hoodie', price: 1100, sku: 'HD-01', hsn: '6110', gst: 12 },
-  { id: "9", name: 'Sunglasses', price: 450, sku: 'SG-01', hsn: '9004', gst: 18 },
-  { id: "10", name: 'Belt', price: 300, sku: 'BL-01', hsn: '3926', gst: 18 },
+  { id: "1", name: 'T-Shirt', price: 250, margin: 25, sku: 'TS-01', hsn: '6109', gst: 5 },
+  { id: "2", name: 'Jeans', price: 750, margin: 30, sku: 'JN-01', hsn: '6203', gst: 5 },
+  { id: "3", name: 'Sneakers', price: 1200, margin: 40, sku: 'SH-01', hsn: '6404', gst: 18 },
+  { id: "4", name: 'Watch', price: 3500, margin: 50, sku: 'WT-01', hsn: '9102', gst: 18 },
+  { id: "5", name: 'Cap', price: 150, margin: 20, sku: 'CP-01', hsn: '6505', gst: 12 },
+  { id: "6", name: 'Socks', price: 80, margin: 15, sku: 'SK-01', hsn: '6115', gst: 5 },
+  { id: "7", name: 'Backpack', price: 900, margin: 35, sku: 'BP-01', hsn: '4202', gst: 18 },
+  { id: "8", name: 'Hoodie', price: 1100, margin: 30, sku: 'HD-01', hsn: '6110', gst: 12 },
+  { id: "9", name: 'Sunglasses', price: 450, margin: 45, sku: 'SG-01', hsn: '9004', gst: 18 },
+  { id: "10", name: 'Belt', price: 300, margin: 28, sku: 'BL-01', hsn: '3926', gst: 18 },
 ];
 
 export default function POSPage() {
@@ -275,6 +276,7 @@ export default function POSPage() {
         quantity: item.quantity,
         price: item.product.price,
         discount: item.discount,
+        margin: item.product.margin || 0,
         sku: item.product.sku || '',
         hsn: item.product.hsn || '',
         gst: item.product.gst || 0,

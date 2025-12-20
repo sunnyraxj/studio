@@ -48,6 +48,7 @@ export default function AddProductPage() {
 
   const [productName, setProductName] = useState('');
   const [mrp, setMrp] = useState('');
+  const [margin, setMargin] = useState('');
   const [gst, setGst] = useState('');
   const [hsn, setHsn] = useState('');
   const [productCode, setProductCode] = useState('');
@@ -76,9 +77,19 @@ export default function AddProductPage() {
         return;
     }
 
+    if (!margin) {
+        toast({
+            variant: "destructive",
+            title: "Margin Required",
+            description: "Please enter a profit margin for the product."
+        });
+        return;
+    }
+
     const productData = {
       name: productName,
       price: parseFloat(mrp) || 0,
+      margin: parseFloat(margin) || 0,
       gst: parseInt(gst) || 0,
       hsn: hsn,
       sku: productCode,
@@ -115,6 +126,7 @@ export default function AddProductPage() {
         'Product Name': '',
         'Product Code / SKU': '',
         'MRP (₹)': '',
+        'Margin (%)': '',
         'GST (%)': '',
         'HSN Code': '',
         'Category': '',
@@ -238,6 +250,17 @@ export default function AddProductPage() {
               placeholder="e.g., 499"
               value={mrp}
               onChange={(e) => setMrp(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="margin">Margin (%)</Label>
+            <Input
+              id="margin"
+              type="number"
+              placeholder="e.g., 25"
+              value={margin}
+              onChange={(e) => setMargin(e.target.value)}
+              required
             />
           </div>
           <div className="space-y-2">

@@ -58,6 +58,7 @@ const demoData: InventoryItem[] = [
     sku: 'TSHIRT-BLK-L',
     stock: 120,
     price: 499,
+    margin: 25,
     category: 'Apparel',
     size: 'L',
     gst: 5,
@@ -72,6 +73,7 @@ const demoData: InventoryItem[] = [
     sku: 'JEANS-BLU-32',
     stock: 80,
     price: 1299,
+    margin: 30,
     category: 'Apparel',
     size: '32',
     gst: 5,
@@ -86,6 +88,7 @@ const demoData: InventoryItem[] = [
     sku: 'SNEAK-WHT-10',
     stock: 15,
     price: 2499,
+    margin: 40,
     category: 'Footwear',
     size: '10',
     gst: 18,
@@ -100,6 +103,7 @@ const demoData: InventoryItem[] = [
     sku: 'WATCH-SIL-01',
     stock: 45,
     price: 3500,
+    margin: 50,
     category: 'Accessories',
     size: 'N/A',
     gst: 18,
@@ -114,6 +118,7 @@ const demoData: InventoryItem[] = [
     sku: 'CAP-RED-OS',
     stock: 0,
     price: 399,
+    margin: 20,
     category: 'Accessories',
     size: 'One Size',
     gst: 12,
@@ -129,6 +134,7 @@ export type InventoryItem = {
   sku: string;
   stock: number;
   price: number;
+  margin: number;
   status: 'in stock' | 'low stock' | 'out of stock';
   dateAdded: string; // Stored as ISO string
   category: string;
@@ -221,6 +227,11 @@ export const columns: ColumnDef<InventoryItem>[] = [
         const rowValue = row.getValue(columnId) as number;
         return String(rowValue).includes(String(filterValue));
     }
+  },
+  {
+    accessorKey: 'margin',
+    header: () => <div className="text-center">Margin (%)</div>,
+    cell: ({ row }) => <div className="text-center">{`${row.getValue('margin')}%`}</div>,
   },
   {
     accessorKey: 'gst',
@@ -324,6 +335,7 @@ export default function InventoryPage() {
     React.useState<VisibilityState>({
         hsn: false,
         sku: false,
+        margin: false,
     });
   const [rowSelection, setRowSelection] = React.useState({});
   const [searchBy, setSearchBy] = React.useState('name');
@@ -379,6 +391,7 @@ export default function InventoryPage() {
           'Size': item.size,
           'Stock': `${item.stock} ${item.unit}`,
           'MRP': item.price,
+          'Margin (%)': item.margin,
           'GST (%)': item.gst,
           'HSN Code': item.hsn,
           'SKU': item.sku,

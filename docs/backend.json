@@ -150,6 +150,10 @@
         },
         "status": {
           "type": "string"
+        },
+        "margin": {
+            "type": "number",
+            "description": "The profit margin percentage for the product."
         }
       },
       "required": [
@@ -157,7 +161,8 @@
         "name",
         "price",
         "stock",
-        "status"
+        "status",
+        "margin"
       ]
     },
     "Sale": {
@@ -191,13 +196,17 @@
               },
               "price": {
                 "type": "number"
+              },
+              "margin": {
+                "type": "number"
               }
             },
             "required": [
               "productId",
               "name",
               "quantity",
-              "price"
+              "price",
+              "margin"
             ]
           }
         },
