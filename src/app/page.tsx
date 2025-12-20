@@ -1,7 +1,8 @@
 
 'use client';
 
-import { Building, Shield, Gem } from 'lucide-react';
+import { useState } from 'react';
+import { Building, Shield, Gem, Rocket, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +10,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 type UserProfile = {
   subscriptionStatus?: string;
@@ -37,6 +39,7 @@ const roles = [
 export default function RoleSelectionPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const userDocRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -94,16 +97,15 @@ export default function RoleSelectionPage() {
                 <CardContent className="text-center flex-grow flex flex-col justify-between">
                   <CardDescription>{role.description}</CardDescription>
                   {role.id === 'dashboard' && !isSubscribed && (
-                     <Link href="/subscribe" passHref className="mt-4">
-                        <Button className="w-full">Get Started</Button>
-                    </Link>
+                     <Button className="w-full mt-4" onClick={() => setIsDialogOpen(true)}>Get Started</Button>
                   )}
                 </CardContent>
               </Card>
           );
           
+          // If the user is not subscribed, wrap the card content in a div that triggers the dialog
           if (role.id === 'dashboard' && !isSubscribed) {
-              return <div key={role.name}>{cardContent}</div>
+              return <div key={role.name} onClick={() => setIsDialogOpen(true)}>{cardContent}</div>
           }
 
           return (
@@ -113,6 +115,30 @@ export default function RoleSelectionPage() {
           )
         })}
       </div>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-md text-center">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">Choose Your Path</DialogTitle>
+            <DialogDescription>
+              Explore the demo or unlock all features by subscribing.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col sm:flex-row gap-4 py-4">
+            <Link href="/dashboard" passHref className="flex-1">
+              <Button variant="outline" className="w-full h-20 flex-col">
+                  <Eye className="h-6 w-6 mb-1" />
+                  <span>View Demo</span>
+              </Button>
+            </Link>
+             <Link href="/subscribe" passHref className="flex-1">
+              <Button className="w-full h-20 flex-col sparkle">
+                  <Rocket className="h-6 w-6 mb-1" />
+                  <span>Upgrade to Pro</span>
+              </Button>
+            </Link>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
