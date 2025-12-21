@@ -15,7 +15,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { format, differenceInDays } from 'date-fns';
+import { format, differenceInMilliseconds, differenceInDays } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CheckCircle, Clock, XCircle, AlertTriangle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
@@ -27,7 +27,14 @@ type UserProfile = {
   subscriptionStartDate?: string;
   subscriptionEndDate?: string;
   subscriptionType?: 'New' | 'Renew';
+  rejectionReason?: string;
 };
+
+type TimeRemaining = {
+    days: number;
+    hours: number;
+    minutes: number;
+}
 
 export default function SubscriptionPage() {
   const router = useRouter();
@@ -43,29 +50,52 @@ export default function SubscriptionPage() {
   
   const isDemoMode = !user;
 
-  const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
-  const [totalDuration, setTotalDuration] = useState<number>(365);
+  const [timeRemaining, setTimeRemaining] = useState<TimeRemaining | null>(null);
   const [progress, setProgress] = useState(0);
+  const [canRenew, setCanRenew] = useState(false);
 
   useEffect(() => {
     if (userData?.subscriptionStatus === 'active' && userData.subscriptionStartDate && userData.subscriptionEndDate) {
       const startDate = new Date(userData.subscriptionStartDate);
       const endDate = new Date(userData.subscriptionEndDate);
-      const now = new Date();
       
-      const remaining = differenceInDays(endDate, now);
-      const total = differenceInDays(endDate, startDate);
+      const updateRemainingTime = () => {
+        const now = new Date();
+        const diff = differenceInMilliseconds(endDate, now);
 
-      setDaysRemaining(remaining > 0 ? remaining : 0);
-      setTotalDuration(total > 0 ? total : 1);
+        if (diff <= 0) {
+            setTimeRemaining({ days: 0, hours: 0, minutes: 0 });
+            setProgress(100);
+            setCanRenew(true);
+            return;
+        }
 
-      if (total > 0) {
-        const elapsed = differenceInDays(now, startDate);
-        const progressPercentage = Math.max(0, Math.min(100, (elapsed / total) * 100));
-        setProgress(progressPercentage);
-      } else {
-        setProgress(100);
-      }
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((diff / 1000 / 60) % 60);
+        
+        setTimeRemaining({ days, hours, minutes });
+
+        const totalDuration = differenceInMilliseconds(endDate, startDate);
+        if (totalDuration > 0) {
+            const elapsed = differenceInMilliseconds(now, startDate);
+            const progressPercentage = Math.max(0, Math.min(100, (elapsed / totalDuration) * 100));
+            setProgress(progressPercentage);
+        } else {
+            setProgress(100);
+        }
+        
+        setCanRenew(days <= 30);
+      };
+
+      updateRemainingTime();
+      const interval = setInterval(updateRemainingTime, 60000); // Update every minute
+      return () => clearInterval(interval);
+    } else {
+        // Handle non-active states
+        if (userData?.subscriptionStatus === 'inactive' || userData?.subscriptionStatus === 'rejected') {
+            setCanRenew(true);
+        }
     }
   }, [userData]);
 
@@ -74,12 +104,22 @@ export default function SubscriptionPage() {
   };
 
   const getStatusInfo = () => {
-    // If a renewal is pending for an active user, show that status first.
-    if (userData?.subscriptionStatus === 'active' && userData?.subscriptionType === 'Renew') {
+    // A renewal might be pending for an active (but expiring) user.
+    if (userData?.subscriptionType === 'Renew' && userData?.subscriptionStatus === 'active') {
         return {
           icon: <Clock className="h-6 w-6 text-yellow-500" />,
           title: 'Renewal Pending Verification',
-          description: 'Your renewal payment is being verified. Your current plan remains active.',
+          description: 'Your renewal payment is being verified. Your current plan remains active until its expiry.',
+          badgeVariant: 'secondary',
+        }
+    }
+    
+    // A renewal might be pending for an already inactive user.
+    if (userData?.subscriptionType === 'Renew' && userData?.subscriptionStatus === 'pending_verification') {
+        return {
+          icon: <Clock className="h-6 w-6 text-yellow-500" />,
+          title: 'Renewal Pending Verification',
+          description: 'Your renewal payment is being verified. Your access will be restored upon approval.',
           badgeVariant: 'secondary',
         }
     }
@@ -103,7 +143,7 @@ export default function SubscriptionPage() {
          return {
           icon: <XCircle className="h-6 w-6 text-red-500" />,
           title: 'Payment Rejected',
-          description: 'Your recent payment was not successful. Please try again.',
+          description: userData.rejectionReason ? `Reason: ${userData.rejectionReason}` : 'Your recent payment was not successful. Please try again.',
           badgeVariant: 'destructive',
         };
       case 'inactive':
@@ -120,6 +160,8 @@ export default function SubscriptionPage() {
   const statusInfo = getStatusInfo();
 
   const isLoading = isUserLoading || isProfileLoading;
+  
+  const isRenewalPending = userData?.subscriptionType === 'Renew';
 
   if (isDemoMode) {
       return (
@@ -191,13 +233,17 @@ export default function SubscriptionPage() {
                     </div>
                     
                      <div className="pt-2">
-                        <Progress value={progress} className="w-full" indicatorClassName={daysRemaining !== null && daysRemaining < 30 ? 'bg-destructive' : 'bg-primary'} />
+                        <Progress value={progress} className="w-full" indicatorClassName={timeRemaining?.days !== null && timeRemaining?.days < 30 ? 'bg-destructive' : 'bg-primary'} />
                         <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-                            {isLoading ? <Skeleton className="h-4 w-24" /> : <span>{totalDuration - (daysRemaining ?? 0)} days used</span>}
-                            {isLoading ? <Skeleton className="h-4 w-24" /> : 
-                                (daysRemaining !== null && daysRemaining > 0) ? (
-                                    <span className={daysRemaining < 30 ? 'font-bold text-destructive' : ''}>
-                                        {daysRemaining} days remaining
+                            {isLoading || !timeRemaining ? <Skeleton className="h-4 w-48" /> : 
+                                timeRemaining.days === 0 && timeRemaining.hours === 0 && timeRemaining.minutes === 0 ?
+                                <span>Plan expired</span> :
+                                <span>Time used</span>
+                            }
+                            {isLoading || !timeRemaining ? <Skeleton className="h-4 w-48" /> : 
+                                (timeRemaining.days > 0 || timeRemaining.hours > 0 || timeRemaining.minutes > 0) ? (
+                                    <span className={timeRemaining.days < 30 ? 'font-bold text-destructive' : ''}>
+                                        {timeRemaining.days}d {timeRemaining.hours}h {timeRemaining.minutes}m remaining
                                     </span>
                                 ) : userData?.subscriptionStatus === 'active' ? <span>Expired</span> : null
                             }
@@ -207,14 +253,14 @@ export default function SubscriptionPage() {
             )}
         </CardContent>
         <CardFooter>
-            <Button onClick={handleRenew} disabled={isLoading || (daysRemaining !== null && daysRemaining > 30) || userData?.subscriptionType === 'Renew'}>
-                {userData?.subscriptionStatus === 'rejected' || userData?.subscriptionStatus === 'inactive' ? 'Subscribe Now' : 'Renew Subscription'}
+            <Button onClick={handleRenew} disabled={isLoading || !canRenew || isRenewalPending}>
+                {userData?.subscriptionStatus === 'active' ? 'Renew Subscription' : 'Subscribe Now'}
             </Button>
-            {userData?.subscriptionType === 'Renew' ? (
+            {isRenewalPending ? (
                 <div className="text-sm text-muted-foreground ml-4">
                    Your renewal is pending verification.
                 </div>
-            ) : daysRemaining !== null && daysRemaining > 30 && userData?.subscriptionStatus === 'active' && (
+            ) : !canRenew && userData?.subscriptionStatus === 'active' && (
                 <div className="text-sm text-muted-foreground ml-4">
                    You can renew your subscription within 30 days of expiry.
                 </div>
@@ -224,3 +270,5 @@ export default function SubscriptionPage() {
     </div>
   );
 }
+
+    
