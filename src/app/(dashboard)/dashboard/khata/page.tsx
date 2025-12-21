@@ -30,66 +30,28 @@ import { DataTablePagination } from '@/components/data-table-pagination';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { CaretSortIcon } from '@radix-ui/react-icons';
-import { Search } from 'lucide-react';
+import { Search, PlusCircle, IndianRupee } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import type { Sale } from '../page';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import type { KhataEntry } from '../page';
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc } from 'firebase/firestore';
+import { collection, query, doc, addDoc, updateDoc, orderBy } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { toast } from '@/hooks/use-toast.tsx';
 
-const khataColumns: ColumnDef<Sale>[] = [
-  {
-    accessorKey: 'invoiceNumber',
-    header: 'Invoice #',
-    cell: ({ row }) => <Badge variant="outline">{row.getValue('invoiceNumber')}</Badge>,
-  },
-  {
-    accessorKey: 'date',
-    header: ({ column }) => (
-      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
-        Date <CaretSortIcon className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => format(new Date(row.getValue('date')), 'dd MMM yyyy'),
-  },
-  {
-    accessorKey: 'customer.name',
-    header: 'Customer',
-    cell: ({ row }) => <div className="font-medium">{row.original.customer.name}</div>,
-  },
-    {
-    accessorKey: 'status',
-    header: 'Status',
-    cell: ({ row }) => {
-        const status = row.getValue('status') as string;
-        return <Badge variant={status === 'unpaid' ? 'destructive' : 'secondary'} className="capitalize">{status}</Badge>
-    }
-  },
-  {
-    accessorKey: 'total',
-    header: () => <div className="text-right">Total Amount</div>,
-    cell: ({ row }) => <div className="text-right font-semibold">₹{row.original.total.toLocaleString('en-IN')}</div>,
-  },
-    {
-    accessorKey: 'amountPaid',
-    header: () => <div className="text-right">Amount Paid</div>,
-    cell: ({ row }) => <div className="text-right font-medium text-green-600">₹{row.original.amountPaid.toLocaleString('en-IN')}</div>,
-  },
-  {
-    accessorKey: 'amountDue',
-    header: ({ column }) => (
-      <Button variant="ghost" className="w-full justify-end" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
-        Amount Due <CaretSortIcon className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => <div className="text-right font-bold text-destructive">₹{row.original.amountDue.toLocaleString('en-IN')}</div>,
-  },
-];
 
 export default function KhataBookPage() {
-  const [sorting, setSorting] = useState<SortingState>([{ id: 'amountDue', desc: true }]);
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'date', desc: true }]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  
+  // Form state for new entry
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [amount, setAmount] = useState('');
+  const [notes, setNotes] = useState('');
   
   const { user } = useUser();
   const firestore = useFirestore();
@@ -102,26 +64,94 @@ export default function KhataBookPage() {
   const { data: userData } = useDoc(userDocRef);
   const shopId = userData?.shopId;
 
-  const creditSalesQuery = useMemoFirebase(() => {
+  const khataQuery = useMemoFirebase(() => {
     if (isDemoMode || !shopId || !firestore) return null;
-    const salesCollectionRef = collection(firestore, `shops/${shopId}/sales`);
-    return query(salesCollectionRef, where('status', 'in', ['partial', 'unpaid']));
+    const khataCollectionRef = collection(firestore, `shops/${shopId}/khataEntries`);
+    return query(khataCollectionRef, orderBy('date', 'desc'));
   }, [shopId, firestore, isDemoMode]);
   
-  const { data: creditSalesData, isLoading } = useCollection<Sale>(creditSalesQuery);
+  const { data: khataData, isLoading } = useCollection<KhataEntry>(khataQuery);
 
   const filteredData = useMemo(() => {
-     if (!creditSalesData) return [];
-     if (!searchTerm) return creditSalesData;
-     return creditSalesData.filter(sale => 
-         sale.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-         sale.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase())
+     if (!khataData) return [];
+     if (!searchTerm) return khataData;
+     return khataData.filter(entry => 
+         entry.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         (entry.customerPhone && entry.customerPhone.includes(searchTerm))
      );
-  }, [creditSalesData, searchTerm]);
+  }, [khataData, searchTerm]);
   
   const totalDue = useMemo(() => {
-    return (filteredData || []).reduce((sum, sale) => sum + sale.amountDue, 0);
+    return (filteredData || []).filter(e => e.status === 'unpaid').reduce((sum, entry) => sum + entry.amount, 0);
   }, [filteredData]);
+  
+  const handleMarkAsPaid = async (entryId: string) => {
+    if (isDemoMode || !shopId || !firestore) {
+        toast({ variant: 'destructive', title: 'Action not allowed in demo mode.'});
+        return;
+    }
+    const entryDocRef = doc(firestore, `shops/${shopId}/khataEntries`, entryId);
+    try {
+        await updateDoc(entryDocRef, { status: 'paid' });
+        toast({ title: 'Success', description: 'Entry marked as paid.'});
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: 'Error', description: e.message });
+    }
+  }
+
+  const khataColumns: ColumnDef<KhataEntry>[] = [
+    {
+      accessorKey: 'date',
+      header: ({ column }) => (
+        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+          Date <CaretSortIcon className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => format(new Date(row.getValue('date')), 'dd MMM yyyy'),
+    },
+    {
+      accessorKey: 'customerName',
+      header: 'Customer',
+      cell: ({ row }) => {
+        const entry = row.original;
+        return (
+          <div>
+            <div className="font-medium">{entry.customerName}</div>
+            {entry.customerPhone && <div className="text-xs text-muted-foreground">{entry.customerPhone}</div>}
+          </div>
+        )
+      }
+    },
+    {
+      accessorKey: 'amount',
+      header: () => <div className="text-right">Amount</div>,
+      cell: ({ row }) => <div className="text-right font-semibold">₹{row.original.amount.toLocaleString('en-IN')}</div>,
+    },
+    {
+      accessorKey: 'notes',
+      header: 'Notes',
+    },
+    {
+      accessorKey: 'status',
+      header: 'Status',
+      cell: ({ row }) => {
+          const status = row.getValue('status') as string;
+          return <Badge variant={status === 'unpaid' ? 'destructive' : 'default'} className="capitalize">{status}</Badge>
+      }
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => {
+        const entry = row.original;
+        if (entry.status === 'unpaid') {
+          return (
+            <Button size="sm" onClick={() => handleMarkAsPaid(entry.id)}>Mark as Paid</Button>
+          );
+        }
+        return null;
+      },
+    },
+  ];
 
   const table = useReactTable({
     data: filteredData,
@@ -137,6 +167,40 @@ export default function KhataBookPage() {
       },
     },
   });
+  
+  const handleAddNewEntry = async () => {
+    if (isDemoMode || !shopId || !firestore) {
+        toast({ variant: 'destructive', title: 'Action not allowed in demo mode.'});
+        return;
+    }
+    
+    if (!customerName || !amount) {
+        toast({ variant: 'destructive', title: 'Missing Fields', description: 'Customer Name and Amount are required.' });
+        return;
+    }
+
+    const khataCollectionRef = collection(firestore, `shops/${shopId}/khataEntries`);
+    try {
+        await addDoc(khataCollectionRef, {
+            customerName,
+            customerPhone,
+            amount: parseFloat(amount),
+            notes,
+            date: new Date().toISOString(),
+            status: 'unpaid'
+        });
+
+        toast({ title: 'Success', description: 'New credit entry added.'});
+        setIsAddDialogOpen(false);
+        // Clear form
+        setCustomerName('');
+        setCustomerPhone('');
+        setAmount('');
+        setNotes('');
+    } catch(e: any) {
+        toast({ variant: 'destructive', title: 'Error', description: e.message });
+    }
+  }
 
   return (
     <Card>
@@ -144,7 +208,7 @@ export default function KhataBookPage() {
         <div>
           <CardTitle>Khata Book (Credit Ledger)</CardTitle>
           <CardDescription>
-            Track all unpaid and partially paid invoices.
+            Manually track all customer credit here. This is separate from POS invoices.
           </CardDescription>
         </div>
         <div className="flex items-center gap-4">
@@ -155,12 +219,15 @@ export default function KhataBookPage() {
             <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                    placeholder="Search by customer or invoice..."
+                    placeholder="Search by name or phone..."
                     className="pl-8 w-64"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
             </div>
+            <Button onClick={() => setIsAddDialogOpen(true)}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add New Udhar
+            </Button>
         </div>
       </CardHeader>
       <CardContent>
@@ -191,7 +258,7 @@ export default function KhataBookPage() {
                     colSpan={khataColumns.length}
                     className="h-24 text-center"
                   >
-                    Loading credit sales...
+                    Loading Khata...
                   </TableCell>
                 </TableRow>
               ) : table.getRowModel().rows?.length ? (
@@ -216,7 +283,7 @@ export default function KhataBookPage() {
                     colSpan={khataColumns.length}
                     className="h-24 text-center"
                   >
-                    No outstanding payments found.
+                    No credit entries found.
                   </TableCell>
                 </TableRow>
               )}
@@ -227,6 +294,71 @@ export default function KhataBookPage() {
           <DataTablePagination table={table} />
         </div>
       </CardContent>
+
+       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Credit (Udhar)</DialogTitle>
+            <DialogDescription>
+              Enter the details for the new credit entry.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+             <div className="grid grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                  <Label htmlFor="customer-name">Customer Name</Label>
+                  <Input 
+                    id="customer-name"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder="e.g. Raju Kumar"
+                  />
+                </div>
+                 <div className="space-y-2">
+                  <Label htmlFor="customer-phone">Phone Number (Optional)</Label>
+                  <Input 
+                    id="customer-phone"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    placeholder="e.g. 9876543210"
+                  />
+                </div>
+             </div>
+             <div className="space-y-2">
+                <Label htmlFor="amount">Amount (₹)</Label>
+                <div className="relative">
+                    <IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                        id="amount"
+                        type="number"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="pl-8"
+                    />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="notes">Notes (Optional)</Label>
+                <Textarea
+                    id="notes"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="e.g., For 2 T-shirts"
+                />
+              </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+                <Button variant="outline" onClick={() => {}}>Cancel</Button>
+            </DialogClose>
+            <Button onClick={handleAddNewEntry}>
+                Save Entry
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </Card>
   );
 }

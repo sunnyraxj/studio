@@ -113,7 +113,6 @@ export default function POSPage() {
     card: 0,
     upi: 0,
   });
-  const [amountPaid, setAmountPaid] = useState(0);
 
   const generateNextInvoiceNumber = async () => {
     if (isDemoMode || !firestore || !shopId) {
@@ -233,7 +232,6 @@ export default function POSPage() {
     setCustomerGstin('');
     setPaymentMode('cash');
     setPaymentDetails({ cash: 0, card: 0, upi: 0 });
-    setAmountPaid(0);
     generateNextInvoiceNumber();
   };
 
@@ -266,9 +264,6 @@ export default function POSPage() {
       return;
     }
 
-    const finalAmountPaid = paymentMode === 'credit' ? amountPaid : total;
-    const amountDue = total - finalAmountPaid;
-
     const saleData: any = {
       date: new Date().toISOString(),
       total: total,
@@ -296,9 +291,6 @@ export default function POSPage() {
       },
       paymentMode: paymentMode,
       invoiceNumber: invoiceNumber,
-      amountPaid: finalAmountPaid,
-      amountDue: amountDue,
-      status: amountDue > 0 ? (finalAmountPaid > 0 ? 'partial' : 'unpaid') : 'paid',
     };
     
     if (paymentMode === 'both') {
@@ -559,10 +551,6 @@ export default function POSPage() {
                                     <RadioGroupItem value="both" id="both" />
                                     <Label htmlFor="both">Both</Label>
                                 </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="credit" id="credit" />
-                                    <Label htmlFor="credit">Credit</Label>
-                                </div>
                             </RadioGroup>
                         </div>
                         {paymentMode === 'both' && (
@@ -593,23 +581,6 @@ export default function POSPage() {
                                 </div>
                                 <div className="mt-2 text-right text-sm font-medium">
                                     Remaining: <span className={remainingBalance !== 0 ? 'text-destructive' : 'text-green-600'}>₹{remainingBalance.toFixed(2)}</span>
-                                </div>
-                            </Card>
-                        )}
-                        {paymentMode === 'credit' && (
-                             <Card className="p-4 bg-muted/50">
-                                <h4 className="text-sm font-medium mb-2">Credit Details</h4>
-                                <div className="space-y-2">
-                                    <div className="flex items-center gap-2">
-                                        <Label htmlFor="amount-paid" className="w-24">Amount Paid</Label>
-                                        <div className="relative flex-1">
-                                            <IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                            <Input id="amount-paid" type="number" placeholder="0.00" className="pl-8" value={amountPaid || ''} onChange={(e) => setAmountPaid(parseFloat(e.target.value) || 0)} />
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="mt-2 text-right text-sm font-medium">
-                                    Amount Due: <span className="text-destructive">₹{(total - amountPaid).toFixed(2)}</span>
                                 </div>
                             </Card>
                         )}

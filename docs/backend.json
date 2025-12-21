@@ -223,7 +223,7 @@
         },
         "paymentMode": {
           "type": "string",
-          "enum": ["cash", "card", "upi", "both", "credit"]
+          "enum": ["cash", "card", "upi", "both"]
         },
         "paymentDetails": {
           "type": "object",
@@ -232,19 +232,6 @@
             "card": { "type": "number" },
             "upi": { "type": "number" }
           }
-        },
-        "status": {
-            "type": "string",
-            "enum": ["paid", "partial", "unpaid"],
-            "description": "The payment status of the sale."
-        },
-        "amountPaid": {
-            "type": "number",
-            "description": "The amount paid by the customer."
-        },
-        "amountDue": {
-            "type": "number",
-            "description": "The outstanding amount due from the customer."
         }
       },
       "required": [
@@ -252,11 +239,23 @@
         "date",
         "total",
         "items",
-        "paymentMode",
-        "status",
-        "amountPaid",
-        "amountDue"
+        "paymentMode"
       ]
+    },
+    "KhataEntry": {
+        "type": "object",
+        "title": "Khata Entry",
+        "description": "Represents a single credit entry in the Khata Book.",
+        "properties": {
+            "id": { "type": "string" },
+            "customerName": { "type": "string" },
+            "customerPhone": { "type": "string" },
+            "amount": { "type": "number" },
+            "notes": { "type": "string" },
+            "date": { "type": "string", "format": "date-time" },
+            "status": { "type": "string", "enum": ["unpaid", "paid"] }
+        },
+        "required": ["id", "customerName", "amount", "date", "status"]
     }
   },
   "auth": {
@@ -310,6 +309,15 @@
             "type": "object"
           },
           "description": "Settings for a specific shop."
+        }
+      },
+       {
+        "path": "/shops/{shopId}/khataEntries/{khataEntryId}",
+        "definition": {
+          "schema": {
+            "$ref": "#/backend/entities/KhataEntry"
+          },
+          "description": "Credit ledger entries for a specific shop."
         }
       }
     ]
