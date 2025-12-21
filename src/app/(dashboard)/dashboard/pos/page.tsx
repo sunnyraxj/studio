@@ -450,7 +450,7 @@ export default function POSPage() {
                             </div>
                             <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
                                 <SelectTrigger className="w-[180px]">
-                                    <SelectValue placeholder="Filter by material" />
+                                    <SelectValue placeholder="Filter material" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {uniqueMaterials.map(material => (
@@ -595,7 +595,7 @@ export default function POSPage() {
                                          <Input id="customer-state" placeholder="e.g. Assam" value={customerState} onChange={(e) => setCustomerState(e.target.value)} />
                                     </div>
                                 </div>
-                                 <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-2 gap-4">
                                      <div className="space-y-2">
                                         <Label htmlFor="customer-phone">Customer Phone</Label>
                                         <Input id="customer-phone" placeholder="Enter phone number" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
@@ -604,7 +604,7 @@ export default function POSPage() {
                                         <Label htmlFor="customer-pin">PIN Code</Label>
                                         <Input id="customer-pin" placeholder="e.g. 110001" value={customerPin} onChange={(e) => setCustomerPin(e.target.value)} />
                                     </div>
-                                 </div>
+                                </div>
                                 <Collapsible>
                                     <CollapsibleTrigger asChild>
                                         <Button variant="outline" size="sm" className="w-full">
