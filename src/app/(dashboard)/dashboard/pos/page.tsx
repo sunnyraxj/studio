@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -478,7 +479,7 @@ export default function POSPage() {
                                                         className="h-8 w-16 text-center"
                                                         value={item.discount}
                                                         onChange={(e) => updateDiscount(item.product.id, parseFloat(e.target.value))}
-                                                        onFocus={(e) => e.target.value === '0' && e.target.select()}
+                                                        onFocus={(e) => e.target.select()}
                                                         placeholder="0"
                                                     />
                                                 </TableCell>
@@ -579,7 +580,7 @@ export default function POSPage() {
                             <div className="flex justify-between font-semibold text-lg"><span>Total</span><span>₹{total.toFixed(2)}</span></div>
                         </div>
                         <div className="flex-col items-stretch space-y-2">
-                            <Button className="w-full" disabled={cart.length === 0 || (paymentMode === 'both' && remainingBalance !== 0)} onClick={completeSale}>Complete Sale</Button>
+                            <Button className="w-full" disabled={cart.length === 0 || (paymentMode === 'both' && remainingBalance !== 0)} onClick={completeSale}>Generate Invoice</Button>
                             <Button variant="destructive" className="w-full" onClick={clearSale} disabled={cart.length === 0}><Trash2 className="mr-2 h-4 w-4" /> Clear Sale</Button>
                         </div>
                     </div>
@@ -589,3 +590,5 @@ export default function POSPage() {
     </div>
   );
 }
+
+    
