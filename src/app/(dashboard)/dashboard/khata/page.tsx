@@ -31,7 +31,7 @@ import {
 import { DataTablePagination } from '@/components/data-table-pagination';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { CaretSortIcon, ChevronDownIcon, ChevronRightIcon } from '@radix-ui/react-icons';
+import { CaretSortIcon, ChevronDownIcon, ChevronRightIcon, DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Search, PlusCircle, IndianRupee, HandCoins } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { Input } from '@/components/ui/input';
@@ -44,6 +44,12 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast.tsx';
 import { cn } from '@/lib/utils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 
 type AggregatedKhata = {
@@ -260,25 +266,6 @@ export default function KhataBookPage() {
       ),
       cell: ({ row }) => <div className="text-right">{format(new Date(row.getValue('lastEntryDate')), 'dd MMM yyyy')}</div>,
     },
-    {
-        id: 'actions',
-        header: () => <div className="text-right">Actions</div>,
-        cell: ({ row }) => (
-            <div className="text-right">
-                <Button 
-                    size="sm" 
-                    onClick={() => {
-                        setSelectedCustomer(row.original);
-                        setIsPayDialogOpen(true);
-                    }}
-                    disabled={row.original.totalDue <= 0}
-                >
-                    <HandCoins className="mr-2 h-4 w-4" />
-                    Settle Dues
-                </Button>
-            </div>
-        )
-    }
   ];
 
   const table = useReactTable({
@@ -461,15 +448,37 @@ export default function KhataBookPage() {
                           <div className="p-4 bg-muted/50">
                             <div className="flex justify-between items-center mb-2">
                                 <h4 className="font-bold">Transaction History for {row.original.customerName}</h4>
-                                <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    onClick={() => handleWhatsAppReminder(row.original)}
-                                    disabled={!row.original.customerPhone}
-                                >
-                                    <FaWhatsapp className="mr-2 h-4 w-4 text-green-500" />
-                                    Send Reminder
-                                </Button>
+                                <div className="flex items-center gap-2">
+                                    <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        onClick={() => handleWhatsAppReminder(row.original)}
+                                        disabled={!row.original.customerPhone}
+                                    >
+                                        <FaWhatsapp className="mr-2 h-4 w-4 text-green-500" />
+                                        Send Reminder
+                                    </Button>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="outline" size="icon" className="h-8 w-8">
+                                                <DotsHorizontalIcon className="h-4 w-4" />
+                                                <span className="sr-only">More Actions</span>
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem
+                                                onClick={() => {
+                                                    setSelectedCustomer(row.original);
+                                                    setIsPayDialogOpen(true);
+                                                }}
+                                                disabled={row.original.totalDue <= 0}
+                                            >
+                                                <HandCoins className="mr-2 h-4 w-4" />
+                                                Settle Dues
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
                             </div>
                             <Table>
                               <TableHeader>
