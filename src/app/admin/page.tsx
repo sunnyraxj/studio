@@ -58,6 +58,11 @@ type ExpiringUser = UserProfile & {
     daysRemaining: number;
 }
 
+const demoPendingUsers: UserProfile[] = [
+    { id: 'user1', name: 'Anjali Verma', email: 'anjali@example.com', subscriptionStatus: 'pending_verification', utr: '348123912381', planPrice: 7499, subscriptionType: 'New', planName: 'Yearly', planDurationMonths: 12 },
+    { id: 'user2', name: 'Rajesh Kumar', email: 'rajesh@example.com', subscriptionStatus: 'active', utr: '912837129831', planPrice: 2099, subscriptionType: 'Renew', planName: 'Quarterly', planDurationMonths: 3, subscriptionEndDate: '2024-08-15T12:00:00.000Z' },
+];
+
 export default function AdminPage() {
   const firestore = useFirestore();
 
@@ -68,9 +73,12 @@ export default function AdminPage() {
 
   const { data: usersData, isLoading: isUsersLoading } = useCollection<UserProfile>(usersCollectionRef);
 
+  const [localPendingUsers, setLocalPendingUsers] = useState(demoPendingUsers);
+
   const pendingUsers = useMemo(() => {
+     if (!firestore) return localPendingUsers;
     return usersData?.filter(u => u.subscriptionStatus === 'pending_verification' || u.subscriptionType === 'Renew');
-  }, [usersData]);
+  }, [usersData, firestore, localPendingUsers]);
 
   const expiringUsers = useMemo(() => {
     if (!usersData) return [];
@@ -92,7 +100,16 @@ export default function AdminPage() {
   const [rejectionNote, setRejectionNote] = useState('');
 
   const handleApprove = async (targetUser: UserProfile) => {
-    if (!firestore || !targetUser) return;
+    if (!firestore) { // This implies demo mode
+        setLocalPendingUsers(prev => prev.filter(u => u.id !== targetUser.id));
+        toast({
+            title: 'User Approved (Demo)',
+            description: `${targetUser.email} has been granted access.`,
+        });
+        setIsApproveDialogOpen(false);
+        setSelectedUser(null);
+        return;
+    }
   
     const batch = writeBatch(firestore);
     const targetUserDocRef = doc(firestore, 'users', targetUser.id);
@@ -156,7 +173,19 @@ export default function AdminPage() {
   };
   
   const handleReject = async (targetUser: UserProfile) => {
-    if (!firestore || !targetUser || !rejectionNote) {
+    if (!firestore) { // This implies demo mode
+        setLocalPendingUsers(prev => prev.filter(u => u.id !== targetUser.id));
+        toast({
+            title: 'User Rejected (Demo)',
+            description: `${targetUser.email}'s payment has been rejected.`,
+        });
+        setIsRejectDialogOpen(false);
+        setSelectedUser(null);
+        setRejectionNote('');
+        return;
+    }
+    
+    if (!targetUser || !rejectionNote) {
         toast({
             variant: "destructive",
             title: "Rejection note is required"
@@ -236,7 +265,7 @@ export default function AdminPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isUsersLoading ? (
+              {isUsersLoading && firestore ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center">Loading users...</TableCell>
                 </TableRow>

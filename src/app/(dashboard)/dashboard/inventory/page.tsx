@@ -51,6 +51,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 import * as XLSX from 'xlsx';
 import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast.tsx';
 
 const demoData: InventoryItem[] = [
   // ... (existing demo data)
@@ -250,6 +251,23 @@ export const columns: ColumnDef<InventoryItem>[] = [
     enableHiding: false,
     cell: ({ row }) => {
       const item = row.original;
+      const { user } = useUser();
+      const isDemoMode = !user;
+
+      const handleAction = (action: string) => {
+        if (isDemoMode) {
+          toast({
+            title: `Action: ${action} (Demo)`,
+            description: `This action was simulated for product: ${item.name}`,
+          });
+        } else {
+          // Implement actual logic here for logged-in users
+          toast({
+            title: 'Coming Soon!',
+            description: `${action} functionality is being implemented.`,
+          });
+        }
+      };
 
       return (
         <DropdownMenu>
@@ -261,8 +279,12 @@ export const columns: ColumnDef<InventoryItem>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem>Edit product</DropdownMenuItem>
-            <DropdownMenuItem>Print barcode</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleAction('Edit Product')}>
+              Edit product
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleAction('Print Barcode')}>
+              Print barcode
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );

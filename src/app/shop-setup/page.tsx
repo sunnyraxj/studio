@@ -26,6 +26,7 @@ export default function ShopSetupPage() {
   const router = useRouter();
   const firestore = useFirestore();
   const { user } = useUser();
+  const isDemoMode = !user;
 
   const [step, setStep] = useState(1);
 
@@ -52,6 +53,15 @@ export default function ShopSetupPage() {
   const prevStep = () => setStep((s) => s - 1);
 
   const handleFinish = async () => {
+    if (isDemoMode) {
+      toast({
+        title: 'Setup Complete! (Demo)',
+        description: 'Your shop has been created. Welcome to the dashboard!',
+      });
+      router.push('/dashboard');
+      return;
+    }
+    
     if (!firestore || !user) {
       toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in.' });
       return;
