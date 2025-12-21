@@ -215,6 +215,13 @@ export default function KhataBookPage() {
     window.open(whatsappUrl, '_blank');
 };
 
+  const openNewCreditDialog = (customer?: AggregatedKhata) => {
+    setCustomerName(customer?.customerName || '');
+    setCustomerPhone(customer?.customerPhone || '');
+    setAmount('');
+    setNotes('');
+    setIsAddDialogOpen(true);
+  }
 
   const khataColumns: ColumnDef<AggregatedKhata>[] = [
     {
@@ -266,6 +273,24 @@ export default function KhataBookPage() {
       ),
       cell: ({ row }) => <div className="text-right">{format(new Date(row.getValue('lastEntryDate')), 'dd MMM yyyy')}</div>,
     },
+    {
+      id: 'actions',
+      header: () => <div className="text-right">Actions</div>,
+      cell: ({ row }) => {
+        const customer = row.original;
+        return (
+          <div className="text-right">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => openNewCreditDialog(customer)}
+            >
+              <PlusCircle className="mr-2 h-4 w-4" /> Credit
+            </Button>
+          </div>
+        );
+      },
+    }
   ];
 
   const table = useReactTable({
@@ -380,7 +405,7 @@ export default function KhataBookPage() {
                 <p className="text-sm text-muted-foreground">Grand Total Due</p>
                 <p className="text-2xl font-bold text-destructive">₹{grandTotalDue.toLocaleString('en-IN')}</p>
             </div>
-            <Button onClick={() => setIsAddDialogOpen(true)} className="bg-green-600 hover:bg-green-700">
+            <Button onClick={() => openNewCreditDialog()} className="bg-green-600 hover:bg-green-700">
                 <PlusCircle className="mr-2 h-4 w-4" /> Add New Credit
             </Button>
         </div>
@@ -538,6 +563,7 @@ export default function KhataBookPage() {
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     placeholder="e.g. Raju Kumar"
+                    readOnly={!!customerName}
                   />
                 </div>
                  <div className="space-y-2">
@@ -547,6 +573,7 @@ export default function KhataBookPage() {
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
                     placeholder="e.g. 9876543210"
+                    readOnly={!!customerPhone}
                   />
                 </div>
              </div>
