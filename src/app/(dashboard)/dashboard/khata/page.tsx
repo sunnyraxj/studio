@@ -458,26 +458,18 @@ export default function KhataBookPage() {
                                         <FaWhatsapp className="mr-2 h-4 w-4 text-green-500" />
                                         Send Reminder
                                     </Button>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                             <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                                                <HandCoins className="mr-2 h-4 w-4" />
-                                                Actions
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem
-                                                onClick={() => {
-                                                    setSelectedCustomer(row.original);
-                                                    setIsPayDialogOpen(true);
-                                                }}
-                                                disabled={row.original.totalDue <= 0}
-                                            >
-                                                <HandCoins className="mr-2 h-4 w-4" />
-                                                Settle Dues
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
+                                    <Button
+                                        size="sm"
+                                        className="bg-green-600 hover:bg-green-700"
+                                        onClick={() => {
+                                            setSelectedCustomer(row.original);
+                                            setIsPayDialogOpen(true);
+                                        }}
+                                        disabled={row.original.totalDue <= 0}
+                                    >
+                                        <HandCoins className="mr-2 h-4 w-4" />
+                                        Settle Dues
+                                    </Button>
                                 </div>
                             </div>
                             <Table>
