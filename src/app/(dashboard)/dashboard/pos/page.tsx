@@ -478,6 +478,7 @@ export default function POSPage() {
                                                         className="h-8 w-16 text-center"
                                                         value={item.discount}
                                                         onChange={(e) => updateDiscount(item.product.id, parseFloat(e.target.value))}
+                                                        onFocus={(e) => e.target.value === '0' && e.target.select()}
                                                         placeholder="0"
                                                     />
                                                 </TableCell>
