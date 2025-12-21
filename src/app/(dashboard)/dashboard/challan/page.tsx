@@ -124,6 +124,9 @@ export default function ChallanPage() {
   const [challanNotes, setChallanNotes] = useState('');
   const [paymentMode, setPaymentMode] = useState('none');
 
+  const [quickItemName, setQuickItemName] = useState('');
+  const [quickItemQty, setQuickItemQty] = useState<number | string>(1);
+
   const [isChallanOpen, setIsChallanOpen] = useState(false);
   const [lastChallanData, setLastChallanData] = useState<any>(null);
   const challanRef = useRef(null);
@@ -191,6 +194,32 @@ export default function ChallanPage() {
       }
       return [...prevCart, { product: productToAdd, quantity: 1 }];
     });
+  };
+
+  const addQuickItemToCart = () => {
+    if (!quickItemName || !quickItemQty) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing Details',
+        description: 'Please enter both item name and quantity.',
+      });
+      return;
+    }
+
+    const newProduct: Product = {
+      id: `quick-${Date.now()}`,
+      name: quickItemName,
+      sku: 'N/A',
+    };
+
+    setCart((prevCart) => [
+      ...prevCart,
+      { product: newProduct, quantity: Number(quickItemQty) },
+    ]);
+
+    // Reset form
+    setQuickItemName('');
+    setQuickItemQty(1);
   };
 
   const updateQuantity = (productId: string, amount: number) => {
@@ -348,6 +377,28 @@ export default function ChallanPage() {
                     <ScrollArea className="h-full">
                         <div className="p-4 pt-0">
                             <Separator />
+                            <div className="p-2 space-y-2 border-b">
+                                <Label className="text-sm font-medium">Quick Item Entry</Label>
+                                <div className="flex items-center gap-2">
+                                <Input
+                                    placeholder="Item Name"
+                                    value={quickItemName}
+                                    onChange={(e) => setQuickItemName(e.target.value)}
+                                    className="h-8"
+                                />
+                                <Input
+                                    type="number"
+                                    placeholder="Qty"
+                                    value={quickItemQty}
+                                    onChange={(e) => setQuickItemQty(e.target.value)}
+                                    className="h-8 w-20"
+                                    min="1"
+                                />
+                                <Button size="sm" onClick={addQuickItemToCart} className="h-8">
+                                    <PlusCircle className="h-4 w-4" />
+                                </Button>
+                                </div>
+                            </div>
                             <div className="py-2">
                                 {cart.length === 0 ? (
                                      <div className="text-center text-muted-foreground py-10">
