@@ -98,11 +98,6 @@ export const demoCustomers: Customer[] = [
     { id: '4', name: 'Sunita Gupta', phone: '9876543213', invoiceNumbers: ['INV126'], lastPurchaseDate: new Date(Date.now() - 259200000).toISOString() },
     { id: '5', name: 'Vikas Patel', phone: '9876543214', invoiceNumbers: ['INV127'], lastPurchaseDate: new Date(Date.now() - 345600000).toISOString() },
 ];
-const DemoData = {
-    todaySales: 12345.67,
-    thisMonthSales: 150000,
-    thisYearSales: 1850000,
-};
 
 const LoadingComponent = () => (
   <Card>
