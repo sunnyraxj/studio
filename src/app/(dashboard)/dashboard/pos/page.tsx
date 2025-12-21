@@ -448,6 +448,7 @@ export default function POSPage() {
                                         <TableRow>
                                             <TableHead>Item</TableHead>
                                             <TableHead className="text-center">Qty</TableHead>
+                                            <TableHead className="text-center">Disc(%)</TableHead>
                                             <TableHead className="text-right">Amount</TableHead>
                                             <TableHead className="w-[50px]"></TableHead>
                                         </TableRow>
@@ -470,6 +471,15 @@ export default function POSPage() {
                                                             <PlusCircle className='h-4 w-4' />
                                                         </Button>
                                                     </div>
+                                                </TableCell>
+                                                 <TableCell className="text-center py-2">
+                                                    <Input
+                                                        type="number"
+                                                        className="h-8 w-16 text-center"
+                                                        value={item.discount}
+                                                        onChange={(e) => updateDiscount(item.product.id, parseFloat(e.target.value))}
+                                                        placeholder="0"
+                                                    />
                                                 </TableCell>
                                                 <TableCell className="text-right py-2">₹{finalPrice.toFixed(2)}</TableCell>
                                                 <TableCell className="text-right py-2">
