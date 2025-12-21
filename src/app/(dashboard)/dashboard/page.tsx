@@ -153,15 +153,13 @@ export default function DashboardPage() {
     if (isDemoMode || !shopId || !firestore) return null;
     return collection(firestore, `shops/${shopId}/sales`);
   }, [shopId, firestore, isDemoMode]);
-
-  // We are removing the top-level data fetch. Data will be fetched within each tab.
-  // const { data: allSalesData, isLoading: isAllSalesLoading } = useCollection<Sale>(salesCollectionRef);
   
-  // For overview cards, we will still fetch some aggregated data, but we can optimize this later if needed.
-  // For now, let's fetch all data just for the overview page, and let other tabs manage their own data.
-  const { data: allSalesData, isLoading: isAllSalesLoading } = useCollection<Sale>(activeTab === 'overview' ? salesCollectionRef : null);
+  // Only fetch data for the overview tab here. Other tabs will fetch their own data.
+  const { data: overviewSalesData, isLoading: isOverviewLoading } = useCollection<Sale>(
+    activeTab === 'overview' ? salesCollectionRef : null
+  );
 
-  const salesData = isDemoMode ? demoSales : allSalesData;
+  const salesData = isDemoMode ? demoSales : overviewSalesData;
   const originalData = salesData || [];
 
   const {
@@ -204,7 +202,7 @@ export default function DashboardPage() {
   }, [originalData]);
 
 
-  const isLoading = isAllSalesLoading && !isDemoMode;
+  const isLoading = isOverviewLoading && !isDemoMode;
   const isNewSubscriber = userData?.subscriptionType === 'New';
 
   return (
@@ -331,3 +329,5 @@ export default function DashboardPage() {
     </TooltipProvider>
   );
 }
+
+    

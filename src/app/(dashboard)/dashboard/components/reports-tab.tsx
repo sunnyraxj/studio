@@ -40,7 +40,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import type { Sale, ReportItem } from '../page';
 import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, getDocs, limit, startAfter, getCountFromServer, Query, DocumentData } from 'firebase/firestore';
+import { collection, query, where, orderBy, getDocs, limit, startAfter, getCountFromServer, Query, DocumentData, doc } from 'firebase/firestore';
 
 
 const reportsColumns: ColumnDef<ReportItem>[] = [
@@ -68,7 +68,7 @@ export function ReportsTab() {
   const isDemoMode = !user;
 
   const userDocRef = useMemoFirebase(() => {
-    if (isDemoMode || !firestore) return null;
+    if (isDemoMode || !user || !firestore) return null;
     return doc(firestore, `users/${user.uid}`);
   }, [user, firestore, isDemoMode]);
   const { data: userData } = useDoc(userDocRef);
@@ -77,13 +77,12 @@ export function ReportsTab() {
   const [data, setData] = useState<ReportItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [pageCount, setPageCount] = useState(0);
-  const [lastVisible, setLastVisible] = useState<DocumentData | null>(null);
 
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({ hsn: false });
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 30 });
   const [sorting, setSorting] = useState<SortingState>([]);
   
-  const [isFilterApplied, setIsFilterApplied] = useState(false);
+  const [isFilterActive, setIsFilterActive] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [startDay, setStartDay] = useState('');
   const [startMonth, setStartMonth] = useState('');
@@ -94,9 +93,6 @@ export function ReportsTab() {
 
   const buildQuery = () => {
     if (!firestore || !shopId) return null;
-    // Note: Firestore doesn't allow querying subcollections directly.
-    // This implementation will fetch sales and then flatten them.
-    // For true scalability, a separate 'saleItems' root collection would be needed.
     const baseRef = collection(firestore, `shops/${shopId}/sales`);
     let constraints = [orderBy('date', 'desc')];
     
@@ -118,9 +114,7 @@ export function ReportsTab() {
 
     setIsLoading(true);
     try {
-      // This approach is not fully paginated for report items, as it fetches sales first.
-      // True item-level pagination requires a different data model.
-      const querySnapshot = await getDocs(query(q, limit(100))); // Fetch 100 sales at a time to get items
+      const querySnapshot = await getDocs(query(q, limit(100))); // This approach is not scalable for pagination
       const sales = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Sale));
       
       let reportItems = sales.flatMap(sale => sale.items.map(item => ({ ...item, saleDate: sale.date })));
@@ -132,7 +126,8 @@ export function ReportsTab() {
         );
       }
       
-      setData(reportItems);
+      const paginatedItems = reportItems.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize);
+      setData(paginatedItems);
       setPageCount(Math.ceil(reportItems.length / pageSize));
     } catch(e) {
       console.error(e)
@@ -142,12 +137,12 @@ export function ReportsTab() {
   };
 
   useEffect(() => {
-    if(!isDemoMode) fetchData();
-  }, [pageIndex, pageSize, isFilterApplied]);
+    if(!isDemoMode && shopId) fetchData();
+  }, [shopId, pageIndex, pageSize, isFilterActive, searchTerm]);
 
   const handleFilter = () => {
     setPageIndex(0);
-    setIsFilterApplied(true);
+    setIsFilterActive(prev => !prev);
   };
   
   const handleClearFilter = () => {
@@ -155,8 +150,12 @@ export function ReportsTab() {
     setEndDay(''); setEndMonth(''); setEndYear('');
     setSearchTerm('');
     setPageIndex(0);
-    setIsFilterApplied(false);
+    if (isFilterActive) {
+      setIsFilterActive(prev => !prev);
+    }
   }
+
+  const isAnyFilterApplied = !!(searchTerm || startDay || endDay);
 
   const totalSales = useMemo(() => {
     return data.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -236,7 +235,7 @@ export function ReportsTab() {
                   </div>
                 </div>
                 <Button onClick={handleFilter} size="sm">Filter</Button>
-                {isFilterApplied && (
+                {isAnyFilterApplied && (
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleClearFilter}>
                       <X className="h-4 w-4" />
                       <span className="sr-only">Clear Filter</span>
@@ -305,3 +304,5 @@ export function ReportsTab() {
     </TooltipProvider>
   );
 }
+
+    

@@ -97,7 +97,7 @@ export function CustomersTab({ isDemoMode }: { isDemoMode: boolean }) {
   const firestore = useFirestore();
 
   const userDocRef = useMemoFirebase(() => {
-    if (isDemoMode || !firestore) return null;
+    if (isDemoMode || !user || !firestore) return null;
     return doc(firestore, `users/${user.uid}`);
   }, [user, firestore, isDemoMode]);
   const { data: userData } = useDoc(userDocRef);
@@ -110,7 +110,6 @@ export function CustomersTab({ isDemoMode }: { isDemoMode: boolean }) {
     pageIndex: 0,
     pageSize: 30,
   });
-  const [lastVisible, setLastVisible] = useState<DocumentData | null>(null);
 
   const fetchData = async () => {
     if (isDemoMode) {
@@ -121,19 +120,12 @@ export function CustomersTab({ isDemoMode }: { isDemoMode: boolean }) {
     if (!shopId || !firestore) return;
 
     setIsLoading(true);
-
-    const salesCollectionRef = collection(firestore, `shops/${shopId}/sales`);
     
-    // Base query
-    let q: Query = salesCollectionRef;
-    
-    // Since we are aggregating on the client, we cannot efficiently filter on the server by customer name.
-    // We will fetch all sales and then aggregate. This is the bottleneck.
-    // The "fix" is to change this entire component to query a 'customers' collection
-    // that is updated by a cloud function, or to implement a more complex client-side pagination.
-    // For this change, we'll implement a basic client-side pagination on the aggregated data.
-    
+    // This is still inefficient and should be replaced with a dedicated 'customers' collection
+    // that is updated via a Cloud Function on sale creation/update for scalability.
+    // For now, we fetch all sales and aggregate on the client.
     try {
+        const salesCollectionRef = collection(firestore, `shops/${shopId}/sales`);
         const querySnapshot = await getDocs(query(salesCollectionRef, orderBy('date', 'desc')));
         const salesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Sale));
         
@@ -181,9 +173,8 @@ export function CustomersTab({ isDemoMode }: { isDemoMode: boolean }) {
             );
         }
 
-        // Apply sorting
         allCustomers.sort((a, b) => {
-            if (sorting[0].id === 'lastPurchaseDate') {
+            if (sorting[0]?.id === 'lastPurchaseDate') {
                 const dateA = new Date(a.lastPurchaseDate).getTime();
                 const dateB = new Date(b.lastPurchaseDate).getTime();
                 return sorting[0].desc ? dateB - dateA : dateA - dateB;
@@ -307,3 +298,5 @@ export function CustomersTab({ isDemoMode }: { isDemoMode: boolean }) {
     </Card>
   );
 }
+
+    

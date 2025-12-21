@@ -39,7 +39,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { Sale } from '../page';
 import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit, startAfter, getDocs, where, Query, DocumentData, getCountFromServer } from 'firebase/firestore';
+import { collection, query, orderBy, limit, startAfter, getDocs, where, Query, DocumentData, getCountFromServer, doc } from 'firebase/firestore';
 
 
 const salesColumns: ColumnDef<Sale>[] = [
@@ -95,7 +95,7 @@ export function AllSalesTab() {
   const isDemoMode = !user;
 
   const userDocRef = useMemoFirebase(() => {
-    if (isDemoMode || !firestore) return null;
+    if (isDemoMode || !firestore || !user) return null;
     return doc(firestore, `users/${user.uid}`);
   }, [user, firestore, isDemoMode]);
   const { data: userData } = useDoc(userDocRef);
@@ -114,7 +114,7 @@ export function AllSalesTab() {
 
   const [lastVisible, setLastVisible] = useState<DocumentData | null>(null);
   
-  const [isFilterApplied, setIsFilterApplied] = useState(false);
+  const [isFilterActive, setIsFilterActive] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
   const [startDay, setStartDay] = useState('');
@@ -151,8 +151,6 @@ export function AllSalesTab() {
     if (isValidEndDate) queryConstraints.push(where('date', '<=', endDate.toISOString()));
     
     if (searchTerm) {
-        // Firestore doesn't support OR queries on different fields easily.
-        // We will filter by the primary search term which is customer name for now.
         queryConstraints.push(where('customer.name', '>=', searchTerm));
         queryConstraints.push(where('customer.name', '<=', searchTerm + '\uf8ff'));
     }
@@ -190,15 +188,15 @@ export function AllSalesTab() {
   };
 
   useEffect(() => {
-    if (!isDemoMode) {
+    if (!isDemoMode && shopId) {
       fetchData();
     }
-  }, [pageIndex, pageSize, sorting, isFilterApplied]);
+  }, [shopId, pageIndex, pageSize, sorting, isFilterActive]);
 
   const handleFilter = () => {
     setPageIndex(0); // Reset to first page
     setLastVisible(null);
-    setIsFilterApplied(true); // Trigger re-fetch
+    setIsFilterActive(prev => !prev); // Trigger re-fetch
   };
   
   const handleClearFilter = () => {
@@ -211,8 +209,12 @@ export function AllSalesTab() {
     setSearchTerm('');
     setPageIndex(0);
     setLastVisible(null);
-    setIsFilterApplied(false);
+    if(isFilterActive) {
+      setIsFilterActive(prev => !prev);
+    }
   }
+
+  const isAnyFilterApplied = !!(searchTerm || startDay || endDay);
 
   const table = useReactTable({
     data,
@@ -267,7 +269,7 @@ export function AllSalesTab() {
                   </div>
                 </div>
                 <Button onClick={handleFilter} size="sm">Filter</Button>
-                {(isFilterApplied || searchTerm) && (
+                {isAnyFilterApplied && (
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleClearFilter}>
                       <X className="h-4 w-4" />
                       <span className="sr-only">Clear Filter</span>
@@ -329,3 +331,5 @@ export function AllSalesTab() {
     </Card>
   );
 }
+
+    

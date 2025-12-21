@@ -95,13 +95,12 @@ export function PaymentsTab() {
   const isDemoMode = !user;
 
   const userDocRef = useMemoFirebase(() => {
-    if (isDemoMode || !firestore) return null;
+    if (isDemoMode || !user || !firestore) return null;
     return doc(firestore, `users/${user.uid}`);
   }, [user, firestore, isDemoMode]);
   const { data: userData } = useDoc(userDocRef);
   const shopId = userData?.shopId;
   
-  // States for overview cards, still need to fetch all data for these for now.
   const salesCollectionRef = useMemoFirebase(() => {
     if (isDemoMode || !shopId || !firestore) return null;
     return collection(firestore, `shops/${shopId}/sales`);
@@ -119,7 +118,7 @@ export function PaymentsTab() {
     pageSize: 30,
   });
 
-  const [isFilterApplied, setIsFilterApplied] = useState(false);
+  const [isFilterActive, setIsFilterActive] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [startDay, setStartDay] = useState('');
   const [startMonth, setStartMonth] = useState('');
@@ -175,8 +174,8 @@ export function PaymentsTab() {
   };
   
   useEffect(() => {
-    if(!isDemoMode) fetchData();
-  }, [pageIndex, pageSize, sorting, isFilterApplied]);
+    if(!isDemoMode && shopId) fetchData();
+  }, [shopId, pageIndex, pageSize, sorting, isFilterActive]);
 
   const originalData = overviewSalesData || [];
 
@@ -213,8 +212,6 @@ export function PaymentsTab() {
     const yesterdaySales = yesterdaySalesData.reduce((sum, s) => sum + s.total, 0);
     const thisMonthSales = originalData.filter(s => new Date(s.date).getMonth() === currentMonth && new Date(s.date).getFullYear() === currentYear).reduce((sum, s) => sum + s.total, 0);
     
-    // For filtered totals, we can't rely on `data` state as it's paginated. This would need a separate query.
-    // For now, we show all-time totals if no filter is applied.
     return {
         filteredPaymentTotals: calculateTotals(originalData),
         todayPaymentTotals: calculateTotals(todaySalesData),
@@ -229,7 +226,7 @@ export function PaymentsTab() {
   const handleFilter = () => {
     setPageIndex(0);
     setLastVisible(null);
-    setIsFilterApplied(true);
+    setIsFilterActive(prev => !prev);
   };
   
   const handleClearFilter = () => {
@@ -238,8 +235,12 @@ export function PaymentsTab() {
     setSearchTerm('');
     setPageIndex(0);
     setLastVisible(null);
-    setIsFilterApplied(false);
+    if(isFilterActive) {
+      setIsFilterActive(prev => !prev);
+    }
   }
+
+  const isAnyFilterApplied = !!(searchTerm || startDay || endDay);
   
   const handleExport = () => {
     // This needs to be adapted to fetch all data for export, or export current view.
@@ -309,7 +310,7 @@ export function PaymentsTab() {
                   </div>
                 </div>
                 <Button onClick={handleFilter} size="sm" className="self-end">Filter</Button>
-                {isFilterApplied && (
+                {isAnyFilterApplied && (
                   <Button variant="ghost" size="icon" className="h-8 w-8 self-end" onClick={handleClearFilter}>
                       <X className="h-4 w-4" />
                       <span className="sr-only">Clear Filter</span>
@@ -365,11 +366,11 @@ export function PaymentsTab() {
             <PaymentBreakdownCard title="Today's Payments" totals={todayPaymentTotals} isLoading={isOverviewLoading} />
             <PaymentBreakdownCard title="Yesterday's Payments" totals={yesterdayPaymentTotals} isLoading={isOverviewLoading} />
             <PaymentBreakdownCard 
-                title={isFilterApplied ? "Filtered Totals" : "All-Time Totals"} 
+                title={isAnyFilterApplied ? "Filtered Totals" : "All-Time Totals"} 
                 totals={filteredPaymentTotals}
                 isLoading={isOverviewLoading}
                 className={cn(
-                    isFilterApplied && "bg-accent/50 border-primary ring-2 ring-primary/50"
+                    isAnyFilterApplied && "bg-accent/50 border-primary ring-2 ring-primary/50"
                 )}
             />
           </div>
@@ -399,3 +400,5 @@ export function PaymentsTab() {
     </TooltipProvider>
   );
 }
+
+    
