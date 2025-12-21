@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
@@ -38,7 +37,10 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible"
+} from "@/components/ui/collapsible";
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useReactToPrint } from 'react-to-print';
+import { Invoice } from './components/invoice';
 
 
 type Product = {
@@ -59,6 +61,18 @@ type CartItem = {
 
 type UserProfile = {
   shopId?: string;
+}
+
+type ShopSettings = {
+    companyName?: string;
+    companyAddress?: string;
+    companyGstin?: string;
+    companyPhone?: string;
+    logoUrl?: string;
+    bankName?: string;
+    accountNumber?: string;
+    ifscCode?: string;
+    upiId?: string;
 }
 
 type Sale = {
@@ -98,6 +112,12 @@ export default function POSPage() {
 
   const { data: userData } = useDoc<UserProfile>(userDocRef);
   const shopId = userData?.shopId;
+  
+  const settingsDocRef = useMemoFirebase(() => {
+    if (isDemoMode || !shopId || !firestore) return null;
+    return doc(firestore, `shops/${shopId}/settings`, 'details');
+  }, [firestore, shopId, isDemoMode]);
+  const { data: shopSettings } = useDoc<ShopSettings>(settingsDocRef);
 
   const productsCollectionRef = useMemoFirebase(() => {
     if (isDemoMode || !shopId || !firestore) return null;
@@ -123,6 +143,20 @@ export default function POSPage() {
     card: 0,
     upi: 0,
   });
+  
+  const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
+  const [lastSaleData, setLastSaleData] = useState<any>(null);
+  const invoiceRef = useRef(null);
+
+  const handlePrint = useReactToPrint({
+    content: () => invoiceRef.current,
+    onAfterPrint: () => {
+        setIsInvoiceOpen(false);
+        setLastSaleData(null);
+        clearSale();
+    }
+  });
+  
 
   const generateNextInvoiceNumber = async () => {
     if (isDemoMode || !firestore || !shopId) {
@@ -264,7 +298,7 @@ export default function POSPage() {
   };
 
   const completeSale = async () => {
-    if (paymentMode === 'both' && remainingBalance !== 0) {
+    if (paymentMode === 'both' && remainingBalance.toFixed(2) !== '0.00') {
         toast({
             variant: 'destructive',
             title: 'Payment Mismatch',
@@ -272,25 +306,7 @@ export default function POSPage() {
         });
         return;
     }
-
-    if (isDemoMode) {
-      toast({
-        title: 'Sale Completed (Demo)',
-        description: `Sale ${invoiceNumber} has been recorded in memory.`
-      });
-      clearSale();
-      return;
-    }
-
-    if (!firestore || !shopId) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Cannot find your shop. Please ensure you are subscribed.'
-      });
-      return;
-    }
-
+    
     const saleData: any = {
       date: new Date().toISOString(),
       total: total,
@@ -328,6 +344,26 @@ export default function POSPage() {
             upi: paymentDetails.upi || 0,
         }
     }
+    
+    setLastSaleData(saleData);
+
+    if (isDemoMode) {
+      toast({
+        title: 'Invoice Generated (Demo)',
+        description: `Invoice ${invoiceNumber} is ready to print.`
+      });
+      setIsInvoiceOpen(true);
+      return;
+    }
+
+    if (!firestore || !shopId) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Cannot find your shop. Please ensure you are subscribed.'
+      });
+      return;
+    }
 
     try {
       const salesCollectionRef = collection(firestore, `shops/${shopId}/sales`);
@@ -336,7 +372,7 @@ export default function POSPage() {
         title: 'Sale Completed',
         description: `Sale ${invoiceNumber} has been recorded.`
       });
-      clearSale();
+      setIsInvoiceOpen(true);
     } catch(error: any) {
       toast({
         variant: 'destructive',
@@ -345,6 +381,12 @@ export default function POSPage() {
       })
     }
   };
+
+  useEffect(() => {
+    if (isInvoiceOpen && lastSaleData) {
+        handlePrint();
+    }
+  }, [isInvoiceOpen, lastSaleData]);
 
   const getCartItemQuantity = (productId: string) => {
     const item = cart.find(cartItem => cartItem.product.id === productId);
@@ -357,7 +399,8 @@ export default function POSPage() {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-full">
+    <>
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-full print-hidden">
         {/* Left Column: Product Catalog */}
         <div className="lg:col-span-7 flex flex-col h-full">
             <Card className="flex-grow flex flex-col">
@@ -580,7 +623,7 @@ export default function POSPage() {
                             <div className="flex justify-between font-semibold text-lg"><span>Total</span><span>₹{total.toFixed(2)}</span></div>
                         </div>
                         <div className="flex-col items-stretch space-y-2">
-                            <Button className="w-full" disabled={cart.length === 0 || (paymentMode === 'both' && remainingBalance !== 0)} onClick={completeSale}>Generate Invoice</Button>
+                            <Button className="w-full" disabled={cart.length === 0 || (paymentMode === 'both' && remainingBalance.toFixed(2) !== '0.00')} onClick={completeSale}>Generate Invoice</Button>
                             <Button variant="destructive" className="w-full" onClick={clearSale} disabled={cart.length === 0}><Trash2 className="mr-2 h-4 w-4" /> Clear Sale</Button>
                         </div>
                     </div>
@@ -588,7 +631,13 @@ export default function POSPage() {
             </Card>
         </div>
     </div>
+    <Dialog open={isInvoiceOpen} onOpenChange={setIsInvoiceOpen}>
+        <DialogContent className="max-w-4xl">
+             <div ref={invoiceRef}>
+                 <Invoice sale={lastSaleData} settings={shopSettings} />
+             </div>
+        </DialogContent>
+    </Dialog>
+    </>
   );
 }
-
-    
