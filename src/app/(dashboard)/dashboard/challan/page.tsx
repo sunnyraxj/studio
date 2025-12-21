@@ -469,40 +469,56 @@ export default function InvoicePage() {
             <Card className="flex-grow flex flex-col">
                 <CardHeader>
                     <div className="space-y-4">
-                        <div className="p-2 space-y-2 border rounded-lg bg-muted/50">
-                            <Label className="text-sm font-medium px-1">Quick Item Entry</Label>
-                            <div className="flex items-center gap-2">
-                            <Input
-                                placeholder="Item Name"
-                                value={quickItemName}
-                                onChange={(e) => setQuickItemName(e.target.value)}
-                                className="h-8 flex-grow"
-                            />
-                             <Input
-                                type="number"
-                                placeholder="MRP"
-                                value={quickItemPrice}
-                                onChange={(e) => setQuickItemPrice(e.target.value)}
-                                className="h-8 w-24"
-                            />
-                            <Input
-                                type="number"
-                                placeholder="Qty"
-                                value={quickItemQty}
-                                onChange={(e) => setQuickItemQty(e.target.value)}
-                                className="h-8 w-20"
-                                min="1"
-                            />
-                            <Input
-                                type="number"
-                                placeholder="Disc %"
-                                value={quickItemDiscount}
-                                onChange={(e) => setQuickItemDiscount(e.target.value)}
-                                className="h-8 w-20"
-                            />
-                            <Button size="sm" onClick={addQuickItemToCart} className="h-8">
-                                <PlusCircle className="h-4 w-4" />
-                            </Button>
+                        <div className="p-4 border rounded-lg bg-muted/50 space-y-4">
+                            <Label className="text-sm font-medium">Quick Item Entry</Label>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2 items-end">
+                                <div className="space-y-1 md:col-span-2">
+                                    <Label htmlFor="quick-name" className="text-xs">Item Name</Label>
+                                    <Input
+                                        id="quick-name"
+                                        placeholder="Item Name"
+                                        value={quickItemName}
+                                        onChange={(e) => setQuickItemName(e.target.value)}
+                                        className="h-8"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label htmlFor="quick-mrp" className="text-xs">MRP</Label>
+                                    <Input
+                                        id="quick-mrp"
+                                        type="number"
+                                        placeholder="MRP"
+                                        value={quickItemPrice}
+                                        onChange={(e) => setQuickItemPrice(e.target.value)}
+                                        className="h-8"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label htmlFor="quick-qty" className="text-xs">Qty</Label>
+                                    <Input
+                                        id="quick-qty"
+                                        type="number"
+                                        placeholder="Qty"
+                                        value={quickItemQty}
+                                        onChange={(e) => setQuickItemQty(e.target.value)}
+                                        className="h-8"
+                                        min="1"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label htmlFor="quick-disc" className="text-xs">Disc %</Label>
+                                    <Input
+                                        id="quick-disc"
+                                        type="number"
+                                        placeholder="Disc %"
+                                        value={quickItemDiscount}
+                                        onChange={(e) => setQuickItemDiscount(e.target.value)}
+                                        className="h-8"
+                                    />
+                                </div>
+                                <Button size="sm" onClick={addQuickItemToCart} className="h-8 sm:self-end">
+                                    <PlusCircle className="h-4 w-4" />
+                                </Button>
                             </div>
                         </div>
                         <div className="flex gap-2 pt-2">
@@ -733,3 +749,5 @@ export default function InvoicePage() {
     </>
   );
 }
+
+    
