@@ -469,8 +469,8 @@ export default function InvoicePage() {
             <Card className="flex-grow flex flex-col">
                 <CardHeader>
                     <div className="space-y-4">
-                        <div className="p-2 space-y-2 border-b">
-                            <Label className="text-sm font-medium">Quick Item Entry</Label>
+                        <div className="p-2 space-y-2 border rounded-lg bg-muted/50">
+                            <Label className="text-sm font-medium px-1">Quick Item Entry</Label>
                             <div className="flex items-center gap-2">
                             <Input
                                 placeholder="Item Name"
@@ -733,5 +733,3 @@ export default function InvoicePage() {
     </>
   );
 }
-
-    
