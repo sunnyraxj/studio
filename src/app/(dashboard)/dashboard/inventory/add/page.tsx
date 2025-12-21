@@ -26,8 +26,12 @@ import Link from 'next/link';
 import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 import { addDoc, collection, doc, query, orderBy, limit, getDocs, writeBatch } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast.tsx';
-import { FileDown, FileUp } from 'lucide-react';
+import { CalendarIcon, FileDown, FileUp } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
 
 type UserProfile = {
   shopId?: string;
@@ -67,6 +71,7 @@ export default function AddProductPage() {
   const [size, setSize] = useState('');
   const [qty, setQty] = useState('');
   const [unit, setUnit] = useState('pcs');
+  const [expiryDate, setExpiryDate] = useState<Date>();
   
   const generateNextProductCode = async (prefix: string): Promise<string> => {
     if (!firestore || !shopId) return `${prefix}-001`;
@@ -144,7 +149,8 @@ export default function AddProductPage() {
       stock: parseInt(qty) || 0,
       unit: unit,
       dateAdded: new Date().toISOString(),
-      status: (parseInt(qty) || 0) > 10 ? 'in stock' : (parseInt(qty) || 0) > 0 ? 'low stock' : 'out of stock'
+      status: (parseInt(qty) || 0) > 10 ? 'in stock' : (parseInt(qty) || 0) > 0 ? 'low stock' : 'out of stock',
+      expiryDate: expiryDate ? format(expiryDate, 'yyyy-MM-dd') : null,
     };
 
     try {
@@ -179,6 +185,7 @@ export default function AddProductPage() {
         'Size': '',
         'Opening Quantity': '',
         'Unit': 'pcs',
+        'Expiry Date (YYYY-MM-DD)': '',
       }
     ];
     const worksheet = XLSX.utils.json_to_sheet(templateData);
@@ -228,6 +235,7 @@ export default function AddProductPage() {
             }
             
             const stock = parseInt(product['Opening Quantity']) || 0;
+            const expiry = product['Expiry Date (YYYY-MM-DD)'];
             
             const productData = {
               name: product['Product Name'] || '',
@@ -242,6 +250,7 @@ export default function AddProductPage() {
               unit: product['Unit'] || 'pcs',
               dateAdded: new Date().toISOString(),
               status: stock > 10 ? 'in stock' : stock > 0 ? 'low stock' : 'out of stock',
+              expiryDate: expiry ? format(new Date(expiry), 'yyyy-MM-dd') : null,
             };
             
             if (!productData.name || !productData.margin) {
@@ -308,7 +317,7 @@ export default function AddProductPage() {
             Provide essential information about the new product. SKU is optional and will be auto-generated.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="space-y-2">
             <Label htmlFor="product-name">Product Name</Label>
             <Input
@@ -413,6 +422,31 @@ export default function AddProductPage() {
               </SelectContent>
             </Select>
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="expiry-date">Expiry Date</Label>
+             <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !expiryDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {expiryDate ? format(expiryDate, "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={expiryDate}
+                  onSelect={setExpiryDate}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </CardContent>
         <CardFooter className="flex justify-end gap-2">
            <Link href="/dashboard/inventory" passHref>
@@ -424,5 +458,3 @@ export default function AddProductPage() {
     </div>
   );
 }
-
-    

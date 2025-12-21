@@ -21,7 +21,7 @@ import {
 } from '@tanstack/react-table';
 import * as React from 'react';
 import Link from 'next/link';
-import { format } from 'date-fns';
+import { format, differenceInDays, isBefore } from 'date-fns';
 import { collection, doc, query, orderBy, limit, startAfter, getDocs, Query, DocumentData, endBefore, limitToLast } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
@@ -44,12 +44,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, FileUp, FileDown } from 'lucide-react';
+import { PlusCircle, FileDown } from 'lucide-react';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 import * as XLSX from 'xlsx';
+import { cn } from '@/lib/utils';
 
 const demoData: InventoryItem[] = [
   // ... (existing demo data)
@@ -64,6 +65,7 @@ export type InventoryItem = {
   margin: number;
   status: 'in stock' | 'low stock' | 'out of stock';
   dateAdded: string; // Stored as ISO string
+  expiryDate?: string | null; // Stored as 'YYYY-MM-DD'
   category: string;
   size: string;
   gst: number;
@@ -206,6 +208,41 @@ export const columns: ColumnDef<InventoryItem>[] = [
     cell: ({ row }) => {
       const date = new Date(row.getValue('dateAdded'));
       return <div>{format(date, 'dd MMM yyyy')}</div>;
+    },
+  },
+  {
+    accessorKey: 'expiryDate',
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+      >
+        Expiry Date
+        <CaretSortIcon className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const expiryDate = row.getValue('expiryDate') as string | undefined | null;
+      if (!expiryDate) return <div className="text-center">-</div>;
+
+      const date = new Date(expiryDate);
+      const today = new Date();
+      const isExpired = isBefore(date, today);
+      const daysLeft = differenceInDays(date, today);
+      
+      const isExpiringSoon = !isExpired && daysLeft <= 30;
+
+      return (
+        <div className={cn(
+          "text-left",
+          isExpired ? "text-destructive font-bold" : "",
+          isExpiringSoon ? "text-yellow-600 font-semibold" : ""
+        )}>
+          {format(date, 'dd MMM yyyy')}
+          {isExpired && <Badge variant="destructive" className="ml-2">Expired</Badge>}
+          {isExpiringSoon && <Badge variant="secondary" className="ml-2">{daysLeft} days left</Badge>}
+        </div>
+      );
     },
   },
   {
@@ -357,7 +394,13 @@ export default function InventoryPage() {
 
   const handleExport = () => {
     // This would need to be adapted to fetch all data for export, or export current view
-    const dataToExport = table.getFilteredRowModel().rows.map(row => row.original);
+    const dataToExport = table.getFilteredRowModel().rows.map(row => {
+        const { expiryDate, ...rest } = row.original;
+        return {
+            ...rest,
+            'Expiry Date': expiryDate ? format(new Date(expiryDate), 'yyyy-MM-dd') : '',
+        }
+    });
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory");
@@ -426,7 +469,7 @@ export default function InventoryPage() {
                         column.toggleVisibility(!!value)
                         }
                     >
-                        {column.id === 'dateAdded' ? 'Date Added' : column.id}
+                        {column.id === 'dateAdded' ? 'Date Added' : column.id === 'expiryDate' ? 'Expiry Date' : column.id}
                     </DropdownMenuCheckboxItem>
                     );
                 })}

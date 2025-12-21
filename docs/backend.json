@@ -154,6 +154,11 @@
         "margin": {
             "type": "number",
             "description": "The profit margin percentage for the product."
+        },
+        "expiryDate": {
+            "type": "string",
+            "format": "date",
+            "description": "The expiration date of the product."
         }
       },
       "required": [
