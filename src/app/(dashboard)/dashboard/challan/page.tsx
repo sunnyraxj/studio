@@ -153,6 +153,9 @@ export default function InvoicePage() {
 
   const [quickItemName, setQuickItemName] = useState('');
   const [quickItemQty, setQuickItemQty] = useState<number | string>(1);
+  const [quickItemPrice, setQuickItemPrice] = useState<number | string>('');
+  const [quickItemDiscount, setQuickItemDiscount] = useState<number | string>(0);
+
 
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
   const [lastSaleData, setLastSaleData] = useState<any>(null);
@@ -254,11 +257,11 @@ export default function InvoicePage() {
   };
 
   const addQuickItemToCart = () => {
-    if (!quickItemName || !quickItemQty) {
+    if (!quickItemName || !quickItemQty || !quickItemPrice) {
       toast({
         variant: 'destructive',
         title: 'Missing Details',
-        description: 'Please enter both item name and quantity.',
+        description: 'Please enter item name, quantity, and MRP.',
       });
       return;
     }
@@ -266,19 +269,21 @@ export default function InvoicePage() {
     const newProduct: Product = {
       id: `quick-${Date.now()}`,
       name: quickItemName,
-      price: 0, // Quick items need price to be entered manually or are 0
+      price: Number(quickItemPrice),
       margin: 0,
       sku: 'N/A',
     };
 
     setCart((prevCart) => [
       ...prevCart,
-      { product: newProduct, quantity: Number(quickItemQty), discount: 0 },
+      { product: newProduct, quantity: Number(quickItemQty), discount: Number(quickItemDiscount) },
     ]);
 
     // Reset form
     setQuickItemName('');
     setQuickItemQty(1);
+    setQuickItemPrice('');
+    setQuickItemDiscount(0);
   };
 
   const updateQuantity = (productId: string, amount: number) => {
@@ -471,7 +476,14 @@ export default function InvoicePage() {
                                 placeholder="Item Name"
                                 value={quickItemName}
                                 onChange={(e) => setQuickItemName(e.target.value)}
-                                className="h-8"
+                                className="h-8 flex-grow"
+                            />
+                             <Input
+                                type="number"
+                                placeholder="MRP"
+                                value={quickItemPrice}
+                                onChange={(e) => setQuickItemPrice(e.target.value)}
+                                className="h-8 w-24"
                             />
                             <Input
                                 type="number"
@@ -480,6 +492,13 @@ export default function InvoicePage() {
                                 onChange={(e) => setQuickItemQty(e.target.value)}
                                 className="h-8 w-20"
                                 min="1"
+                            />
+                            <Input
+                                type="number"
+                                placeholder="Disc %"
+                                value={quickItemDiscount}
+                                onChange={(e) => setQuickItemDiscount(e.target.value)}
+                                className="h-8 w-20"
                             />
                             <Button size="sm" onClick={addQuickItemToCart} className="h-8">
                                 <PlusCircle className="h-4 w-4" />
