@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -26,6 +25,8 @@ import { Upload, X } from 'lucide-react';
 type ShopSettings = {
     companyName?: string;
     companyAddress?: string;
+    companyState?: string;
+    companyPin?: string;
     companyGstin?: string;
     companyPhone?: string;
     logoUrl?: string;
@@ -62,7 +63,9 @@ export default function SettingsPage() {
 
   // State for Company Details
   const [companyName, setCompanyName] = useState('Demo Company');
-  const [companyAddress, setCompanyAddress] = useState('123 Demo Street, Suite 456, Demo City, 12345');
+  const [companyAddress, setCompanyAddress] = useState('123 Demo Street, Suite 456, Demo City');
+  const [companyPin, setCompanyPin] = useState('12345');
+  const [companyState, setCompanyState] = useState('Assam');
   const [companyGstin, setCompanyGstin] = useState('29DEMOCOMPANY1Z9');
   const [companyPhone, setCompanyPhone] = useState('9876543210');
   const [logoUrl, setLogoUrl] = useState('');
@@ -82,6 +85,8 @@ export default function SettingsPage() {
     if (settingsData) {
         setCompanyName(settingsData.companyName || '');
         setCompanyAddress(settingsData.companyAddress || '');
+        setCompanyState(settingsData.companyState || '');
+        setCompanyPin(settingsData.companyPin || '');
         setCompanyGstin(settingsData.companyGstin || '');
         setCompanyPhone(settingsData.companyPhone || '');
         setLogoUrl(settingsData.logoUrl || '');
@@ -138,6 +143,8 @@ export default function SettingsPage() {
     const newSettings: ShopSettings = {
       companyName,
       companyAddress,
+      companyState,
+      companyPin,
       companyGstin,
       companyPhone,
       logoUrl: finalLogoUrl,
@@ -227,6 +234,16 @@ export default function SettingsPage() {
                   onChange={(e) => setCompanyAddress(e.target.value)}
                 />
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="company-pin">PIN Code</Label>
+                    <Input id="company-pin" value={companyPin} onChange={(e) => setCompanyPin(e.target.value)} placeholder="e.g., 781001" />
+                  </div>
+                   <div className="space-y-2">
+                    <Label htmlFor="company-state">State</Label>
+                    <Input id="company-state" value={companyState} onChange={(e) => setCompanyState(e.target.value)} placeholder="e.g., Assam" />
+                  </div>
+                </div>
               <div className="space-y-2">
                 <Label htmlFor="company-phone">Phone Number</Label>
                 <Input
@@ -315,3 +332,5 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    

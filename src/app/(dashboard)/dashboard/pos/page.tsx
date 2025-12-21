@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -81,6 +80,7 @@ type ShopSettings = {
     accountNumber?: string;
     ifscCode?: string;
     upiId?: string;
+    companyState?: string;
 }
 
 type Sale = {
@@ -167,12 +167,27 @@ export default function POSPage() {
     if (printContent) {
         const newWindow = window.open('', '_blank', 'width=800,height=600');
         if (newWindow) {
+            const printableContent = (printContent as HTMLDivElement).innerHTML;
+            
             newWindow.document.write('<html><head><title>Print Invoice</title>');
-            // You may need to link to your stylesheet or embed styles here
-            newWindow.document.write('<style>@media print { body { -webkit-print-color-adjust: exact; } .print-container { margin: 0 auto; width: 210mm; height: 297mm; } } </style>');
-            newWindow.document.write('</head><body><div class="print-container">');
-            newWindow.document.write((printContent as HTMLDivElement).innerHTML);
-            newWindow.document.write('</div></body></html>');
+            // Embed styles directly for better print consistency
+            const styles = Array.from(document.styleSheets)
+              .map(styleSheet => {
+                  try {
+                      return Array.from(styleSheet.cssRules)
+                          .map(rule => rule.cssText)
+                          .join('');
+                  } catch (e) {
+                      console.log('Access to stylesheet %s is denied. Skipping.', styleSheet.href);
+                      return '';
+                  }
+              })
+              .join('');
+            
+            newWindow.document.write(`<style>${styles}</style>`);
+            newWindow.document.write('</head><body>');
+            newWindow.document.write(printableContent);
+            newWindow.document.write('</body></html>');
             newWindow.document.close();
             newWindow.focus();
             setTimeout(() => { // Timeout to allow content to render
@@ -270,7 +285,7 @@ export default function POSPage() {
   };
   
   const { subtotal, cgst, sgst, igst, total } = useMemo(() => {
-    const isIntraState = customerState.toLowerCase().trim() === 'assam';
+    const isIntraState = customerState.toLowerCase().trim() === (shopSettings?.companyState || 'Assam').toLowerCase().trim();
 
     let subtotal = 0;
     let cgst = 0;
@@ -298,7 +313,7 @@ export default function POSPage() {
 
     return { subtotal, cgst, sgst, igst, total };
 
-  }, [cart, customerState]);
+  }, [cart, customerState, shopSettings]);
 
 
   const totalPaid = (paymentDetails.cash || 0) + (paymentDetails.card || 0) + (paymentDetails.upi || 0);
@@ -358,7 +373,7 @@ export default function POSPage() {
         gst: item.product.gst || 0,
       })),
       customer: {
-        name: customerName,
+        name: customerName || 'Walk-in Customer',
         phone: customerPhone,
         address: customerAddress,
         pin: customerPin,
@@ -588,7 +603,7 @@ export default function POSPage() {
                                <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="customer-name">Customer Name</Label>
-                                        <Input id="customer-name" placeholder="Enter customer name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+                                        <Input id="customer-name" placeholder="Walk-in Customer" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
                                     </div>
                                     <div className="space-y-2">
                                          <Label htmlFor="customer-state">State</Label>
@@ -681,7 +696,7 @@ export default function POSPage() {
         </div>
     </div>
     <Dialog open={isInvoiceOpen && !!lastSaleData} onOpenChange={(open) => { if (!open) { setIsInvoiceOpen(false); setLastSaleData(null); clearSale(); }}}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-4xl p-0 border-0">
              <div ref={invoiceRef}>
                  <Invoice sale={lastSaleData} settings={shopSettings} />
              </div>
@@ -690,3 +705,5 @@ export default function POSPage() {
     </>
   );
 }
+
+    

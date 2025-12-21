@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -22,6 +21,7 @@ import {
   CreditCard,
   AlertTriangle,
   BookUser,
+  Percent,
 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -84,6 +84,11 @@ const navLinks = [
     href: '/dashboard/khata',
     icon: BookUser,
     label: 'Khata Book',
+  },
+  {
+    href: '/dashboard/gst',
+    icon: Percent,
+    label: 'GST Reports',
   },
   {
     href: '/dashboard/subscription',
@@ -348,3 +353,5 @@ export default function DashboardLayout({
     </SidebarProvider>
   );
 }
+
+    

@@ -51,15 +51,15 @@ const numberToWords = (num: number): string => {
     const a = ['', 'one ', 'two ', 'three ', 'four ', 'five ', 'six ', 'seven ', 'eight ', 'nine ', 'ten ', 'eleven ', 'twelve ', 'thirteen ', 'fourteen ', 'fifteen ', 'sixteen ', 'seventeen ', 'eighteen ', 'nineteen '];
     const b = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
 
-    if ((num = num.toString()).length > 9) return 'overflow';
-    const n = ('000000000' + num).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+    if ((num = Math.round(num)).toString().length > 9) return 'overflow';
+    let n: any = ('000000000' + num).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
     if (!n) return '';
     let str = '';
-    str += (n[1] != '00') ? (a[Number(n[1])] || b[Number(n[1][0])] + ' ' + a[Number(n[1][1])]) + 'crore ' : '';
-    str += (n[2] != '00') ? (a[Number(n[2])] || b[Number(n[2][0])] + ' ' + a[Number(n[2][1])]) + 'lakh ' : '';
-    str += (n[3] != '00') ? (a[Number(n[3])] || b[Number(n[3][0])] + ' ' + a[Number(n[3][1])]) + 'thousand ' : '';
-    str += (n[4] != '0') ? (a[Number(n[4])] || b[Number(n[4][0])] + ' ' + a[Number(n[4][1])]) + 'hundred ' : '';
-    str += (n[5] != '00') ? ((str != '') ? 'and ' : '') + (a[Number(n[5])] || b[Number(n[5][0])] + ' ' + a[Number(n[5][1])]) : '';
+    str += (n[1] != '00') ? (a[Number(n[1])] || b[n[1][0]] + ' ' + a[n[1][1]]) + 'crore ' : '';
+    str += (n[2] != '00') ? (a[Number(n[2])] || b[n[2][0]] + ' ' + a[n[2][1]]) + 'lakh ' : '';
+    str += (n[3] != '00') ? (a[Number(n[3])] || b[n[3][0]] + ' ' + a[n[3][1]]) + 'thousand ' : '';
+    str += (n[4] != '0') ? (a[Number(n[4])] || b[n[4][0]] + ' ' + a[n[4][1]]) + 'hundred ' : '';
+    str += (n[5] != '00') ? ((str != '') ? 'and ' : '') + (a[Number(n[5])] || b[n[5][0]] + ' ' + a[n[5][1]]) : '';
     return str.trim();
 };
 
@@ -81,10 +81,10 @@ export const Invoice: React.FC<InvoiceProps> = ({ sale, settings }) => {
         total,
     } = sale;
 
-    const totalAmountInWords = numberToWords(Math.round(total));
+    const totalAmountInWords = numberToWords(total);
 
     return (
-        <div className="bg-white text-black text-[10px] leading-snug p-8 font-sans" style={{width: '210mm', height: '297mm'}}>
+        <div className="bg-white text-black text-[10px] leading-snug p-8 font-sans" style={{width: '210mm', minHeight: '297mm'}}>
             <div className="flex justify-between items-start pb-4 border-b-2 border-black">
                 <div className="flex items-center gap-4">
                      {settings.logoUrl && (
@@ -144,6 +144,7 @@ export const Invoice: React.FC<InvoiceProps> = ({ sale, settings }) => {
                              const itemTotal = item.price * item.quantity;
                              const discountAmount = itemTotal * (item.discount / 100);
                              const taxableValue = itemTotal - discountAmount;
+                             const gstAmount = taxableValue * (item.gst / 100);
                              return (
                                 <tr key={index} className="border-b border-l border-r border-black">
                                     <td className="p-1 border-r border-black text-center">{index + 1}</td>
@@ -154,7 +155,7 @@ export const Invoice: React.FC<InvoiceProps> = ({ sale, settings }) => {
                                     <td className="p-1 border-r border-black text-center">{item.discount || 0}%</td>
                                     <td className="p-1 border-r border-black text-right">{taxableValue.toFixed(2)}</td>
                                     <td className="p-1 border-r border-black text-center">{item.gst || 0}%</td>
-                                    <td className="p-1 text-right">{taxableValue * (1 + (item.gst || 0) / 100).toFixed(2)}</td>
+                                    <td className="p-1 text-right">{(taxableValue + gstAmount).toFixed(2)}</td>
                                 </tr>
                              )
                         })}
@@ -204,3 +205,5 @@ export const Invoice: React.FC<InvoiceProps> = ({ sale, settings }) => {
         </div>
     );
 };
+
+    
