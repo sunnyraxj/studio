@@ -23,7 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { PlusCircle, Search, Trash2, MinusCircle, IndianRupee } from 'lucide-react';
+import { PlusCircle, Search, Trash2, MinusCircle, IndianRupee, ChevronDown } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import {
   RadioGroup,
@@ -34,6 +34,11 @@ import { Badge } from '@/components/ui/badge';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, doc, addDoc, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast.tsx';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 
 
 type Product = {
@@ -473,6 +478,34 @@ export default function POSPage() {
                                         <Input id="customer-phone" placeholder="Enter phone number" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
                                     </div>
                                 </div>
+                                <Collapsible>
+                                    <CollapsibleTrigger asChild>
+                                        <Button variant="link" className="p-0 h-auto text-muted-foreground">
+                                            More Customer Details
+                                            <ChevronDown className="h-4 w-4 ml-1" />
+                                        </Button>
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent className="space-y-4 mt-2">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="customer-address">Address</Label>
+                                            <Textarea id="customer-address" placeholder="Enter full address" value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="customer-pin">PIN Code</Label>
+                                                <Input id="customer-pin" placeholder="e.g. 110001" value={customerPin} onChange={(e) => setCustomerPin(e.target.value)} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="customer-state">State</Label>
+                                                <Input id="customer-state" placeholder="e.g. Delhi" value={customerState} onChange={(e) => setCustomerState(e.target.value)} />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="customer-gstin">Customer GSTIN</Label>
+                                            <Input id="customer-gstin" placeholder="Enter GSTIN" value={customerGstin} onChange={(e) => setCustomerGstin(e.target.value)} />
+                                        </div>
+                                    </CollapsibleContent>
+                                </Collapsible>
                                 <div className="space-y-2">
                                     <Label>Payment Mode</Label>
                                     <RadioGroup value={paymentMode} onValueChange={setPaymentMode} className="flex items-center flex-wrap gap-x-4 gap-y-2">
@@ -525,7 +558,5 @@ export default function POSPage() {
     </div>
   );
 }
-
-    
 
     
