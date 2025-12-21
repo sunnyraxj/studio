@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -10,6 +9,8 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   SortingState,
+  getExpandedRowModel,
+  ExpandedState,
 } from '@tanstack/react-table';
 import {
   Table,
@@ -29,7 +30,7 @@ import {
 import { DataTablePagination } from '@/components/data-table-pagination';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { CaretSortIcon } from '@radix-ui/react-icons';
+import { CaretSortIcon, ChevronDownIcon, ChevronRightIcon } from '@radix-ui/react-icons';
 import { Search, PlusCircle, IndianRupee } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,10 +41,25 @@ import { collection, query, doc, addDoc, updateDoc, orderBy } from 'firebase/fir
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast.tsx';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
+
+type AggregatedKhata = {
+    id: string;
+    customerName: string;
+    customerPhone: string;
+    totalDue: number;
+    totalCredit: number;
+    unpaidEntriesCount: number;
+    lastEntryDate: string;
+    entries: KhataEntry[];
+}
 
 
 export default function KhataBookPage() {
-  const [sorting, setSorting] = useState<SortingState>([{ id: 'date', desc: true }]);
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'totalDue', desc: true }]);
+  const [expanded, setExpanded] = useState<ExpandedState>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   
@@ -52,6 +68,11 @@ export default function KhataBookPage() {
   const [customerPhone, setCustomerPhone] = useState('');
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
+  
+  // Filter states
+  const [showOnlyUnpaid, setShowOnlyUnpaid] = useState(true);
+  const [filterDueOver1000, setFilterDueOver1000] = useState(false);
+  const [filterDueOver5000, setFilterDueOver5000] = useState(false);
   
   const { user } = useUser();
   const firestore = useFirestore();
@@ -72,18 +93,66 @@ export default function KhataBookPage() {
   
   const { data: khataData, isLoading } = useCollection<KhataEntry>(khataQuery);
 
+  const aggregatedData = useMemo(() => {
+    if (!khataData) return [];
+    
+    const customerMap = new Map<string, AggregatedKhata>();
+
+    khataData.forEach(entry => {
+        const key = `${entry.customerName.toLowerCase()}|${entry.customerPhone || ''}`;
+        if (!customerMap.has(key)) {
+            customerMap.set(key, {
+                id: key,
+                customerName: entry.customerName,
+                customerPhone: entry.customerPhone,
+                totalDue: 0,
+                totalCredit: 0,
+                unpaidEntriesCount: 0,
+                lastEntryDate: entry.date,
+                entries: []
+            });
+        }
+        
+        const customer = customerMap.get(key)!;
+        customer.entries.push(entry);
+        customer.totalCredit += entry.amount;
+        if(entry.status === 'unpaid') {
+            customer.totalDue += entry.amount;
+            customer.unpaidEntriesCount += 1;
+        }
+        if (new Date(entry.date) > new Date(customer.lastEntryDate)) {
+            customer.lastEntryDate = entry.date;
+        }
+    });
+
+    return Array.from(customerMap.values());
+  }, [khataData]);
+
   const filteredData = useMemo(() => {
-     if (!khataData) return [];
-     if (!searchTerm) return khataData;
-     return khataData.filter(entry => 
-         entry.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-         (entry.customerPhone && entry.customerPhone.includes(searchTerm))
-     );
-  }, [khataData, searchTerm]);
+     let data = aggregatedData;
+     
+     if (searchTerm) {
+        data = data.filter(customer => 
+            customer.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (customer.customerPhone && customer.customerPhone.includes(searchTerm))
+        );
+     }
+     if (showOnlyUnpaid) {
+        data = data.filter(c => c.totalDue > 0);
+     }
+     if (filterDueOver1000) {
+        data = data.filter(c => c.totalDue > 1000);
+     }
+     if (filterDueOver5000) {
+        data = data.filter(c => c.totalDue > 5000);
+     }
+     
+     return data;
+  }, [aggregatedData, searchTerm, showOnlyUnpaid, filterDueOver1000, filterDueOver5000]);
   
-  const totalDue = useMemo(() => {
-    return (filteredData || []).filter(e => e.status === 'unpaid').reduce((sum, entry) => sum + entry.amount, 0);
-  }, [filteredData]);
+  const grandTotalDue = useMemo(() => {
+    return aggregatedData.reduce((sum, customer) => sum + customer.totalDue, 0);
+  }, [aggregatedData]);
   
   const handleMarkAsPaid = async (entryId: string) => {
     if (isDemoMode || !shopId || !firestore) {
@@ -99,68 +168,73 @@ export default function KhataBookPage() {
     }
   }
 
-  const khataColumns: ColumnDef<KhataEntry>[] = [
+  const khataColumns: ColumnDef<AggregatedKhata>[] = [
     {
-      accessorKey: 'date',
-      header: ({ column }) => (
-        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
-          Date <CaretSortIcon className="ml-2 h-4 w-4" />
+      id: 'expander',
+      header: () => null,
+      cell: ({ row }) => (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={row.getToggleExpandedHandler()}
+          className="h-8 w-8"
+        >
+          {row.getIsExpanded() ? <ChevronDownIcon /> : <ChevronRightIcon />}
         </Button>
       ),
-      cell: ({ row }) => format(new Date(row.getValue('date')), 'dd MMM yyyy'),
     },
     {
       accessorKey: 'customerName',
-      header: 'Customer',
+      header: ({ column }) => (
+        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+          Customer <CaretSortIcon className="ml-2 h-4 w-4" />
+        </Button>
+      ),
       cell: ({ row }) => {
-        const entry = row.original;
+        const customer = row.original;
         return (
           <div>
-            <div className="font-medium">{entry.customerName}</div>
-            {entry.customerPhone && <div className="text-xs text-muted-foreground">{entry.customerPhone}</div>}
+            <div className="font-medium">{customer.customerName}</div>
+            {customer.customerPhone && <div className="text-xs text-muted-foreground">{customer.customerPhone}</div>}
           </div>
         )
       }
     },
     {
-      accessorKey: 'amount',
-      header: () => <div className="text-right">Amount</div>,
-      cell: ({ row }) => <div className="text-right font-semibold">₹{row.original.amount.toLocaleString('en-IN')}</div>,
+        accessorKey: 'unpaidEntriesCount',
+        header: 'Unpaid Entries',
+        cell: ({ row }) => <div className="text-center">{row.getValue('unpaidEntriesCount')}</div>,
     },
     {
-      accessorKey: 'notes',
-      header: 'Notes',
+      accessorKey: 'totalDue',
+      header: ({ column }) => (
+        <Button variant="ghost" className="w-full justify-end" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+            Total Due <CaretSortIcon className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => <div className="text-right font-bold text-lg text-destructive">₹{row.original.totalDue.toLocaleString('en-IN')}</div>,
     },
     {
-      accessorKey: 'status',
-      header: 'Status',
-      cell: ({ row }) => {
-          const status = row.getValue('status') as string;
-          return <Badge variant={status === 'unpaid' ? 'destructive' : 'default'} className="capitalize">{status}</Badge>
-      }
-    },
-    {
-      id: 'actions',
-      cell: ({ row }) => {
-        const entry = row.original;
-        if (entry.status === 'unpaid') {
-          return (
-            <Button size="sm" onClick={() => handleMarkAsPaid(entry.id)}>Mark as Paid</Button>
-          );
-        }
-        return null;
-      },
+      accessorKey: 'lastEntryDate',
+       header: ({ column }) => (
+        <Button variant="ghost" className="w-full justify-end" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+            Last Entry <CaretSortIcon className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => <div className="text-right">{format(new Date(row.getValue('lastEntryDate')), 'dd MMM yyyy')}</div>,
     },
   ];
 
   const table = useReactTable({
     data: filteredData,
     columns: khataColumns,
-    state: { sorting },
+    state: { sorting, expanded },
     onSortingChange: setSorting,
+    onExpandedChange: setExpanded,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getExpandedRowModel: getExpandedRowModel(),
     initialState: {
       pagination: {
         pageSize: 30,
@@ -204,7 +278,7 @@ export default function KhataBookPage() {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex flex-row items-start justify-between">
         <div>
           <CardTitle>Khata Book (Credit Ledger)</CardTitle>
           <CardDescription>
@@ -213,9 +287,16 @@ export default function KhataBookPage() {
         </div>
         <div className="flex items-center gap-4">
             <div className="text-right">
-                <p className="text-sm text-muted-foreground">Total Amount Due</p>
-                <p className="text-2xl font-bold text-destructive">₹{totalDue.toLocaleString('en-IN')}</p>
+                <p className="text-sm text-muted-foreground">Grand Total Due</p>
+                <p className="text-2xl font-bold text-destructive">₹{grandTotalDue.toLocaleString('en-IN')}</p>
             </div>
+            <Button onClick={() => setIsAddDialogOpen(true)}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add New Udhar
+            </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="flex justify-between items-center py-4 px-2 border-y">
             <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -225,12 +306,22 @@ export default function KhataBookPage() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
             </div>
-            <Button onClick={() => setIsAddDialogOpen(true)}>
-                <PlusCircle className="mr-2 h-4 w-4" /> Add New Udhar
-            </Button>
+            <div className="flex items-center gap-4">
+                <div className="flex items-center space-x-2">
+                    <Switch id="show-unpaid" checked={showOnlyUnpaid} onCheckedChange={setShowOnlyUnpaid} />
+                    <Label htmlFor="show-unpaid">Show Unpaid Only</Label>
+                </div>
+                <Separator orientation="vertical" className="h-6" />
+                <div className="flex items-center space-x-2">
+                    <Switch id="due-1000" checked={filterDueOver1000} onCheckedChange={setFilterDueOver1000} />
+                    <Label htmlFor="due-1000">Due {'>'} ₹1,000</Label>
+                </div>
+                 <div className="flex items-center space-x-2">
+                    <Switch id="due-5000" checked={filterDueOver5000} onCheckedChange={setFilterDueOver5000} />
+                    <Label htmlFor="due-5000">Due {'>'} ₹5,000</Label>
+                </div>
+            </div>
         </div>
-      </CardHeader>
-      <CardContent>
         <div className="rounded-md border">
           <Table>
             <TableHeader>
@@ -263,8 +354,8 @@ export default function KhataBookPage() {
                 </TableRow>
               ) : table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => (
+                  <React.Fragment key={row.id}>
                   <TableRow
-                    key={row.id}
                     data-state={row.getIsSelected() && 'selected'}
                   >
                     {row.getVisibleCells().map((cell) => (
@@ -276,6 +367,42 @@ export default function KhataBookPage() {
                       </TableCell>
                     ))}
                   </TableRow>
+                  {row.getIsExpanded() && (
+                      <TableRow>
+                        <TableCell colSpan={khataColumns.length} className="p-0">
+                          <div className="p-4 bg-muted/50">
+                            <h4 className="font-bold mb-2">Credit History for {row.original.customerName}</h4>
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Date</TableHead>
+                                  <TableHead>Notes</TableHead>
+                                  <TableHead>Status</TableHead>
+                                  <TableHead className="text-right">Amount</TableHead>
+                                  <TableHead className="text-right">Action</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {row.original.entries.map((entry) => (
+                                  <TableRow key={entry.id}>
+                                    <TableCell>{format(new Date(entry.date), 'dd MMM yyyy')}</TableCell>
+                                    <TableCell>{entry.notes}</TableCell>
+                                    <TableCell><Badge variant={entry.status === 'unpaid' ? 'destructive' : 'default'} className="capitalize">{entry.status}</Badge></TableCell>
+                                    <TableCell className="text-right">₹{entry.amount.toLocaleString('en-IN')}</TableCell>
+                                    <TableCell className="text-right">
+                                        {entry.status === 'unpaid' && (
+                                            <Button size="sm" variant="secondary" onClick={() => handleMarkAsPaid(entry.id)}>Mark Paid</Button>
+                                        )}
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </React.Fragment>
                 ))
               ) : (
                 <TableRow>
@@ -283,7 +410,7 @@ export default function KhataBookPage() {
                     colSpan={khataColumns.length}
                     className="h-24 text-center"
                   >
-                    No credit entries found.
+                    No credit entries found for the selected filters.
                   </TableCell>
                 </TableRow>
               )}
