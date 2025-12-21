@@ -121,6 +121,15 @@ export default function AddProductPage() {
         return;
     }
 
+    if (!productName) {
+        toast({
+            variant: "destructive",
+            title: "Product Name Required",
+            description: "Please enter a name for the product."
+        });
+        return;
+    }
+    
     if (!margin) {
         toast({
             variant: "destructive",
@@ -321,12 +330,13 @@ export default function AddProductPage() {
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="space-y-2">
-            <Label htmlFor="product-name">Product Name</Label>
+            <Label htmlFor="product-name">Product Name <span className="text-destructive">*</span></Label>
             <Input
               id="product-name"
               placeholder="e.g., Men's Cotton T-Shirt"
               value={productName}
               onChange={(e) => setProductName(e.target.value)}
+              required
             />
           </div>
           <div className="space-y-2">
@@ -349,7 +359,7 @@ export default function AddProductPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="margin">Margin (%)</Label>
+            <Label htmlFor="margin">Margin (%) <span className="text-destructive">*</span></Label>
             <Input
               id="margin"
               type="number"
