@@ -23,6 +23,7 @@ import {
   AlertTriangle,
   BookUser,
   Percent,
+  FileText,
 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -75,6 +76,11 @@ const navLinks = [
     href: '/dashboard/pos',
     icon: Printer,
     label: 'POS',
+  },
+   {
+    href: '/dashboard/challan',
+    icon: FileText,
+    label: 'Challan',
   },
   {
     href: '/dashboard/inventory',
