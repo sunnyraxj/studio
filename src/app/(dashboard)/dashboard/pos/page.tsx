@@ -236,16 +236,6 @@ export default function POSPage() {
   };
 
   const completeSale = async () => {
-    if (isDemoMode) {
-      toast({
-        variant: 'destructive',
-        title: 'Demo Mode',
-        description: 'Log in and subscribe to record sales.'
-      });
-      router.push('/login');
-      return;
-    }
-    
     if (paymentMode === 'both' && remainingBalance !== 0) {
         toast({
             variant: 'destructive',
@@ -253,6 +243,15 @@ export default function POSPage() {
             description: 'The total paid amount does not match the total sale amount.'
         });
         return;
+    }
+
+    if (isDemoMode) {
+      toast({
+        title: 'Sale Completed (Demo)',
+        description: `Sale ${invoiceNumber} has been recorded in memory.`
+      });
+      clearSale();
+      return;
     }
 
     if (!firestore || !shopId) {

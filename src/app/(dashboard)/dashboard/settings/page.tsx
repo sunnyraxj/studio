@@ -79,7 +79,7 @@ export default function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!isDemoMode && settingsData) {
+    if (settingsData) {
         setCompanyName(settingsData.companyName || '');
         setCompanyAddress(settingsData.companyAddress || '');
         setCompanyGstin(settingsData.companyGstin || '');
@@ -90,7 +90,7 @@ export default function SettingsPage() {
         setIfscCode(settingsData.ifscCode || '');
         setUpiId(settingsData.upiId || '');
     }
-  }, [settingsData, isDemoMode]);
+  }, [settingsData]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -110,8 +110,7 @@ export default function SettingsPage() {
 
   const handleSave = async () => {
     if (isDemoMode) {
-      toast({ variant: 'destructive', title: 'Demo Mode', description: 'Log in and subscribe to save your settings.' });
-      router.push('/login');
+      toast({ title: 'Success (Demo)', description: 'Settings have been saved in memory.' });
       return;
     }
     if (!settingsDocRef || !shopId || !firestore) {

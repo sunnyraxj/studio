@@ -57,13 +57,13 @@ type AggregatedKhata = {
     entries: KhataEntry[];
 }
 
-const demoKhataEntries: KhataEntry[] = [
+let demoKhataEntries: KhataEntry[] = [
     { id: 'k1', customerName: 'Rohan Sharma', customerPhone: '9876543210', amount: 1500, notes: 'Groceries', date: new Date(Date.now() - 86400000 * 2).toISOString(), status: 'unpaid' },
     { id: 'k2', customerName: 'Priya Patel', customerPhone: '9876543211', amount: 800, notes: '2 T-shirts', date: new Date(Date.now() - 86400000 * 5).toISOString(), status: 'unpaid' },
     { id: 'k3', customerName: 'Rohan Sharma', customerPhone: '9876543210', amount: 500, notes: 'Paid back a bit', date: new Date(Date.now() - 86400000 * 1).toISOString(), status: 'paid' },
     { id: 'k4', customerName: 'Amit Singh', customerPhone: '9876543212', amount: 6200, notes: 'Building materials', date: new Date(Date.now() - 86400000 * 10).toISOString(), status: 'unpaid' },
     { id: 'k5', customerName: 'Sunita Devi', customerPhone: '9876543213', amount: 350, notes: 'Snacks and drinks', date: new Date(Date.now() - 86400000 * 3).toISOString(), status: 'unpaid' },
-    { id_k6: 'k6', customerName: 'Priya Patel', customerPhone: '9876543211', amount: 200, notes: 'More items', date: new Date(Date.now() - 86400000 * 3).toISOString(), status: 'unpaid' },
+    { id: 'k6', customerName: 'Priya Patel', customerPhone: '9876543211', amount: 200, notes: 'More items', date: new Date(Date.now() - 86400000 * 3).toISOString(), status: 'unpaid' },
 ];
 
 
@@ -88,6 +88,8 @@ export default function KhataBookPage() {
   const firestore = useFirestore();
   const isDemoMode = !user;
 
+  const [localDemoData, setLocalDemoData] = useState<KhataEntry[]>(demoKhataEntries);
+
   const userDocRef = useMemoFirebase(() => {
     if (isDemoMode || !firestore) return null;
     return doc(firestore, `users/${user.uid}`);
@@ -104,7 +106,7 @@ export default function KhataBookPage() {
   const { data: khataData, isLoading } = useCollection<KhataEntry>(khataQuery);
 
   const aggregatedData = useMemo(() => {
-    const dataToProcess = isDemoMode ? demoKhataEntries : (khataData || []);
+    const dataToProcess = isDemoMode ? localDemoData : (khataData || []);
     if (dataToProcess.length === 0) return [];
     
     const customerMap = new Map<string, AggregatedKhata>();
@@ -137,7 +139,7 @@ export default function KhataBookPage() {
     });
 
     return Array.from(customerMap.values());
-  }, [khataData, isDemoMode]);
+  }, [khataData, isDemoMode, localDemoData]);
 
   const filteredData = useMemo(() => {
      let data = aggregatedData;
@@ -166,8 +168,18 @@ export default function KhataBookPage() {
   }, [aggregatedData]);
   
   const handleMarkAsPaid = async (entryId: string) => {
-    if (isDemoMode || !shopId || !firestore) {
-        toast({ variant: 'destructive', title: 'Action not allowed in demo mode.'});
+    if (isDemoMode) {
+        setLocalDemoData(prevData =>
+            prevData.map(entry =>
+                entry.id === entryId ? { ...entry, status: 'paid' } : entry
+            )
+        );
+        toast({ title: 'Success (Demo)', description: 'Entry marked as paid in memory.' });
+        return;
+    }
+
+    if (!shopId || !firestore) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Shop not found.' });
         return;
     }
     const entryDocRef = doc(firestore, `shops/${shopId}/khataEntries`, entryId);
@@ -254,37 +266,51 @@ export default function KhataBookPage() {
   });
   
   const handleAddNewEntry = async () => {
-    if (isDemoMode || !shopId || !firestore) {
-        toast({ variant: 'destructive', title: 'Action not allowed in demo mode.'});
-        return;
-    }
-    
     if (!customerName || !amount) {
         toast({ variant: 'destructive', title: 'Missing Fields', description: 'Customer Name and Amount are required.' });
         return;
     }
-
-    const khataCollectionRef = collection(firestore, `shops/${shopId}/khataEntries`);
-    try {
-        await addDoc(khataCollectionRef, {
+    
+    if (isDemoMode) {
+        const newEntry: KhataEntry = {
+            id: `demo-${Date.now()}`,
             customerName,
             customerPhone,
             amount: parseFloat(amount),
             notes,
             date: new Date().toISOString(),
             status: 'unpaid'
-        });
-
-        toast({ title: 'Success', description: 'New credit entry added.'});
-        setIsAddDialogOpen(false);
-        // Clear form
-        setCustomerName('');
-        setCustomerPhone('');
-        setAmount('');
-        setNotes('');
-    } catch(e: any) {
-        toast({ variant: 'destructive', title: 'Error', description: e.message });
+        };
+        setLocalDemoData(prevData => [newEntry, ...prevData]);
+        toast({ title: 'Success (Demo)', description: 'New credit entry added to memory.'});
+    } else {
+        if (!shopId || !firestore) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Shop not found.' });
+            return;
+        }
+        const khataCollectionRef = collection(firestore, `shops/${shopId}/khataEntries`);
+        try {
+            await addDoc(khataCollectionRef, {
+                customerName,
+                customerPhone,
+                amount: parseFloat(amount),
+                notes,
+                date: new Date().toISOString(),
+                status: 'unpaid'
+            });
+            toast({ title: 'Success', description: 'New credit entry added.'});
+        } catch(e: any) {
+            toast({ variant: 'destructive', title: 'Error', description: e.message });
+            return; // Don't close dialog on error
+        }
     }
+
+    setIsAddDialogOpen(false);
+    // Clear form
+    setCustomerName('');
+    setCustomerPhone('');
+    setAmount('');
+    setNotes('');
   }
 
   return (

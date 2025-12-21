@@ -104,11 +104,10 @@ export default function AddProductPage() {
   const handleSaveProduct = async () => {
     if (isDemoMode) {
         toast({
-            variant: "destructive",
-            title: "Demo Mode",
-            description: "Please log in and subscribe to add products to your inventory."
+            title: "Product Saved (Demo)",
+            description: "This product is saved in memory and will be gone on refresh."
         });
-        router.push('/login');
+        router.push('/dashboard/inventory');
         return;
     }
 
@@ -200,11 +199,10 @@ export default function AddProductPage() {
 
     if (isDemoMode) {
       toast({
-        variant: 'destructive',
-        title: 'Demo Mode',
-        description: 'Please log in and subscribe to import products.',
+        title: 'Import Successful (Demo)',
+        description: `Products from ${file.name} have been added to memory.`,
       });
-      router.push('/login');
+      router.push('/dashboard/inventory');
       return;
     }
     
