@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -39,7 +40,6 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { useReactToPrint } from 'react-to-print';
 import { Invoice } from './components/invoice';
 
 
@@ -148,14 +148,29 @@ export default function POSPage() {
   const [lastSaleData, setLastSaleData] = useState<any>(null);
   const invoiceRef = useRef(null);
 
-  const handlePrint = useReactToPrint({
-    content: () => invoiceRef.current,
-    onAfterPrint: () => {
-        setIsInvoiceOpen(false);
-        setLastSaleData(null);
-        clearSale();
+  const handlePrint = () => {
+    const printContent = invoiceRef.current;
+    if (printContent) {
+        const newWindow = window.open('', '_blank', 'width=800,height=600');
+        if (newWindow) {
+            newWindow.document.write('<html><head><title>Print Invoice</title>');
+            // You may need to link to your stylesheet or embed styles here
+            newWindow.document.write('<style>@media print { body { -webkit-print-color-adjust: exact; } .print-container { margin: 0 auto; width: 210mm; height: 297mm; } } </style>');
+            newWindow.document.write('</head><body><div class="print-container">');
+            newWindow.document.write((printContent as HTMLDivElement).innerHTML);
+            newWindow.document.write('</div></body></html>');
+            newWindow.document.close();
+            newWindow.focus();
+            setTimeout(() => { // Timeout to allow content to render
+                newWindow.print();
+                newWindow.close();
+                setIsInvoiceOpen(false);
+                setLastSaleData(null);
+                clearSale();
+            }, 500);
+        }
     }
-  });
+  };
   
 
   const generateNextInvoiceNumber = async () => {
@@ -631,7 +646,12 @@ export default function POSPage() {
             </Card>
         </div>
     </div>
-    <Dialog open={isInvoiceOpen} onOpenChange={setIsInvoiceOpen}>
+    <div className='hidden print:block'>
+        <div ref={invoiceRef}>
+            {lastSaleData && <Invoice sale={lastSaleData} settings={shopSettings} />}
+        </div>
+    </div>
+    <Dialog open={isInvoiceOpen && !!lastSaleData} onOpenChange={(open) => { if (!open) { setIsInvoiceOpen(false); setLastSaleData(null); clearSale(); }}}>
         <DialogContent className="max-w-4xl">
              <div ref={invoiceRef}>
                  <Invoice sale={lastSaleData} settings={shopSettings} />

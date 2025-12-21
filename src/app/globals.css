@@ -115,6 +115,9 @@
   .print-hidden {
     display: none;
   }
+  .print-block {
+    display: block;
+  }
   @page {
     size: A4;
     margin: 0;
