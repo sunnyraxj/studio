@@ -369,13 +369,13 @@ export default function POSPage() {
                 </CardHeader>
                 <CardContent className="flex-grow p-0">
                     <ScrollArea className="h-[calc(100vh-220px)]">
-                        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 p-4">
+                        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2 p-2">
                             {filteredProducts.map((product) => {
                                 const quantityInCart = getCartItemQuantity(product.id);
                                 return (
                                     <Card
                                         key={product.id}
-                                        className="group relative flex flex-col items-center justify-center p-3 hover:bg-green-100 cursor-pointer transition-colors shadow-sm"
+                                        className="group relative flex flex-col items-center justify-center p-2 hover:bg-green-100 cursor-pointer transition-colors shadow-sm"
                                         onClick={() => addToCart(product)}
                                     >
                                         {quantityInCart > 0 && (
@@ -386,10 +386,10 @@ export default function POSPage() {
                                             {quantityInCart}
                                         </Badge>
                                         )}
-                                        <div className="text-xs sm:text-sm font-semibold text-center">
+                                        <div className="text-xs font-semibold text-center leading-tight">
                                             {product.name}
                                         </div>
-                                        <div className="text-sm text-foreground font-semibold mt-1">
+                                        <div className="text-xs text-foreground font-semibold mt-1">
                                         MRP: ₹{product.price.toFixed(2)}
                                         </div>
                                     </Card>
@@ -525,5 +525,7 @@ export default function POSPage() {
     </div>
   );
 }
+
+    
 
     
