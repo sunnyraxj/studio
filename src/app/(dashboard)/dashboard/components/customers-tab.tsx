@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   ColumnDef,
   flexRender,
@@ -10,6 +10,7 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   SortingState,
+  PaginationState,
 } from '@tanstack/react-table';
 import {
   Table,
@@ -36,8 +37,8 @@ import { Input } from '@/components/ui/input';
 import type { Sale, Customer } from '../page';
 import { demoCustomers } from '../page';
 import { Badge } from '@/components/ui/badge';
-import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { collection, doc, query, getDocs, orderBy, limit, startAfter, where, Query, DocumentData, getCountFromServer } from 'firebase/firestore';
 
 
 const customerColumns: ColumnDef<Customer>[] = [
@@ -101,80 +102,123 @@ export function CustomersTab({ isDemoMode }: { isDemoMode: boolean }) {
   }, [user, firestore, isDemoMode]);
   const { data: userData } = useDoc(userDocRef);
   const shopId = userData?.shopId;
-
-  const salesCollectionRef = useMemoFirebase(() => {
-    if (isDemoMode || !shopId || !firestore) return null;
-    return collection(firestore, `shops/${shopId}/sales`);
-  }, [shopId, firestore, isDemoMode]);
   
-  // NOTE: This still fetches all sales data to aggregate customers.
-  // For millions of records, this should be replaced with a server-side aggregation/function.
-  const { data: salesData, isLoading } = useCollection<Sale>(salesCollectionRef);
+  const [data, setData] = useState<Customer[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [pageCount, setPageCount] = useState(0);
+  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 30,
+  });
+  const [lastVisible, setLastVisible] = useState<DocumentData | null>(null);
 
-  const customersData = useMemo(() => {
-    if (isDemoMode) return demoCustomers;
-    if (!salesData) return [];
-
-    type CustomerAggregate = {
-        id: string;
-        name: string;
-        phone: string;
-        invoiceNumbers: Set<string>;
-        lastPurchaseDate: string;
+  const fetchData = async () => {
+    if (isDemoMode) {
+      setData(demoCustomers);
+      setPageCount(Math.ceil(demoCustomers.length / pageSize));
+      return;
     }
+    if (!shopId || !firestore) return;
 
-    const customerMap = new Map<string, CustomerAggregate>();
+    setIsLoading(true);
 
-    salesData.forEach((sale) => {
-      if (!sale.customer || (!sale.customer.phone && !sale.customer.name)) return;
-      
-      const customerKey = sale.customer.phone || sale.customer.name.toLowerCase();
-
-      if (customerMap.has(customerKey)) {
-        const existingCustomer = customerMap.get(customerKey)!;
-        existingCustomer.invoiceNumbers.add(sale.invoiceNumber);
-        if (new Date(sale.date) > new Date(existingCustomer.lastPurchaseDate)) {
-            existingCustomer.lastPurchaseDate = sale.date;
-        }
-      } else {
-        customerMap.set(customerKey, {
-          id: customerKey,
-          name: sale.customer.name,
-          phone: sale.customer.phone || '',
-          invoiceNumbers: new Set([sale.invoiceNumber]),
-          lastPurchaseDate: sale.date,
-        });
-      }
-    });
+    const salesCollectionRef = collection(firestore, `shops/${shopId}/sales`);
     
-    return Array.from(customerMap.values()).map(c => ({
-        ...c,
-        invoiceNumbers: Array.from(c.invoiceNumbers),
-    }));
+    // Base query
+    let q: Query = salesCollectionRef;
+    
+    // Since we are aggregating on the client, we cannot efficiently filter on the server by customer name.
+    // We will fetch all sales and then aggregate. This is the bottleneck.
+    // The "fix" is to change this entire component to query a 'customers' collection
+    // that is updated by a cloud function, or to implement a more complex client-side pagination.
+    // For this change, we'll implement a basic client-side pagination on the aggregated data.
+    
+    try {
+        const querySnapshot = await getDocs(query(salesCollectionRef, orderBy('date', 'desc')));
+        const salesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Sale));
+        
+        type CustomerAggregate = {
+            id: string;
+            name: string;
+            phone: string;
+            invoiceNumbers: Set<string>;
+            lastPurchaseDate: string;
+        }
 
-  }, [salesData, isDemoMode]);
+        const customerMap = new Map<string, CustomerAggregate>();
+
+        salesData.forEach((sale) => {
+          if (!sale.customer || (!sale.customer.phone && !sale.customer.name)) return;
+          
+          const customerKey = sale.customer.phone || sale.customer.name.toLowerCase();
+
+          if (customerMap.has(customerKey)) {
+            const existingCustomer = customerMap.get(customerKey)!;
+            existingCustomer.invoiceNumbers.add(sale.invoiceNumber);
+            if (new Date(sale.date) > new Date(existingCustomer.lastPurchaseDate)) {
+                existingCustomer.lastPurchaseDate = sale.date;
+            }
+          } else {
+            customerMap.set(customerKey, {
+              id: customerKey,
+              name: sale.customer.name,
+              phone: sale.customer.phone || '',
+              invoiceNumbers: new Set([sale.invoiceNumber]),
+              lastPurchaseDate: sale.date,
+            });
+          }
+        });
+        
+        let allCustomers = Array.from(customerMap.values()).map(c => ({
+            ...c,
+            invoiceNumbers: Array.from(c.invoiceNumbers),
+        }));
+
+        if (searchTerm) {
+            allCustomers = allCustomers.filter(customer => 
+                customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (customer.phone && customer.phone.includes(searchTerm))
+            );
+        }
+
+        // Apply sorting
+        allCustomers.sort((a, b) => {
+            if (sorting[0].id === 'lastPurchaseDate') {
+                const dateA = new Date(a.lastPurchaseDate).getTime();
+                const dateB = new Date(b.lastPurchaseDate).getTime();
+                return sorting[0].desc ? dateB - dateA : dateA - dateB;
+            }
+            return 0;
+        });
+
+        setPageCount(Math.ceil(allCustomers.length / pageSize));
+        const paginatedData = allCustomers.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize);
+        setData(paginatedData);
+
+    } catch (e) {
+        console.error(e);
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [pageIndex, pageSize, shopId, firestore, isDemoMode, searchTerm, sorting]);
   
-  const filteredCustomers = useMemo(() => {
-     if (!searchTerm) return customersData;
-     return customersData.filter(customer => 
-         customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-         (customer.phone && customer.phone.includes(searchTerm))
-     );
-  }, [customersData, searchTerm]);
 
   const table = useReactTable({
-    data: filteredCustomers,
+    data,
     columns: customerColumns,
-    state: { sorting },
+    pageCount,
+    state: { sorting, pagination: { pageIndex, pageSize } },
     onSortingChange: setSorting,
+    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    initialState: {
-      pagination: {
-        pageSize: 30,
-      },
-    },
+    manualPagination: true,
+    manualSorting: true,
+    manualFiltering: true,
   });
 
   return (
