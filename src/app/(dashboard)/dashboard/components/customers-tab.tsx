@@ -35,6 +35,7 @@ import { FaWhatsapp } from 'react-icons/fa';
 import { Input } from '@/components/ui/input';
 import type { Sale, Customer } from '../page';
 import { demoCustomers } from '../page';
+import { Badge } from '@/components/ui/badge';
 
 
 const customerColumns: ColumnDef<Customer>[] = [
@@ -62,7 +63,7 @@ const customerColumns: ColumnDef<Customer>[] = [
     header: 'Invoice Numbers',
     cell: ({ row }) => {
       const invoices = row.getValue('invoiceNumbers') as string[];
-      return <div className="flex flex-wrap gap-1">{invoices.map(inv => <span key={inv} className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded-full">{inv}</span>)}</div>;
+      return <div className="flex flex-wrap gap-1">{invoices.map(inv => <Badge key={inv} variant="outline">{inv}</Badge>)}</div>;
     },
   },
   {
