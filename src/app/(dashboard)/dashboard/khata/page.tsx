@@ -33,6 +33,7 @@ import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { CaretSortIcon, ChevronDownIcon, ChevronRightIcon } from '@radix-ui/react-icons';
 import { Search, PlusCircle, IndianRupee, HandCoins } from 'lucide-react';
+import { FaWhatsapp } from 'react-icons/fa';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -174,6 +175,40 @@ export default function KhataBookPage() {
         toast({ variant: 'destructive', title: 'Error', description: e.message });
     }
   }
+  
+  const handleWhatsAppReminder = (customer: AggregatedKhata) => {
+    if (!customer.customerPhone) {
+        toast({ variant: 'destructive', title: 'No Phone Number', description: 'This customer does not have a phone number saved.' });
+        return;
+    }
+
+    let message = `Hello ${customer.customerName},\n\nThis is a friendly reminder regarding your account with us.\n\n`;
+    message += `*Total Amount Due: ₹${customer.totalDue.toLocaleString('en-IN')}*\n\n`;
+    message += '--- Transaction Summary ---\n';
+
+    const credits = customer.entries.filter(e => e.type === 'credit');
+    const payments = customer.entries.filter(e => e.type === 'payment');
+
+    if (credits.length > 0) {
+        message += '\n*Udhar (Credit Given):*\n';
+        credits.forEach(entry => {
+            message += `> ${format(new Date(entry.date), 'dd MMM')}: ₹${entry.amount.toLocaleString('en-IN')} (${entry.notes})\n`;
+        });
+    }
+    
+    if (payments.length > 0) {
+        message += '\n*Jama (Payment Received):*\n';
+        payments.forEach(entry => {
+            message += `> ${format(new Date(entry.date), 'dd MMM')}: ₹${Math.abs(entry.amount).toLocaleString('en-IN')} (${entry.notes})\n`;
+        });
+    }
+
+    message += '\nPlease clear the due amount at your earliest convenience.\nThank you!';
+
+    const whatsappUrl = `https://wa.me/${customer.customerPhone}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+};
+
 
   const khataColumns: ColumnDef<AggregatedKhata>[] = [
     {
@@ -423,7 +458,18 @@ export default function KhataBookPage() {
                       <TableRow>
                         <TableCell colSpan={khataColumns.length} className="p-0">
                           <div className="p-4 bg-muted/50">
-                            <h4 className="font-bold mb-2">Transaction History for {row.original.customerName}</h4>
+                            <div className="flex justify-between items-center mb-2">
+                                <h4 className="font-bold">Transaction History for {row.original.customerName}</h4>
+                                <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => handleWhatsAppReminder(row.original)}
+                                    disabled={!row.original.customerPhone}
+                                >
+                                    <FaWhatsapp className="mr-2 h-4 w-4 text-green-500" />
+                                    Send Reminder
+                                </Button>
+                            </div>
                             <Table>
                               <TableHeader>
                                 <TableRow>
