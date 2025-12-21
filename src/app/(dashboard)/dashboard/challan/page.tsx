@@ -46,7 +46,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Invoice } from './components/invoice';
+import { Invoice as Challan } from './components/challan';
 
 
 type Product = {
@@ -101,7 +101,7 @@ const sampleProducts: Product[] = [
   { id: "3", name: 'Sneakers', price: 1200, margin: 40, sku: 'SH-01', hsn: '6404', gst: 18, material: 'Leather' },
 ];
 
-export default function InvoicePage() {
+export default function ChallanPage() {
   const firestore = useFirestore();
   const { user } = useUser();
   const isDemoMode = !user;
@@ -168,7 +168,7 @@ export default function InvoicePage() {
         if (newWindow) {
             const printableContent = (printContent as HTMLDivElement).innerHTML;
             
-            newWindow.document.write('<html><head><title>Print Invoice</title>');
+            newWindow.document.write('<html><head><title>Print Challan</title>');
             const styles = Array.from(document.styleSheets)
               .map(styleSheet => {
                   try {
@@ -200,44 +200,44 @@ export default function InvoicePage() {
   };
   
 
-  const generateNextInvoiceNumber = async () => {
+  const generateNextChallanNumber = async () => {
     if (isDemoMode || !firestore || !shopId) {
         const currentYear = new Date().getFullYear();
-        setInvoiceNumber(`INV-${currentYear}-0001`);
+        setInvoiceNumber(`CHLN-${currentYear}-0001`);
         return;
     }
 
     const currentYear = new Date().getFullYear();
-    const salesCollectionRef = collection(firestore, `shops/${shopId}/sales`);
+    const challansCollectionRef = collection(firestore, `shops/${shopId}/challans`);
     
     const q = query(
-        salesCollectionRef, 
+        challansCollectionRef, 
         orderBy('date', 'desc'), 
         limit(1)
     );
 
     const querySnapshot = await getDocs(q);
-    let lastInvoiceNumber = 0;
+    let lastChallanNumber = 0;
     
     if (!querySnapshot.empty) {
-        const lastSale = querySnapshot.docs[0].data() as Sale;
-        const lastInvoice = lastSale.invoiceNumber;
+        const lastChallan = querySnapshot.docs[0].data() as Sale;
+        const lastInvoice = lastChallan.invoiceNumber;
         
         const parts = lastInvoice.split('-');
-        if (parts.length === 3) {
+        if (parts.length === 3 && parts[0] === 'CHLN') {
             const yearOfLastInvoice = parseInt(parts[1], 10);
             if (yearOfLastInvoice === currentYear) {
-                lastInvoiceNumber = parseInt(parts[2], 10);
+                lastChallanNumber = parseInt(parts[2], 10);
             }
         }
     }
     
-    const nextInvoiceNumber = (lastInvoiceNumber + 1).toString().padStart(4, '0');
-    setInvoiceNumber(`INV-${currentYear}-${nextInvoiceNumber}`);
+    const nextChallanNumber = (lastChallanNumber + 1).toString().padStart(4, '0');
+    setInvoiceNumber(`CHLN-${currentYear}-${nextChallanNumber}`);
   };
 
   useEffect(() => {
-    generateNextInvoiceNumber();
+    generateNextChallanNumber();
   }, [shopId, isDemoMode, firestore]);
 
   const addToCart = (productToAdd: Product) => {
@@ -359,7 +359,7 @@ export default function InvoicePage() {
     setCustomerGstin('');
     setPaymentMode('cash');
     setPaymentDetails({ cash: 0, card: 0, upi: 0 });
-    generateNextInvoiceNumber();
+    generateNextChallanNumber();
   };
   
   const showPrintToast = () => {
@@ -448,8 +448,8 @@ export default function InvoicePage() {
     }
 
     try {
-      const salesCollectionRef = collection(firestore, `shops/${shopId}/challans`);
-      await addDoc(salesCollectionRef, saleData);
+      const challansCollectionRef = collection(firestore, `shops/${shopId}/challans`);
+      await addDoc(challansCollectionRef, saleData);
       showPrintToast();
     } catch(error: any) {
       hotToast.error(`Error completing sale: ${error.message}`);
@@ -748,7 +748,7 @@ export default function InvoicePage() {
     </div>
     <div className='hidden print:block'>
         <div ref={invoiceRef}>
-            {lastSaleData && <Invoice sale={lastSaleData} settings={shopSettings} />}
+            {lastSaleData && <Challan sale={lastSaleData} settings={shopSettings} />}
         </div>
     </div>
     <Dialog open={isInvoiceOpen && !!lastSaleData} onOpenChange={(open) => { if (!open) { setIsInvoiceOpen(false); setLastSaleData(null); }}}>
@@ -758,12 +758,10 @@ export default function InvoicePage() {
                 <DialogDescription>A preview of the challan for printing.</DialogDescription>
             </DialogHeader>
              <div ref={invoiceRef}>
-                 <Invoice sale={lastSaleData} settings={shopSettings} />
+                 <Challan sale={lastSaleData} settings={shopSettings} />
              </div>
         </DialogContent>
     </Dialog>
     </>
   );
 }
-
-    

@@ -43,7 +43,7 @@ type Sale = {
   }
 };
 
-interface InvoiceProps {
+interface ChallanProps {
     sale: Sale | null;
     settings: ShopSettings | null;
 }
@@ -65,9 +65,9 @@ const numberToWords = (num: number): string => {
 };
 
 
-export const Invoice: React.FC<InvoiceProps> = ({ sale, settings }) => {
+export const Invoice: React.FC<ChallanProps> = ({ sale, settings }) => {
     if (!sale || !settings) {
-        return <div className="p-10">Loading invoice...</div>;
+        return <div className="p-10">Loading challan...</div>;
     }
     
     const {
@@ -101,8 +101,8 @@ export const Invoice: React.FC<InvoiceProps> = ({ sale, settings }) => {
                     </div>
                 </div>
                 <div className="text-right">
-                    <h2 className="text-xl font-bold uppercase">Tax Invoice</h2>
-                    <p><strong>Invoice No:</strong> {invoiceNumber}</p>
+                    <h2 className="text-xl font-bold uppercase">Delivery Challan</h2>
+                    <p><strong>Challan No:</strong> {invoiceNumber}</p>
                     <p><strong>Date:</strong> {format(new Date(date), 'dd-MMM-yyyy')}</p>
                 </div>
             </div>
@@ -195,7 +195,7 @@ export const Invoice: React.FC<InvoiceProps> = ({ sale, settings }) => {
                 <div>
                     <p className="font-bold mb-1">Terms & Conditions:</p>
                     <p className="text-gray-600">1. Goods once sold will not be taken back.</p>
-                    <p className="text-gray-600">2. This is a computer-generated invoice.</p>
+                    <p className="text-gray-600">2. This is a computer-generated challan.</p>
                 </div>
                 <div className="text-center">
                     <p className="font-bold border-t border-black pt-2">For {settings.companyName}</p>
