@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -56,6 +57,15 @@ type AggregatedKhata = {
     entries: KhataEntry[];
 }
 
+const demoKhataEntries: KhataEntry[] = [
+    { id: 'k1', customerName: 'Rohan Sharma', customerPhone: '9876543210', amount: 1500, notes: 'Groceries', date: new Date(Date.now() - 86400000 * 2).toISOString(), status: 'unpaid' },
+    { id: 'k2', customerName: 'Priya Patel', customerPhone: '9876543211', amount: 800, notes: '2 T-shirts', date: new Date(Date.now() - 86400000 * 5).toISOString(), status: 'unpaid' },
+    { id: 'k3', customerName: 'Rohan Sharma', customerPhone: '9876543210', amount: 500, notes: 'Paid back a bit', date: new Date(Date.now() - 86400000 * 1).toISOString(), status: 'paid' },
+    { id: 'k4', customerName: 'Amit Singh', customerPhone: '9876543212', amount: 6200, notes: 'Building materials', date: new Date(Date.now() - 86400000 * 10).toISOString(), status: 'unpaid' },
+    { id: 'k5', customerName: 'Sunita Devi', customerPhone: '9876543213', amount: 350, notes: 'Snacks and drinks', date: new Date(Date.now() - 86400000 * 3).toISOString(), status: 'unpaid' },
+    { id_k6: 'k6', customerName: 'Priya Patel', customerPhone: '9876543211', amount: 200, notes: 'More items', date: new Date(Date.now() - 86400000 * 3).toISOString(), status: 'unpaid' },
+];
+
 
 export default function KhataBookPage() {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'totalDue', desc: true }]);
@@ -94,11 +104,12 @@ export default function KhataBookPage() {
   const { data: khataData, isLoading } = useCollection<KhataEntry>(khataQuery);
 
   const aggregatedData = useMemo(() => {
-    if (!khataData) return [];
+    const dataToProcess = isDemoMode ? demoKhataEntries : (khataData || []);
+    if (dataToProcess.length === 0) return [];
     
     const customerMap = new Map<string, AggregatedKhata>();
 
-    khataData.forEach(entry => {
+    dataToProcess.forEach(entry => {
         const key = `${entry.customerName.toLowerCase()}|${entry.customerPhone || ''}`;
         if (!customerMap.has(key)) {
             customerMap.set(key, {
@@ -126,7 +137,7 @@ export default function KhataBookPage() {
     });
 
     return Array.from(customerMap.values());
-  }, [khataData]);
+  }, [khataData, isDemoMode]);
 
   const filteredData = useMemo(() => {
      let data = aggregatedData;
