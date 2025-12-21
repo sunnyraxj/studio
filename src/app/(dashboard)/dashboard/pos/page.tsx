@@ -29,6 +29,13 @@ import {
   RadioGroup,
   RadioGroupItem,
 } from '@/components/ui/radio-group';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
@@ -127,6 +134,11 @@ export default function POSPage() {
 
   const { data: productsData } = useCollection<Product>(productsCollectionRef);
   const products = isDemoMode ? sampleProducts : productsData || [];
+  
+  const uniqueMaterials = useMemo(() => {
+    const materials = new Set(products.map(p => p.material).filter(Boolean));
+    return ['All', ...Array.from(materials)];
+  }, [products]);
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState('');
@@ -138,6 +150,7 @@ export default function POSPage() {
   const [paymentMode, setPaymentMode] = useState('cash');
   const [searchTerm, setSearchTerm] = useState('');
   const [searchBy, setSearchBy] = useState('name');
+  const [selectedMaterial, setSelectedMaterial] = useState('All');
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetails>({
     cash: 0,
@@ -292,12 +305,13 @@ export default function POSPage() {
   const remainingBalance = total - totalPaid;
 
   const filteredProducts = products.filter((product) => {
+    const materialFilter = selectedMaterial === 'All' || product.material === selectedMaterial;
+    if (!materialFilter) return false;
+
     if (searchBy === 'name') {
       return product.name.toLowerCase().includes(searchTerm.toLowerCase()) || product.sku?.toLowerCase().includes(searchTerm.toLowerCase());
     } else if (searchBy === 'mrp') {
       return product.price.toString().includes(searchTerm);
-    } else if (searchBy === 'material') {
-      return product.material?.toLowerCase().includes(searchTerm.toLowerCase());
     }
     return false;
   });
@@ -424,14 +438,26 @@ export default function POSPage() {
             <Card className="flex-grow flex flex-col">
                 <CardHeader>
                     <div className="space-y-4">
-                        <div className="relative">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Search products..."
-                                className="pl-8"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
+                        <div className="flex gap-2">
+                           <div className="relative flex-grow">
+                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Search products..."
+                                    className="pl-8"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+                            <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="Filter by material" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {uniqueMaterials.map(material => (
+                                        <SelectItem key={material} value={material}>{material}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="flex items-center space-x-4">
                             <Label className="text-sm font-medium">Search By:</Label>
@@ -447,10 +473,6 @@ export default function POSPage() {
                                 <div className="flex items-center space-x-2">
                                     <RadioGroupItem value="mrp" id="mrp" />
                                     <Label htmlFor="mrp">MRP</Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="material" id="material" />
-                                    <Label htmlFor="material">Material</Label>
                                 </div>
                             </RadioGroup>
                         </div>
@@ -563,7 +585,7 @@ export default function POSPage() {
                             </div>
                             <Separator />
                             <div className="p-4 space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
+                               <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="customer-name">Customer Name</Label>
                                         <Input id="customer-name" placeholder="Enter customer name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
