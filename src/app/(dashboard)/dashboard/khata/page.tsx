@@ -28,7 +28,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { DataTablePagination } from '@/components/data-table-pagination';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { CaretSortIcon, ChevronDownIcon, ChevronRightIcon } from '@radix-ui/react-icons';
@@ -78,9 +78,6 @@ export default function KhataBookPage() {
   const [customerPhone, setCustomerPhone] = useState('');
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
-  
-  // Filter states
-  const [showOnlyUnpaid, setShowOnlyUnpaid] = useState(true);
   
   const { user } = useUser();
   const firestore = useFirestore();
@@ -148,12 +145,9 @@ export default function KhataBookPage() {
             (customer.customerPhone && customer.customerPhone.includes(searchTerm))
         );
      }
-     if (showOnlyUnpaid) {
-        data = data.filter(c => c.totalDue > 0);
-     }
      
      return data;
-  }, [aggregatedData, searchTerm, showOnlyUnpaid]);
+  }, [aggregatedData, searchTerm]);
   
   const grandTotalDue = useMemo(() => {
     return aggregatedData.reduce((sum, customer) => sum + customer.totalDue, 0);
@@ -334,12 +328,6 @@ export default function KhataBookPage() {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
-            </div>
-            <div className="flex items-center gap-4">
-                <div className="flex items-center space-x-2">
-                    <Switch id="show-unpaid" checked={showOnlyUnpaid} onCheckedChange={setShowOnlyUnpaid} />
-                    <Label htmlFor="show-unpaid">Show Unpaid Only</Label>
-                </div>
             </div>
         </div>
         <div className="rounded-md border">
