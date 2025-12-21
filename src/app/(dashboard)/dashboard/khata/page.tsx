@@ -81,8 +81,6 @@ export default function KhataBookPage() {
   
   // Filter states
   const [showOnlyUnpaid, setShowOnlyUnpaid] = useState(true);
-  const [filterDueOver1000, setFilterDueOver1000] = useState(false);
-  const [filterDueOver5000, setFilterDueOver5000] = useState(false);
   
   const { user } = useUser();
   const firestore = useFirestore();
@@ -153,15 +151,9 @@ export default function KhataBookPage() {
      if (showOnlyUnpaid) {
         data = data.filter(c => c.totalDue > 0);
      }
-     if (filterDueOver1000) {
-        data = data.filter(c => c.totalDue > 1000);
-     }
-     if (filterDueOver5000) {
-        data = data.filter(c => c.totalDue > 5000);
-     }
      
      return data;
-  }, [aggregatedData, searchTerm, showOnlyUnpaid, filterDueOver1000, filterDueOver5000]);
+  }, [aggregatedData, searchTerm, showOnlyUnpaid]);
   
   const grandTotalDue = useMemo(() => {
     return aggregatedData.reduce((sum, customer) => sum + customer.totalDue, 0);
@@ -347,15 +339,6 @@ export default function KhataBookPage() {
                 <div className="flex items-center space-x-2">
                     <Switch id="show-unpaid" checked={showOnlyUnpaid} onCheckedChange={setShowOnlyUnpaid} />
                     <Label htmlFor="show-unpaid">Show Unpaid Only</Label>
-                </div>
-                <Separator orientation="vertical" className="h-6" />
-                <div className="flex items-center space-x-2">
-                    <Switch id="due-1000" checked={filterDueOver1000} onCheckedChange={setFilterDueOver1000} />
-                    <Label htmlFor="due-1000">Due {'>'} ₹1,000</Label>
-                </div>
-                 <div className="flex items-center space-x-2">
-                    <Switch id="due-5000" checked={filterDueOver5000} onCheckedChange={setFilterDueOver5000} />
-                    <Label htmlFor="due-5000">Due {'>'} ₹5,000</Label>
                 </div>
             </div>
         </div>
