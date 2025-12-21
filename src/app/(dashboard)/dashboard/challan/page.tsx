@@ -45,7 +45,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Invoice } from './components/invoice';
 
 
@@ -741,6 +741,10 @@ export default function InvoicePage() {
     </div>
     <Dialog open={isInvoiceOpen && !!lastSaleData} onOpenChange={(open) => { if (!open) { setIsInvoiceOpen(false); setLastSaleData(null); clearSale(); }}}>
         <DialogContent className="max-w-4xl p-0 border-0">
+             <DialogHeader className="sr-only">
+                <DialogTitle>Invoice</DialogTitle>
+                <DialogDescription>A preview of the invoice for printing.</DialogDescription>
+            </DialogHeader>
              <div ref={invoiceRef}>
                  <Invoice sale={lastSaleData} settings={shopSettings} />
              </div>
