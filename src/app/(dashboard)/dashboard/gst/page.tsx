@@ -95,6 +95,12 @@ type ShopSettings = {
     companyState?: string;
 };
 
+const demoSales: Sale[] = [
+    { id: '1', invoiceNumber: 'D-INV-001', customer: { name: 'Demo Customer 1', state: 'Assam', gstin: '18ABCDE1234F1Z5' }, date: new Date().toISOString(), total: 1120, subtotal: 1000, cgst: 60, sgst: 60, igst: 0, items: [], paymentMode: 'cash' },
+    { id: '2', invoiceNumber: 'D-INV-002', customer: { name: 'Demo Customer 2', state: 'Delhi' }, date: new Date().toISOString(), total: 2240, subtotal: 2000, cgst: 0, sgst: 0, igst: 240, items: [], paymentMode: 'upi' },
+    { id: '3', invoiceNumber: 'D-INV-003', customer: { name: 'Demo Customer 3', state: 'Assam' }, date: new Date(new Date().setDate(new Date().getDate() - 35)).toISOString(), total: 560, subtotal: 500, cgst: 30, sgst: 30, igst: 0, items: [], paymentMode: 'card' },
+];
+
 
 // Main GST Page Component
 export default function GstReportsPage() {
@@ -107,22 +113,22 @@ export default function GstReportsPage() {
     const [invoiceType, setInvoiceType] = useState('All');
 
     const userDocRef = useMemoFirebase(() => {
-        if (!user || !firestore) return null;
+        if (isDemoMode || !user || !firestore) return null;
         return doc(firestore, `users/${user.uid}`);
-    }, [user, firestore]);
+    }, [user, firestore, isDemoMode]);
     const { data: userData } = useDoc<UserProfile>(userDocRef);
     const shopId = userData?.shopId;
     
     const settingsDocRef = useMemoFirebase(() => {
-        if (!shopId || !firestore) return null;
+        if (isDemoMode || !shopId || !firestore) return null;
         return doc(firestore, `shops/${shopId}/settings`, 'details');
-    }, [firestore, shopId]);
+    }, [firestore, shopId, isDemoMode]);
     const { data: shopSettings } = useDoc<ShopSettings>(settingsDocRef);
-    const shopState = shopSettings?.companyState || 'Assam';
+    const shopState = isDemoMode ? 'Assam' : shopSettings?.companyState || 'Assam';
 
     // Fetch sales for the selected month and year
     const salesQuery = useMemoFirebase(() => {
-        if (!shopId || !firestore) return null;
+        if (isDemoMode || !shopId || !firestore) return null;
         const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
         const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
 
@@ -132,12 +138,22 @@ export default function GstReportsPage() {
             where('date', '<=', endDate.toISOString()),
             orderBy('date', 'desc')
         );
-    }, [shopId, firestore, month, year]);
+    }, [shopId, firestore, month, year, isDemoMode]);
 
     const { data: salesData, isLoading: isSalesLoading } = useCollection<Sale>(salesQuery);
     
     const { gstReportData, totals } = useMemo(() => {
-        let filteredSales = salesData || [];
+        let sourceData = isDemoMode ? demoSales : (salesData || []);
+        
+        // Filter by month/year for demo data
+        if (isDemoMode) {
+            sourceData = sourceData.filter(sale => {
+                const saleDate = new Date(sale.date);
+                return saleDate.getFullYear().toString() === year && (saleDate.getMonth() + 1).toString() === month;
+            });
+        }
+
+        let filteredSales = sourceData;
 
         if (invoiceType === 'B2B') {
             filteredSales = filteredSales.filter(sale => sale.customer.gstin);
@@ -169,7 +185,7 @@ export default function GstReportsPage() {
         }, { taxableSales: 0, cgst: 0, sgst: 0, igst: 0 });
 
         return { gstReportData: reportItems, totals };
-    }, [salesData, invoiceType, shopState]);
+    }, [salesData, invoiceType, shopState, isDemoMode, month, year]);
 
     const [sorting, setSorting] = React.useState<SortingState>([
         { id: 'invoiceDate', desc: true },
@@ -288,14 +304,14 @@ export default function GstReportsPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                        <StatCard title="Total Taxable Sales" value={totals.taxableSales} isLoading={isSalesLoading} />
-                        <StatCard title="Total CGST" value={totals.cgst} isLoading={isSalesLoading} />
-                        <StatCard title="Total SGST" value={totals.sgst} isLoading={isSalesLoading} />
-                        <StatCard title="Total IGST" value={totals.igst} isLoading={isSalesLoading} />
+                        <StatCard title="Total Taxable Sales" value={totals.taxableSales} isLoading={isSalesLoading && !isDemoMode} />
+                        <StatCard title="Total CGST" value={totals.cgst} isLoading={isSalesLoading && !isDemoMode} />
+                        <StatCard title="Total SGST" value={totals.sgst} isLoading={isSalesLoading && !isDemoMode} />
+                        <StatCard title="Total IGST" value={totals.igst} isLoading={isSalesLoading && !isDemoMode} />
                     </div>
                      <div className="mt-6 rounded-lg bg-muted/50 p-6 text-center">
                         <p className="text-sm font-medium text-muted-foreground">Total GST Payable for {format(new Date(parseInt(year), parseInt(month) - 1), 'MMMM yyyy')}</p>
-                        {isSalesLoading ? <Skeleton className="h-9 w-40 mx-auto mt-2" /> : <p className="text-3xl font-bold">₹{totalGstCollected.toFixed(2)}</p>}
+                        {isSalesLoading && !isDemoMode ? <Skeleton className="h-9 w-40 mx-auto mt-2" /> : <p className="text-3xl font-bold">₹{totalGstCollected.toFixed(2)}</p>}
                     </div>
                 </CardContent>
             </Card>
@@ -349,7 +365,7 @@ export default function GstReportsPage() {
                                 ))}
                             </TableHeader>
                             <TableBody>
-                                {isSalesLoading ? (
+                                {isSalesLoading && !isDemoMode ? (
                                     <TableRow><TableCell colSpan={columns.length} className="h-24 text-center">Loading report...</TableCell></TableRow>
                                 ) : table.getRowModel().rows?.length ? (
                                     table.getRowModel().rows.map(row => (
@@ -385,5 +401,3 @@ const StatCard = ({ title, value, isLoading }: { title: string, value: number, i
         </CardContent>
     </Card>
 );
-
-    

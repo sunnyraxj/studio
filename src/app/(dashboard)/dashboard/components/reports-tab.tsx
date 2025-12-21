@@ -42,6 +42,10 @@ import type { Sale, ReportItem } from '../page';
 import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, getDocs, limit, startAfter, getCountFromServer, Query, DocumentData, doc } from 'firebase/firestore';
 
+const demoSales: Sale[] = [
+    { id: '1', invoiceNumber: 'D-INV-001', date: new Date().toISOString(), customer: { name: 'Ravi Kumar' }, total: 2500, paymentMode: 'upi', items: [{ productId: '1', name: 'T-Shirt', quantity: 2, price: 500, margin: 25, sku: 'TS-01', hsn: '6109', gst: 5 }, { productId: '2', name: 'Jeans', quantity: 1, price: 1500, margin: 30, sku: 'JN-01', hsn: '6203', gst: 5 }] },
+    { id: '2', invoiceNumber: 'D-INV-002', date: new Date(Date.now() - 86400000).toISOString(), customer: { name: 'Priya Sharma' }, total: 1200, paymentMode: 'card', items: [{ productId: '3', name: 'Sneakers', quantity: 1, price: 1200, margin: 40, sku: 'SH-01', hsn: '6404', gst: 18 }] },
+];
 
 const reportsColumns: ColumnDef<ReportItem>[] = [
   { accessorKey: 'name', header: 'Product Name', cell: ({ row }) => <div className="font-medium">{row.getValue('name')}</div> },
@@ -92,6 +96,7 @@ export function ReportsTab() {
   const [endYear, setEndYear] = useState('');
 
   const buildQuery = () => {
+    if (isDemoMode) return null;
     if (!firestore || !shopId) return null;
     const baseRef = collection(firestore, `shops/${shopId}/sales`);
     let constraints = [orderBy('date', 'desc')];
@@ -109,12 +114,21 @@ export function ReportsTab() {
   }
 
   const fetchData = async () => {
+    if (isDemoMode) {
+        const reportItems = demoSales.flatMap(sale => sale.items.map(item => ({ ...item, saleDate: sale.date })));
+        setData(reportItems);
+        setPageCount(Math.ceil(reportItems.length / pageSize));
+        return;
+    }
+    
     const q = buildQuery();
     if (!q) return;
 
     setIsLoading(true);
     try {
-      const querySnapshot = await getDocs(query(q, limit(100))); // This approach is not scalable for pagination
+      // NOTE: This fetch-all approach is not scalable for pagination with large datasets.
+      // A better approach for production would be server-side aggregation or a more complex query structure.
+      const querySnapshot = await getDocs(query(q, limit(100))); 
       const sales = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Sale));
       
       let reportItems = sales.flatMap(sale => sale.items.map(item => ({ ...item, saleDate: sale.date })));
@@ -137,8 +151,8 @@ export function ReportsTab() {
   };
 
   useEffect(() => {
-    if(!isDemoMode && shopId) fetchData();
-  }, [shopId, pageIndex, pageSize, isFilterActive, searchTerm]);
+    fetchData();
+  }, [shopId, pageIndex, pageSize, isFilterActive, searchTerm, isDemoMode]);
 
   const handleFilter = () => {
     setPageIndex(0);
@@ -291,7 +305,7 @@ export function ReportsTab() {
             <Table>
               <TableHeader>{table.getHeaderGroups().map(hg => <TableRow key={hg.id}>{hg.headers.map(h => <TableHead key={h.id}>{h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}</TableHead>)}</TableRow>)}</TableHeader>
               <TableBody>
-                {isLoading ? <TableRow><TableCell colSpan={reportsColumns.length} className="h-24 text-center">Loading reports...</TableCell></TableRow>
+                {isLoading && !isDemoMode ? <TableRow><TableCell colSpan={reportsColumns.length} className="h-24 text-center">Loading reports...</TableCell></TableRow>
                   : table.getRowModel().rows?.length ? table.getRowModel().rows.map(row => (
                     <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>{row.getVisibleCells().map(cell => <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>)}</TableRow>
                   )) : <TableRow><TableCell colSpan={reportsColumns.length} className="h-24 text-center">No items found for the selected criteria.</TableCell></TableRow>}
@@ -304,5 +318,3 @@ export function ReportsTab() {
     </TooltipProvider>
   );
 }
-
-    

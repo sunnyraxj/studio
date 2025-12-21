@@ -44,6 +44,12 @@ import { PaymentBreakdownCard } from './payment-breakdown-card';
 import { useFirestore, useUser, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc, query, orderBy, where, limit, getDocs, getCountFromServer, startAfter, Query, DocumentData } from 'firebase/firestore';
 
+const demoSales: Sale[] = [
+    { id: '1', invoiceNumber: 'D-INV-001', date: new Date().toISOString(), customer: { name: 'Ravi Kumar' }, total: 2500, paymentMode: 'upi', items: [], paymentDetails: { upi: 2500 } },
+    { id: '2', invoiceNumber: 'D-INV-002', date: new Date(Date.now() - 86400000).toISOString(), customer: { name: 'Priya Sharma' }, total: 1200, paymentMode: 'card', items: [], paymentDetails: { card: 1200 } },
+    { id: '3', invoiceNumber: 'D-INV-003', date: new Date(Date.now() - 172800000).toISOString(), customer: { name: 'Amit Singh' }, total: 3500, paymentMode: 'cash', items: [], paymentDetails: { cash: 3500 } },
+    { id: '4', invoiceNumber: 'D-INV-004', date: new Date().toISOString(), customer: { name: 'Sunita Gupta' }, total: 5000, paymentMode: 'both', items: [], paymentDetails: { cash: 2000, card: 3000 } },
+];
 
 const paymentColumns: ColumnDef<Sale>[] = [
   {
@@ -105,7 +111,6 @@ export function PaymentsTab() {
     if (isDemoMode || !shopId || !firestore) return null;
     return collection(firestore, `shops/${shopId}/sales`);
   }, [shopId, firestore, isDemoMode]);
-  const { data: overviewSalesData, isLoading: isOverviewLoading } = useCollection<Sale>(salesCollectionRef);
   
   const [data, setData] = useState<Sale[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -127,6 +132,8 @@ export function PaymentsTab() {
   const [endMonth, setEndMonth] = useState('');
   const [endYear, setEndYear] = useState('');
   
+  const { data: overviewSalesData, isLoading: isOverviewLoading } = useCollection<Sale>(salesCollectionRef);
+
   const buildQuery = () => {
     if (!firestore || !shopId) return null;
     const baseRef = collection(firestore, `shops/${shopId}/sales`);
@@ -152,6 +159,12 @@ export function PaymentsTab() {
   };
   
   const fetchData = async () => {
+    if (isDemoMode) {
+      setData(demoSales);
+      setPageCount(Math.ceil(demoSales.length / pageSize));
+      return;
+    }
+
     const q = buildQuery();
     if (!q) return;
 
@@ -174,10 +187,10 @@ export function PaymentsTab() {
   };
   
   useEffect(() => {
-    if(!isDemoMode && shopId) fetchData();
-  }, [shopId, pageIndex, pageSize, sorting, isFilterActive]);
+    fetchData();
+  }, [shopId, pageIndex, pageSize, sorting, isFilterActive, isDemoMode]);
 
-  const originalData = overviewSalesData || [];
+  const originalData = isDemoMode ? demoSales : (overviewSalesData || []);
 
   const {
     filteredPaymentTotals,
@@ -363,12 +376,12 @@ export function PaymentsTab() {
               </Card>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
-            <PaymentBreakdownCard title="Today's Payments" totals={todayPaymentTotals} isLoading={isOverviewLoading} />
-            <PaymentBreakdownCard title="Yesterday's Payments" totals={yesterdayPaymentTotals} isLoading={isOverviewLoading} />
+            <PaymentBreakdownCard title="Today's Payments" totals={todayPaymentTotals} isLoading={isOverviewLoading && !isDemoMode} />
+            <PaymentBreakdownCard title="Yesterday's Payments" totals={yesterdayPaymentTotals} isLoading={isOverviewLoading && !isDemoMode} />
             <PaymentBreakdownCard 
                 title={isAnyFilterApplied ? "Filtered Totals" : "All-Time Totals"} 
                 totals={filteredPaymentTotals}
-                isLoading={isOverviewLoading}
+                isLoading={isOverviewLoading && !isDemoMode}
                 className={cn(
                     isAnyFilterApplied && "bg-accent/50 border-primary ring-2 ring-primary/50"
                 )}
@@ -381,7 +394,7 @@ export function PaymentsTab() {
           <Table>
             <TableHeader>{table.getHeaderGroups().map(hg => <TableRow key={hg.id}>{hg.headers.map(h => <TableHead key={h.id}>{h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}</TableHead>)}</TableRow>)}</TableHeader>
             <TableBody>
-              {isLoading ? <TableRow><TableCell colSpan={paymentColumns.length} className="h-24 text-center">Loading payments...</TableCell></TableRow>
+              {isLoading && !isDemoMode ? <TableRow><TableCell colSpan={paymentColumns.length} className="h-24 text-center">Loading payments...</TableCell></TableRow>
                 : table.getRowModel().rows?.length ? table.getRowModel().rows.map(row => (
                     <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
                       {row.getVisibleCells().map(cell => (
@@ -400,5 +413,3 @@ export function PaymentsTab() {
     </TooltipProvider>
   );
 }
-
-    

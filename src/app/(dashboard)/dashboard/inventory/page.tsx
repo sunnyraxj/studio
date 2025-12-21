@@ -54,7 +54,13 @@ import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast.tsx';
 
 const demoData: InventoryItem[] = [
-  // ... (existing demo data)
+    { id: '1', name: 'Cotton T-Shirt', sku: 'DEMO-TS-M', stock: 85, price: 499, margin: 30, status: 'in stock', dateAdded: '2023-10-01T10:00:00Z', expiryDate: null, category: 'Apparel', material: 'Cotton', size: 'M', gst: 5, hsn: '6109' , unit: 'pcs'},
+    { id: '2', name: 'Denim Jeans', sku: 'DEMO-JN-32', stock: 40, price: 1999, margin: 40, status: 'in stock', dateAdded: '2023-09-15T10:00:00Z', expiryDate: null, category: 'Apparel', material: 'Denim', size: '32', gst: 5, hsn: '6203', unit: 'pcs' },
+    { id: '3', name: 'Leather Jacket', sku: 'DEMO-LJ-L', stock: 9, price: 4999, margin: 50, status: 'low stock', dateAdded: '2023-08-20T10:00:00Z', expiryDate: null, category: 'Apparel', material: 'Leather', size: 'L', gst: 18, hsn: '4203', unit: 'pcs' },
+    { id: '4', name: 'Milk', sku: 'DEMO-MLK-1L', stock: 15, price: 60, margin: 10, status: 'in stock', dateAdded: '2023-10-25T10:00:00Z', expiryDate: new Date(Date.now() + 2 * 86400000).toISOString(), category: 'Groceries', material: 'Dairy', size: '1L', gst: 0, hsn: '0401', unit: 'ltr' },
+    { id: '5', name: 'Bread', sku: 'DEMO-BRD-WH', stock: 3, price: 40, margin: 15, status: 'low stock', dateAdded: '2023-10-26T10:00:00Z', expiryDate: new Date(Date.now() + 1 * 86400000).toISOString(), category: 'Bakery', material: 'Wheat', size: '400g', gst: 0, hsn: '1905', unit: 'pcs' },
+    { id: '6', name: 'Expired Ghee', sku: 'DEMO-GHE-EXP', stock: 10, price: 500, margin: 20, status: 'in stock', dateAdded: '2023-01-01T10:00:00Z', expiryDate: new Date(Date.now() - 5 * 86400000).toISOString(), category: 'Groceries', material: 'Dairy', size: '1kg', gst: 12, hsn: '0405', unit: 'kg' },
+    { id: '7', name: 'Running Shoes', sku: 'DEMO-SHOE-9', stock: 0, price: 2500, margin: 35, status: 'out of stock', dateAdded: '2023-07-01T10:00:00Z', expiryDate: null, category: 'Footwear', material: 'Mesh', size: '9', gst: 18, hsn: '6404', unit: 'pair' },
 ];
 
 export type InventoryItem = {
@@ -304,14 +310,14 @@ export default function InventoryPage() {
   const isDemoMode = !user;
   
   const userDocRef = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
+    if (isDemoMode || !user || !firestore) return null;
     return doc(firestore, `users/${user.uid}`);
-  }, [user, firestore]);
+  }, [user, firestore, isDemoMode]);
   const { data: userData } = useDoc<UserProfile>(userDocRef);
   const shopId = userData?.shopId;
 
   const [data, setData] = React.useState<InventoryItem[]>([]);
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [pageCount, setPageCount] = React.useState(0);
   const [lastVisible, setLastVisible] = React.useState<DocumentData | null>(null);
   const [firstVisible, setFirstVisible] = React.useState<DocumentData | null>(null);
@@ -340,9 +346,14 @@ export default function InventoryPage() {
   const fetchData = React.useCallback(async (pagination: PaginationState, sorting: SortingState) => {
     if (isDemoMode) {
         setData(demoData);
+        setPageCount(Math.ceil(demoData.length / pageSize));
+        setIsLoading(false);
         return;
     }
-    if (!firestore || !shopId) return;
+    if (!firestore || !shopId) {
+        setIsLoading(false);
+        return;
+    };
 
     setIsLoading(true);
 
@@ -531,7 +542,7 @@ export default function InventoryPage() {
             ))}
           </TableHeader>
           <TableBody>
-            {isLoading && !isDemoMode ? (
+            {isLoading ? (
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
@@ -562,7 +573,7 @@ export default function InventoryPage() {
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  {isDemoMode ? "No demo products." : "No products found. Add your first product!"}
+                  No products found. Add your first product!
                 </TableCell>
               </TableRow>
             )}

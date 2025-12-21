@@ -41,6 +41,11 @@ import type { Sale } from '../page';
 import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit, startAfter, getDocs, where, Query, DocumentData, getCountFromServer, doc } from 'firebase/firestore';
 
+const demoSales: Sale[] = [
+    { id: '1', invoiceNumber: 'D-INV-001', date: new Date().toISOString(), customer: { name: 'Ravi Kumar', phone: '9876543210' }, total: 2500, paymentMode: 'upi', items: [{ productId: '1', name: 'T-Shirt', quantity: 2, price: 500, margin: 25, sku: 'TS-01', hsn: '6109', gst: 5 }, { productId: '2', name: 'Jeans', quantity: 1, price: 1500, margin: 30, sku: 'JN-01', hsn: '6203', gst: 5 }] },
+    { id: '2', invoiceNumber: 'D-INV-002', date: new Date(Date.now() - 86400000).toISOString(), customer: { name: 'Priya Sharma', phone: '9876543211' }, total: 1200, paymentMode: 'card', items: [{ productId: '3', name: 'Sneakers', quantity: 1, price: 1200, margin: 40, sku: 'SH-01', hsn: '6404', gst: 18 }] },
+    { id: '3', invoiceNumber: 'D-INV-003', date: new Date(Date.now() - 172800000).toISOString(), customer: { name: 'Amit Singh', phone: '9876543212' }, total: 3500, paymentMode: 'cash', items: [{ productId: '4', name: 'Watch', quantity: 1, price: 3500, margin: 50, sku: 'WT-01', hsn: '9102', gst: 18 }] },
+];
 
 const salesColumns: ColumnDef<Sale>[] = [
   {
@@ -125,6 +130,7 @@ export function AllSalesTab() {
   const [endYear, setEndYear] = useState('');
   
   const buildQuery = () => {
+    if (isDemoMode) return null;
     if (!firestore || !shopId) return null;
 
     const salesCollectionRef = collection(firestore, `shops/${shopId}/sales`);
@@ -159,7 +165,12 @@ export function AllSalesTab() {
   }
 
   const fetchData = async () => {
-    if (isDemoMode) return;
+    if (isDemoMode) {
+      setData(demoSales);
+      setPageCount(Math.ceil(demoSales.length / pageSize));
+      return;
+    }
+
     const q = buildQuery();
     if (!q) return;
 
@@ -188,10 +199,8 @@ export function AllSalesTab() {
   };
 
   useEffect(() => {
-    if (!isDemoMode && shopId) {
-      fetchData();
-    }
-  }, [shopId, pageIndex, pageSize, sorting, isFilterActive]);
+    fetchData();
+  }, [shopId, pageIndex, pageSize, sorting, isFilterActive, isDemoMode]);
 
   const handleFilter = () => {
     setPageIndex(0); // Reset to first page
@@ -284,7 +293,7 @@ export function AllSalesTab() {
           <Table>
             <TableHeader>{table.getHeaderGroups().map(hg => <TableRow key={hg.id}>{hg.headers.map(h => <TableHead key={h.id}>{h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}</TableHead>)}</TableRow>)}</TableHeader>
             <TableBody>
-              {isLoading ? <TableRow><TableCell colSpan={salesColumns.length} className="h-24 text-center">Loading sales...</TableCell></TableRow>
+              {isLoading && !isDemoMode ? <TableRow><TableCell colSpan={salesColumns.length} className="h-24 text-center">Loading sales...</TableCell></TableRow>
                 : table.getRowModel().rows?.length ? table.getRowModel().rows.map(row => (
                   <React.Fragment key={row.id}>
                     <TableRow data-state={row.getIsSelected() && 'selected'}>
@@ -331,5 +340,3 @@ export function AllSalesTab() {
     </Card>
   );
 }
-
-    
