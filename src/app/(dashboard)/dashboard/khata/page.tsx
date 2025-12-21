@@ -32,7 +32,7 @@ import { DataTablePagination } from '@/components/data-table-pagination';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { CaretSortIcon, ChevronDownIcon, ChevronRightIcon } from '@radix-ui/react-icons';
-import { Search, PlusCircle, IndianRupee } from 'lucide-react';
+import { Search, PlusCircle, IndianRupee, HandCoins } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -42,28 +42,25 @@ import { collection, query, doc, addDoc, updateDoc, orderBy } from 'firebase/fir
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast.tsx';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
+
 
 type AggregatedKhata = {
     id: string;
     customerName: string;
     customerPhone: string;
     totalDue: number;
-    totalCredit: number;
-    unpaidEntriesCount: number;
     lastEntryDate: string;
     entries: KhataEntry[];
 }
 
 let demoKhataEntries: KhataEntry[] = [
-    { id: 'k1', customerName: 'Rohan Sharma', customerPhone: '9876543210', amount: 1500, notes: 'Groceries', date: new Date(Date.now() - 86400000 * 2).toISOString(), status: 'unpaid' },
-    { id: 'k2', customerName: 'Priya Patel', customerPhone: '9876543211', amount: 800, notes: '2 T-shirts', date: new Date(Date.now() - 86400000 * 5).toISOString(), status: 'unpaid' },
-    { id: 'k3', customerName: 'Rohan Sharma', customerPhone: '9876543210', amount: 500, notes: 'Paid back a bit', date: new Date(Date.now() - 86400000 * 1).toISOString(), status: 'paid' },
-    { id: 'k4', customerName: 'Amit Singh', customerPhone: '9876543212', amount: 6200, notes: 'Building materials', date: new Date(Date.now() - 86400000 * 10).toISOString(), status: 'unpaid' },
-    { id: 'k5', customerName: 'Sunita Devi', customerPhone: '9876543213', amount: 350, notes: 'Snacks and drinks', date: new Date(Date.now() - 86400000 * 3).toISOString(), status: 'unpaid' },
-    { id: 'k6', customerName: 'Priya Patel', customerPhone: '9876543211', amount: 200, notes: 'More items', date: new Date(Date.now() - 86400000 * 3).toISOString(), status: 'unpaid' },
+    { id: 'k1', customerName: 'Rohan Sharma', customerPhone: '9876543210', amount: 1500, notes: 'Groceries', date: new Date(Date.now() - 86400000 * 2).toISOString(), status: 'unpaid', type: 'credit' },
+    { id: 'k2', customerName: 'Priya Patel', customerPhone: '9876543211', amount: 800, notes: '2 T-shirts', date: new Date(Date.now() - 86400000 * 5).toISOString(), status: 'unpaid', type: 'credit' },
+    { id: 'k3', customerName: 'Rohan Sharma', customerPhone: '9876543210', amount: -500, notes: 'Paid back a bit', date: new Date(Date.now() - 86400000 * 1).toISOString(), status: 'paid', type: 'payment' },
+    { id: 'k4', customerName: 'Amit Singh', customerPhone: '9876543212', amount: 6200, notes: 'Building materials', date: new Date(Date.now() - 86400000 * 10).toISOString(), status: 'unpaid', type: 'credit' },
+    { id: 'k5', customerName: 'Sunita Devi', customerPhone: '9876543213', amount: 350, notes: 'Snacks and drinks', date: new Date(Date.now() - 86400000 * 3).toISOString(), status: 'unpaid', type: 'credit' },
+    { id: 'k6', customerName: 'Priya Patel', customerPhone: '9876543211', amount: 200, notes: 'More items', date: new Date(Date.now() - 86400000 * 3).toISOString(), status: 'unpaid', type: 'credit' },
 ];
 
 
@@ -72,12 +69,18 @@ export default function KhataBookPage() {
   const [expanded, setExpanded] = useState<ExpandedState>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isPayDialogOpen, setIsPayDialogOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<AggregatedKhata | null>(null);
   
   // Form state for new entry
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
+
+  // Form state for payment
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentNotes, setPaymentNotes] = useState('');
   
   const { user } = useUser();
   const firestore = useFirestore();
@@ -114,8 +117,6 @@ export default function KhataBookPage() {
                 customerName: entry.customerName,
                 customerPhone: entry.customerPhone,
                 totalDue: 0,
-                totalCredit: 0,
-                unpaidEntriesCount: 0,
                 lastEntryDate: entry.date,
                 entries: []
             });
@@ -123,11 +124,8 @@ export default function KhataBookPage() {
         
         const customer = customerMap.get(key)!;
         customer.entries.push(entry);
-        customer.totalCredit += entry.amount;
-        if(entry.status === 'unpaid') {
-            customer.totalDue += entry.amount;
-            customer.unpaidEntriesCount += 1;
-        }
+        customer.totalDue += entry.amount; // Positive for credit, negative for payment
+        
         if (new Date(entry.date) > new Date(customer.lastEntryDate)) {
             customer.lastEntryDate = entry.date;
         }
@@ -210,18 +208,13 @@ export default function KhataBookPage() {
       }
     },
     {
-        accessorKey: 'unpaidEntriesCount',
-        header: 'Unpaid Entries',
-        cell: ({ row }) => <div className="text-center">{row.getValue('unpaidEntriesCount')}</div>,
-    },
-    {
       accessorKey: 'totalDue',
       header: ({ column }) => (
         <Button variant="ghost" className="w-full justify-end" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
             Total Due <CaretSortIcon className="ml-2 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => <div className="text-right font-bold text-lg text-destructive">₹{row.original.totalDue.toLocaleString('en-IN')}</div>,
+      cell: ({ row }) => <div className={cn("text-right font-bold text-lg", row.original.totalDue > 0 ? 'text-destructive' : 'text-green-600' )}>₹{Math.abs(row.original.totalDue).toLocaleString('en-IN')}</div>,
     },
     {
       accessorKey: 'lastEntryDate',
@@ -232,6 +225,25 @@ export default function KhataBookPage() {
       ),
       cell: ({ row }) => <div className="text-right">{format(new Date(row.getValue('lastEntryDate')), 'dd MMM yyyy')}</div>,
     },
+    {
+        id: 'actions',
+        header: () => <div className="text-right">Actions</div>,
+        cell: ({ row }) => (
+            <div className="text-right">
+                <Button 
+                    size="sm" 
+                    onClick={() => {
+                        setSelectedCustomer(row.original);
+                        setIsPayDialogOpen(true);
+                    }}
+                    disabled={row.original.totalDue <= 0}
+                >
+                    <HandCoins className="mr-2 h-4 w-4" />
+                    Settle Dues
+                </Button>
+            </div>
+        )
+    }
   ];
 
   const table = useReactTable({
@@ -251,23 +263,24 @@ export default function KhataBookPage() {
     },
   });
   
-  const handleAddNewEntry = async () => {
+  const handleAddCreditEntry = async () => {
     if (!customerName || !amount) {
         toast({ variant: 'destructive', title: 'Missing Fields', description: 'Customer Name and Amount are required.' });
         return;
     }
     
+    const newEntry: Omit<KhataEntry, 'id'> = {
+        customerName,
+        customerPhone,
+        amount: parseFloat(amount),
+        notes,
+        date: new Date().toISOString(),
+        status: 'unpaid',
+        type: 'credit'
+    };
+
     if (isDemoMode) {
-        const newEntry: KhataEntry = {
-            id: `demo-${Date.now()}`,
-            customerName,
-            customerPhone,
-            amount: parseFloat(amount),
-            notes,
-            date: new Date().toISOString(),
-            status: 'unpaid'
-        };
-        setLocalDemoData(prevData => [newEntry, ...prevData]);
+        setLocalDemoData(prevData => [{...newEntry, id: `demo-${Date.now()}`}, ...prevData]);
         toast({ title: 'Success (Demo)', description: 'New credit entry added to memory.'});
     } else {
         if (!shopId || !firestore) {
@@ -276,14 +289,7 @@ export default function KhataBookPage() {
         }
         const khataCollectionRef = collection(firestore, `shops/${shopId}/khataEntries`);
         try {
-            await addDoc(khataCollectionRef, {
-                customerName,
-                customerPhone,
-                amount: parseFloat(amount),
-                notes,
-                date: new Date().toISOString(),
-                status: 'unpaid'
-            });
+            await addDoc(khataCollectionRef, newEntry);
             toast({ title: 'Success', description: 'New credit entry added.'});
         } catch(e: any) {
             toast({ variant: 'destructive', title: 'Error', description: e.message });
@@ -292,11 +298,49 @@ export default function KhataBookPage() {
     }
 
     setIsAddDialogOpen(false);
-    // Clear form
     setCustomerName('');
     setCustomerPhone('');
     setAmount('');
     setNotes('');
+  }
+
+  const handleAddPaymentEntry = async () => {
+     if (!selectedCustomer || !paymentAmount) {
+        toast({ variant: 'destructive', title: 'Missing Fields', description: 'Payment amount is required.' });
+        return;
+    }
+     const newEntry: Omit<KhataEntry, 'id'> = {
+        customerName: selectedCustomer.customerName,
+        customerPhone: selectedCustomer.customerPhone,
+        amount: -parseFloat(paymentAmount), // Payments are negative
+        notes: paymentNotes || 'Payment received',
+        date: new Date().toISOString(),
+        status: 'paid', // Payments are always "paid"
+        type: 'payment'
+    };
+
+     if (isDemoMode) {
+        setLocalDemoData(prevData => [{...newEntry, id: `demo-pay-${Date.now()}`}, ...prevData]);
+        toast({ title: 'Success (Demo)', description: 'Payment recorded in memory.'});
+    } else {
+         if (!shopId || !firestore) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Shop not found.' });
+            return;
+        }
+        const khataCollectionRef = collection(firestore, `shops/${shopId}/khataEntries`);
+        try {
+            await addDoc(khataCollectionRef, newEntry);
+            toast({ title: 'Success', description: 'Payment recorded successfully.'});
+        } catch(e: any) {
+            toast({ variant: 'destructive', title: 'Error', description: e.message });
+            return;
+        }
+    }
+
+    setIsPayDialogOpen(false);
+    setSelectedCustomer(null);
+    setPaymentAmount('');
+    setPaymentNotes('');
   }
 
   return (
@@ -379,15 +423,14 @@ export default function KhataBookPage() {
                       <TableRow>
                         <TableCell colSpan={khataColumns.length} className="p-0">
                           <div className="p-4 bg-muted/50">
-                            <h4 className="font-bold mb-2">Credit History for {row.original.customerName}</h4>
+                            <h4 className="font-bold mb-2">Transaction History for {row.original.customerName}</h4>
                             <Table>
                               <TableHeader>
                                 <TableRow>
                                   <TableHead>Date</TableHead>
                                   <TableHead>Notes</TableHead>
-                                  <TableHead>Status</TableHead>
+                                  <TableHead>Type</TableHead>
                                   <TableHead className="text-right">Amount</TableHead>
-                                  <TableHead className="text-right">Action</TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
@@ -395,12 +438,12 @@ export default function KhataBookPage() {
                                   <TableRow key={entry.id}>
                                     <TableCell>{format(new Date(entry.date), 'dd MMM yyyy')}</TableCell>
                                     <TableCell>{entry.notes}</TableCell>
-                                    <TableCell><Badge variant={entry.status === 'unpaid' ? 'destructive' : 'default'} className="capitalize">{entry.status}</Badge></TableCell>
-                                    <TableCell className="text-right">₹{entry.amount.toLocaleString('en-IN')}</TableCell>
-                                    <TableCell className="text-right">
-                                        {entry.status === 'unpaid' && (
-                                            <Button size="sm" variant="secondary" onClick={() => handleMarkAsPaid(entry.id)}>Mark Paid</Button>
-                                        )}
+                                    <TableCell>
+                                        <Badge variant={entry.type === 'credit' ? 'destructive' : 'default'} className="capitalize">{entry.type}</Badge>
+                                    </TableCell>
+                                    <TableCell className={cn("text-right font-semibold", entry.type === 'credit' ? 'text-destructive' : 'text-green-600')}>
+                                        {entry.type === 'payment' && '- '}
+                                        ₹{Math.abs(entry.amount).toLocaleString('en-IN')}
                                     </TableCell>
                                   </TableRow>
                                 ))}
@@ -418,7 +461,7 @@ export default function KhataBookPage() {
                     colSpan={khataColumns.length}
                     className="h-24 text-center"
                   >
-                    No credit entries found for the selected filters.
+                    No credit entries found.
                   </TableCell>
                 </TableRow>
               )}
@@ -485,10 +528,55 @@ export default function KhataBookPage() {
           </div>
           <DialogFooter>
             <DialogClose asChild>
-                <Button variant="outline" onClick={() => {}}>Cancel</Button>
+                <Button variant="outline">Cancel</Button>
             </DialogClose>
-            <Button onClick={handleAddNewEntry}>
+            <Button onClick={handleAddCreditEntry}>
                 Save Entry
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isPayDialogOpen} onOpenChange={setIsPayDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Record a Payment</DialogTitle>
+            <DialogDescription>
+              Record a payment received from <span className="font-bold">{selectedCustomer?.customerName}</span>.
+              Current due: <span className="font-bold text-destructive">₹{selectedCustomer?.totalDue.toLocaleString('en-IN')}</span>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+             <div className="space-y-2">
+                <Label htmlFor="payment-amount">Payment Amount (₹)</Label>
+                <div className="relative">
+                    <IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                        id="payment-amount"
+                        type="number"
+                        value={paymentAmount}
+                        onChange={(e) => setPaymentAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="pl-8"
+                    />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="payment-notes">Payment Notes (Optional)</Label>
+                <Textarea
+                    id="payment-notes"
+                    value={paymentNotes}
+                    onChange={(e) => setPaymentNotes(e.target.value)}
+                    placeholder="e.g., Paid via UPI"
+                />
+              </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+                <Button variant="outline" onClick={() => setSelectedCustomer(null)}>Cancel</Button>
+            </DialogClose>
+            <Button onClick={handleAddPaymentEntry}>
+                Save Payment
             </Button>
           </DialogFooter>
         </DialogContent>

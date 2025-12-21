@@ -76,6 +76,7 @@ export type KhataEntry = {
     notes: string;
     date: string;
     status: 'unpaid' | 'paid';
+    type: 'credit' | 'payment';
 }
 
 type UserProfile = {
