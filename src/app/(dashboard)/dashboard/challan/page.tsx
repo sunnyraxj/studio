@@ -310,7 +310,29 @@ export default function ChallanPage() {
             <Card className="flex-grow flex flex-col">
                 <CardHeader>
                     <div className="space-y-4">
-                        <div className="flex gap-2">
+                        <div className="p-2 space-y-2 border-b">
+                            <Label className="text-sm font-medium">Quick Item Entry</Label>
+                            <div className="flex items-center gap-2">
+                            <Input
+                                placeholder="Item Name"
+                                value={quickItemName}
+                                onChange={(e) => setQuickItemName(e.target.value)}
+                                className="h-8"
+                            />
+                            <Input
+                                type="number"
+                                placeholder="Qty"
+                                value={quickItemQty}
+                                onChange={(e) => setQuickItemQty(e.target.value)}
+                                className="h-8 w-20"
+                                min="1"
+                            />
+                            <Button size="sm" onClick={addQuickItemToCart} className="h-8">
+                                <PlusCircle className="h-4 w-4" />
+                            </Button>
+                            </div>
+                        </div>
+                        <div className="flex gap-2 pt-2">
                            <div className="relative flex-grow">
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
@@ -334,7 +356,7 @@ export default function ChallanPage() {
                     </div>
                 </CardHeader>
                 <CardContent className="flex-grow p-0">
-                    <ScrollArea className="h-[calc(100vh-220px)]">
+                    <ScrollArea className="h-[calc(100vh-280px)]">
                         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2 p-2">
                             {filteredProducts.map((product) => {
                                 const quantityInCart = getCartItemQuantity(product.id);
@@ -377,28 +399,6 @@ export default function ChallanPage() {
                     <ScrollArea className="h-full">
                         <div className="p-4 pt-0">
                             <Separator />
-                            <div className="p-2 space-y-2 border-b">
-                                <Label className="text-sm font-medium">Quick Item Entry</Label>
-                                <div className="flex items-center gap-2">
-                                <Input
-                                    placeholder="Item Name"
-                                    value={quickItemName}
-                                    onChange={(e) => setQuickItemName(e.target.value)}
-                                    className="h-8"
-                                />
-                                <Input
-                                    type="number"
-                                    placeholder="Qty"
-                                    value={quickItemQty}
-                                    onChange={(e) => setQuickItemQty(e.target.value)}
-                                    className="h-8 w-20"
-                                    min="1"
-                                />
-                                <Button size="sm" onClick={addQuickItemToCart} className="h-8">
-                                    <PlusCircle className="h-4 w-4" />
-                                </Button>
-                                </div>
-                            </div>
                             <div className="py-2">
                                 {cart.length === 0 ? (
                                      <div className="text-center text-muted-foreground py-10">
@@ -518,3 +518,5 @@ export default function ChallanPage() {
     </>
   );
 }
+
+    
