@@ -460,9 +460,9 @@ export default function KhataBookPage() {
                                     </Button>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button variant="outline" size="icon" className="h-8 w-8">
-                                                <DotsHorizontalIcon className="h-4 w-4" />
-                                                <span className="sr-only">More Actions</span>
+                                             <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                                                <HandCoins className="mr-2 h-4 w-4" />
+                                                Actions
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
