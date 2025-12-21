@@ -22,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { PlusCircle, Search, Trash2, MinusCircle, ChevronDown } from 'lucide-react';
+import { PlusCircle, Search, Trash2, MinusCircle, ChevronDown, IndianRupee } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import {
   RadioGroup,
@@ -38,7 +38,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, addDoc, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast.tsx';
 import {
   Collapsible,
@@ -46,19 +46,24 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Challan } from './components/challan';
+import { Invoice } from './components/invoice';
 
 
 type Product = {
   id: string;
   name: string;
+  price: number;
+  margin: number;
   sku?: string;
+  hsn?: string;
+  gst?: number;
   material?: string;
 };
 
 type CartItem = {
   product: Product;
   quantity: number;
+  discount: number;
 };
 
 type UserProfile = {
@@ -71,15 +76,32 @@ type ShopSettings = {
     companyGstin?: string;
     companyPhone?: string;
     logoUrl?: string;
+    bankName?: string;
+    accountNumber?: string;
+    ifscCode?: string;
+    upiId?: string;
+    companyState?: string;
 }
 
+type Sale = {
+    invoiceNumber: string;
+    date: string;
+}
+
+type PaymentDetails = {
+    cash?: number;
+    card?: number;
+    upi?: number;
+}
+
+
 const sampleProducts: Product[] = [
-  { id: "1", name: 'T-Shirt', sku: 'TS-01', material: 'Cotton' },
-  { id: "2", name: 'Jeans', sku: 'JN-01', material: 'Denim' },
-  { id: "3", name: 'Sneakers', sku: 'SH-01', material: 'Leather' },
+  { id: "1", name: 'T-Shirt', price: 250, margin: 25, sku: 'TS-01', hsn: '6109', gst: 5, material: 'Cotton' },
+  { id: "2", name: 'Jeans', price: 750, margin: 30, sku: 'JN-01', hsn: '6203', gst: 5, material: 'Denim' },
+  { id: "3", name: 'Sneakers', price: 1200, margin: 40, sku: 'SH-01', hsn: '6404', gst: 18, material: 'Leather' },
 ];
 
-export default function ChallanPage() {
+export default function InvoicePage() {
   const firestore = useFirestore();
   const { user } = useUser();
   const isDemoMode = !user;
@@ -118,27 +140,32 @@ export default function ChallanPage() {
   const [customerPin, setCustomerPin] = useState('');
   const [customerState, setCustomerState] = useState('');
   const [customerGstin, setCustomerGstin] = useState('');
+  const [paymentMode, setPaymentMode] = useState('cash');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMaterial, setSelectedMaterial] = useState('All');
-  const [challanNumber, setChallanNumber] = useState('');
-  const [challanNotes, setChallanNotes] = useState('');
-  const [paymentMode, setPaymentMode] = useState('none');
+  const [invoiceNumber, setInvoiceNumber] = useState('');
+  
+  const [paymentDetails, setPaymentDetails] = useState<PaymentDetails>({
+    cash: 0,
+    card: 0,
+    upi: 0,
+  });
 
   const [quickItemName, setQuickItemName] = useState('');
   const [quickItemQty, setQuickItemQty] = useState<number | string>(1);
 
-  const [isChallanOpen, setIsChallanOpen] = useState(false);
-  const [lastChallanData, setLastChallanData] = useState<any>(null);
-  const challanRef = useRef(null);
+  const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
+  const [lastSaleData, setLastSaleData] = useState<any>(null);
+  const invoiceRef = useRef(null);
 
   const handlePrint = () => {
-    const printContent = challanRef.current;
+    const printContent = invoiceRef.current;
     if (printContent) {
         const newWindow = window.open('', '_blank', 'width=800,height=600');
         if (newWindow) {
             const printableContent = (printContent as HTMLDivElement).innerHTML;
             
-            newWindow.document.write('<html><head><title>Print Challan</title>');
+            newWindow.document.write('<html><head><title>Print Invoice</title>');
             const styles = Array.from(document.styleSheets)
               .map(styleSheet => {
                   try {
@@ -161,23 +188,53 @@ export default function ChallanPage() {
             setTimeout(() => {
                 newWindow.print();
                 newWindow.close();
-                setIsChallanOpen(false);
-                setLastChallanData(null);
-                clearChallan();
+                setIsInvoiceOpen(false);
+                setLastSaleData(null);
+                clearSale();
             }, 500);
         }
     }
   };
   
 
-  const generateNextChallanNumber = async () => {
-    // In a real app, this would query Firestore for the last challan number.
+  const generateNextInvoiceNumber = async () => {
+    if (isDemoMode || !firestore || !shopId) {
+        const currentYear = new Date().getFullYear();
+        setInvoiceNumber(`INV-${currentYear}-0001`);
+        return;
+    }
+
     const currentYear = new Date().getFullYear();
-    setChallanNumber(`CHLN-${currentYear}-0001`);
+    const salesCollectionRef = collection(firestore, `shops/${shopId}/sales`);
+    
+    const q = query(
+        salesCollectionRef, 
+        orderBy('date', 'desc'), 
+        limit(1)
+    );
+
+    const querySnapshot = await getDocs(q);
+    let lastInvoiceNumber = 0;
+    
+    if (!querySnapshot.empty) {
+        const lastSale = querySnapshot.docs[0].data() as Sale;
+        const lastInvoice = lastSale.invoiceNumber;
+        
+        const parts = lastInvoice.split('-');
+        if (parts.length === 3) {
+            const yearOfLastInvoice = parseInt(parts[1], 10);
+            if (yearOfLastInvoice === currentYear) {
+                lastInvoiceNumber = parseInt(parts[2], 10);
+            }
+        }
+    }
+    
+    const nextInvoiceNumber = (lastInvoiceNumber + 1).toString().padStart(4, '0');
+    setInvoiceNumber(`INV-${currentYear}-${nextInvoiceNumber}`);
   };
 
   useEffect(() => {
-    generateNextChallanNumber();
+    generateNextInvoiceNumber();
   }, [shopId, isDemoMode, firestore]);
 
   const addToCart = (productToAdd: Product) => {
@@ -192,7 +249,7 @@ export default function ChallanPage() {
             : item
         );
       }
-      return [...prevCart, { product: productToAdd, quantity: 1 }];
+      return [...prevCart, { product: productToAdd, quantity: 1, discount: 0 }];
     });
   };
 
@@ -209,12 +266,14 @@ export default function ChallanPage() {
     const newProduct: Product = {
       id: `quick-${Date.now()}`,
       name: quickItemName,
+      price: 0, // Quick items need price to be entered manually or are 0
+      margin: 0,
       sku: 'N/A',
     };
 
     setCart((prevCart) => [
       ...prevCart,
-      { product: newProduct, quantity: Number(quickItemQty) },
+      { product: newProduct, quantity: Number(quickItemQty), discount: 0 },
     ]);
 
     // Reset form
@@ -235,18 +294,61 @@ export default function ChallanPage() {
         .filter((item): item is CartItem => item !== null);
     });
   };
+  
+  const updateDiscount = (productId: string, discount: number) => {
+    setCart((prevCart) =>
+      prevCart.map((item) =>
+        item.product.id === productId ? { ...item, discount: isNaN(discount) ? 0 : discount } : item
+      )
+    );
+  };
+
 
   const removeItem = (productId: string) => {
     setCart((prevCart) => prevCart.filter((item) => item.product.id !== productId));
   };
   
+  const { subtotal, cgst, sgst, igst, total } = useMemo(() => {
+    const isIntraState = (customerState || '').toLowerCase().trim() === (shopSettings?.companyState || 'Assam').toLowerCase().trim();
+
+    let subtotal = 0;
+    let cgst = 0;
+    let sgst = 0;
+    let igst = 0;
+
+    cart.forEach(item => {
+        const itemTotal = item.product.price * item.quantity;
+        const discountAmount = itemTotal * (item.discount / 100);
+        const taxableValue = itemTotal - discountAmount;
+        subtotal += taxableValue;
+
+        const gstRate = (item.product.gst || 0) / 100;
+        const itemGstAmount = taxableValue * gstRate;
+
+        if (isIntraState) {
+            cgst += itemGstAmount / 2;
+            sgst += itemGstAmount / 2;
+        } else {
+            igst += itemGstAmount;
+        }
+    });
+
+    const total = subtotal + cgst + sgst + igst;
+
+    return { subtotal, cgst, sgst, igst, total };
+
+  }, [cart, customerState, shopSettings]);
+  
+  const totalPaid = (paymentDetails.cash || 0) + (paymentDetails.card || 0) + (paymentDetails.upi || 0);
+  const remainingBalance = total - totalPaid;
+
   const filteredProducts = products.filter((product) => {
     const materialFilter = selectedMaterial === 'All' || product.material === selectedMaterial;
     if (!materialFilter) return false;
     return product.name.toLowerCase().includes(searchTerm.toLowerCase()) || product.sku?.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
-  const clearChallan = () => {
+  const clearSale = () => {
     setCart([]);
     setCustomerName('');
     setCustomerPhone('');
@@ -254,53 +356,105 @@ export default function ChallanPage() {
     setCustomerPin('');
     setCustomerState('');
     setCustomerGstin('');
-    setChallanNotes('');
-    setPaymentMode('none');
-    generateNextChallanNumber();
+    setPaymentMode('cash');
+    setPaymentDetails({ cash: 0, card: 0, upi: 0 });
+    generateNextInvoiceNumber();
   };
 
-  const generateChallan = async () => {
-    const challanData = {
+  const generateInvoice = async () => {
+    if (paymentMode === 'both' && remainingBalance.toFixed(2) !== '0.00') {
+        toast({
+            variant: 'destructive',
+            title: 'Payment Mismatch',
+            description: 'The total paid amount does not match the total sale amount.'
+        });
+        return;
+    }
+
+    const saleData = {
       date: new Date().toISOString(),
+      total: total,
+      subtotal: subtotal,
+      cgst,
+      sgst,
+      igst,
       items: cart.map(item => ({
         productId: item.product.id,
         name: item.product.name,
         quantity: item.quantity,
+        price: item.product.price,
+        discount: item.discount,
+        margin: item.product.margin || 0,
         sku: item.product.sku || '',
+        hsn: item.product.hsn || '',
+        gst: item.product.gst || 0,
       })),
       customer: {
-        name: customerName || 'N/A',
+        name: customerName || 'Walk-in Customer',
         phone: customerPhone,
         address: customerAddress,
         pin: customerPin,
         state: customerState,
         gstin: customerGstin,
       },
-      challanNumber: challanNumber,
-      notes: challanNotes,
+      invoiceNumber: invoiceNumber,
       paymentMode: paymentMode,
+      paymentDetails: paymentMode === 'both' ? paymentDetails : undefined
     };
     
-    setLastChallanData(challanData);
+    setLastSaleData(saleData);
 
-    toast({
-        title: 'Challan Generated',
-        description: `Challan ${challanNumber} is ready to print.`
-    });
-    setIsChallanOpen(true);
-    // In a real app, you would save `challanData` to a `challans` collection in Firestore.
+    if (isDemoMode) {
+      toast({
+        title: 'Invoice Generated (Demo)',
+        description: `Invoice ${invoiceNumber} is ready to print.`
+      });
+      setIsInvoiceOpen(true);
+      return;
+    }
+    
+    if (!firestore || !shopId) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Cannot find your shop. Please ensure you are subscribed.'
+      });
+      return;
+    }
+
+    try {
+      const salesCollectionRef = collection(firestore, `shops/${shopId}/sales`);
+      await addDoc(salesCollectionRef, saleData);
+      toast({
+        title: 'Sale Completed',
+        description: `Sale ${invoiceNumber} has been recorded.`
+      });
+      setIsInvoiceOpen(true);
+    } catch(error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error completing sale',
+        description: error.message
+      })
+    }
   };
 
   useEffect(() => {
-    if (isChallanOpen && lastChallanData) {
+    if (isInvoiceOpen && lastSaleData) {
         handlePrint();
     }
-  }, [isChallanOpen, lastChallanData]);
+  }, [isInvoiceOpen, lastSaleData]);
 
   const getCartItemQuantity = (productId: string) => {
     const item = cart.find(cartItem => cartItem.product.id === productId);
     return item ? item.quantity : 0;
   }
+  
+  const handlePaymentDetailChange = (method: keyof PaymentDetails, value: string) => {
+    const amount = parseFloat(value) || 0;
+    setPaymentDetails(prev => ({ ...prev, [method]: amount }));
+  };
+
 
   return (
     <>
@@ -377,6 +531,9 @@ export default function ChallanPage() {
                                         <div className="text-sm font-semibold text-center leading-tight">
                                             {product.name}
                                         </div>
+                                         <div className="text-xs text-foreground font-semibold mt-1">
+                                            MRP: ₹{product.price.toFixed(2)}
+                                        </div>
                                     </Card>
                                 )
                             })}
@@ -386,13 +543,13 @@ export default function ChallanPage() {
             </Card>
         </div>
 
-        {/* Right Column: Challan Details */}
+        {/* Right Column: Invoice Details */}
         <div className="lg:col-span-5 flex flex-col h-full">
             <Card className="h-full flex flex-col rounded-lg">
                 <CardHeader>
-                    <CardTitle>Delivery Challan</CardTitle>
+                    <CardTitle>Tax Invoice</CardTitle>
                     <CardDescription>
-                        {challanNumber ? `Challan #${challanNumber}` : '...'}
+                        {invoiceNumber ? `Invoice #${invoiceNumber}` : '...'}
                     </CardDescription>
                 </CardHeader>
                 <div className="flex-grow overflow-hidden">
@@ -409,7 +566,8 @@ export default function ChallanPage() {
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead>Item</TableHead>
-                                            <TableHead className="text-center w-[120px]">Qty</TableHead>
+                                            <TableHead className="text-center w-[100px]">Qty</TableHead>
+                                            <TableHead className="text-center w-[80px]">Disc(%)</TableHead>
                                             <TableHead className="w-[50px]"></TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -428,6 +586,16 @@ export default function ChallanPage() {
                                                         </Button>
                                                     </div>
                                                 </TableCell>
+                                                <TableCell className="text-center py-2">
+                                                    <Input
+                                                        type="number"
+                                                        className="h-8 w-16 text-center"
+                                                        value={item.discount}
+                                                        onChange={(e) => updateDiscount(item.product.id, parseFloat(e.target.value))}
+                                                        onFocus={(e) => e.target.select()}
+                                                        placeholder="0"
+                                                    />
+                                                </TableCell>
                                                 <TableCell className="text-right py-2">
                                                     <Button variant="ghost" size="icon" className='h-6 w-6 text-red-500 hover:text-red-700' onClick={() => removeItem(item.product.id)}>
                                                         <Trash2 className='h-4 w-4' />
@@ -441,14 +609,20 @@ export default function ChallanPage() {
                             </div>
                             <Separator />
                             <div className="p-4 space-y-4">
-                               <div className="space-y-2">
-                                    <Label htmlFor="customer-name">Receiver Name</Label>
-                                    <Input id="customer-name" placeholder="Enter Receiver's Name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="customer-name">Customer Name</Label>
+                                        <Input id="customer-name" placeholder="Walk-in Customer" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+                                    </div>
+                                    <div className="space-y-2">
+                                         <Label htmlFor="customer-state">State</Label>
+                                         <Input id="customer-state" placeholder="e.g. Assam" value={customerState} onChange={(e) => setCustomerState(e.target.value)} />
+                                    </div>
                                 </div>
                                 <Collapsible>
                                     <CollapsibleTrigger asChild>
                                         <Button variant="outline" size="sm" className="w-full">
-                                            Add Shipping Details
+                                            Add Shipping & GST Details
                                             <ChevronDown className="h-4 w-4 ml-2" />
                                         </Button>
                                     </CollapsibleTrigger>
@@ -467,12 +641,8 @@ export default function ChallanPage() {
                                                 <Input id="customer-pin" placeholder="e.g. 110001" value={customerPin} onChange={(e) => setCustomerPin(e.target.value)} />
                                             </div>
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="customer-state">State</Label>
-                                            <Input id="customer-state" placeholder="e.g. Delhi" value={customerState} onChange={(e) => setCustomerState(e.target.value)} />
-                                        </div>
                                          <div className="space-y-2">
-                                            <Label htmlFor="customer-gstin">Receiver GSTIN (Optional)</Label>
+                                            <Label htmlFor="customer-gstin">Customer GSTIN (Optional)</Label>
                                             <Input id="customer-gstin" placeholder="Enter GSTIN" value={customerGstin} onChange={(e) => setCustomerGstin(e.target.value)} />
                                         </div>
                                     </CollapsibleContent>
@@ -480,43 +650,67 @@ export default function ChallanPage() {
                                 <div className="space-y-2">
                                     <Label>Payment Mode</Label>
                                     <RadioGroup value={paymentMode} onValueChange={setPaymentMode} className="flex items-center flex-wrap gap-x-4 gap-y-2">
-                                        <div className="flex items-center space-x-2"><RadioGroupItem value="none" id="none" /><Label htmlFor="none">None</Label></div>
                                         <div className="flex items-center space-x-2"><RadioGroupItem value="cash" id="cash" /><Label htmlFor="cash">Cash</Label></div>
                                         <div className="flex items-center space-x-2"><RadioGroupItem value="card" id="card" /><Label htmlFor="card">Card</Label></div>
                                         <div className="flex items-center space-x-2"><RadioGroupItem value="upi" id="upi" /><Label htmlFor="upi">UPI</Label></div>
+                                        <div className="flex items-center space-x-2"><RadioGroupItem value="both" id="both" /><Label htmlFor="both">Both</Label></div>
                                     </RadioGroup>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="challan-notes">Notes / Remarks</Label>
-                                    <Textarea id="challan-notes" placeholder="e.g., Vehicle number, transport details" value={challanNotes} onChange={(e) => setChallanNotes(e.target.value)} />
-                                </div>
+                                 {paymentMode === 'both' && (
+                                    <Card className="p-4 bg-muted/50">
+                                        <h4 className="text-sm font-medium mb-2">Mixed Payment Details</h4>
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-2">
+                                                <Label htmlFor="cash-amount" className="w-16">Cash</Label>
+                                                <div className="relative flex-1"><IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input id="cash-amount" type="number" placeholder="0.00" className="pl-8" value={paymentDetails.cash || ''} onChange={(e) => handlePaymentDetailChange('cash', e.target.value)} /></div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Label htmlFor="card-amount" className="w-16">Card</Label>
+                                                <div className="relative flex-1"><IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input id="card-amount" type="number" placeholder="0.00" className="pl-8" value={paymentDetails.card || ''} onChange={(e) => handlePaymentDetailChange('card', e.target.value)} /></div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Label htmlFor="upi-amount" className="w-16">UPI</Label>
+                                                <div className="relative flex-1"><IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input id="upi-amount" type="number" placeholder="0.00" className="pl-8" value={paymentDetails.upi || ''} onChange={(e) => handlePaymentDetailChange('upi', e.target.value)} /></div>
+                                            </div>
+                                        </div>
+                                        <div className="mt-2 text-right text-sm font-medium">Remaining: <span className={remainingBalance !== 0 ? 'text-destructive' : 'text-green-600'}>₹{remainingBalance.toFixed(2)}</span></div>
+                                    </Card>
+                                )}
                             </div>
                         </div>
                     </ScrollArea>
                 </div>
                 <CardFooter className="mt-auto flex-none">
-                    <div className='w-full space-y-2'>
-                        <Button className="w-full" disabled={cart.length === 0} onClick={generateChallan}>Generate Challan</Button>
-                        <Button variant="destructive" className="w-full" onClick={clearChallan} disabled={cart.length === 0}><Trash2 className="mr-2 h-4 w-4" /> Clear</Button>
+                    <div className='w-full space-y-4'>
+                        <div className="space-y-1 text-sm">
+                            <div className="flex justify-between"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>
+                            {cgst > 0 && <div className="flex justify-between"><span>CGST</span><span>₹{cgst.toFixed(2)}</span></div>}
+                            {sgst > 0 && <div className="flex justify-between"><span>SGST</span><span>₹{sgst.toFixed(2)}</span></div>}
+                            {igst > 0 && <div className="flex justify-between"><span>IGST</span><span>₹{igst.toFixed(2)}</span></div>}
+                            <Separator />
+                            <div className="flex justify-between font-semibold text-lg"><span>Total</span><span>₹{total.toFixed(2)}</span></div>
+                        </div>
+                        <div className='w-full space-y-2'>
+                            <Button className="w-full" disabled={cart.length === 0 || (paymentMode === 'both' && remainingBalance.toFixed(2) !== '0.00')} onClick={generateInvoice}>Generate Invoice</Button>
+                            <Button variant="destructive" className="w-full" onClick={clearSale} disabled={cart.length === 0}><Trash2 className="mr-2 h-4 w-4" /> Clear</Button>
+                        </div>
                     </div>
                 </CardFooter>
             </Card>
         </div>
     </div>
     <div className='hidden print:block'>
-        <div ref={challanRef}>
-            {lastChallanData && <Challan challan={lastChallanData} settings={shopSettings} />}
+        <div ref={invoiceRef}>
+            {lastSaleData && <Invoice sale={lastSaleData} settings={shopSettings} />}
         </div>
     </div>
-    <Dialog open={isChallanOpen && !!lastChallanData} onOpenChange={(open) => { if (!open) { setIsChallanOpen(false); setLastChallanData(null); clearChallan(); }}}>
+    <Dialog open={isInvoiceOpen && !!lastSaleData} onOpenChange={(open) => { if (!open) { setIsInvoiceOpen(false); setLastSaleData(null); clearSale(); }}}>
         <DialogContent className="max-w-4xl p-0 border-0">
-             <div ref={challanRef}>
-                 <Challan challan={lastChallanData} settings={shopSettings} />
+             <div ref={invoiceRef}>
+                 <Invoice sale={lastSaleData} settings={shopSettings} />
              </div>
         </DialogContent>
     </Dialog>
     </>
   );
 }
-
-    

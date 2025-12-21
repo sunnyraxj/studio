@@ -80,7 +80,7 @@ const navLinks = [
    {
     href: '/dashboard/challan',
     icon: FileText,
-    label: 'Challan',
+    label: 'Invoice',
   },
   {
     href: '/dashboard/inventory',
