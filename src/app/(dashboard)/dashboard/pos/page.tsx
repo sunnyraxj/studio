@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
@@ -205,7 +205,7 @@ export default function POSPage() {
     setCart((prevCart) => prevCart.filter((item) => item.product.id !== productId));
   };
   
-  const { subtotal, cgst, sgst, igst, total } = useEffect(() => {
+  const { subtotal, cgst, sgst, igst, total } = useMemo(() => {
     const isIntraState = customerState.toLowerCase().trim() === 'assam';
 
     let subtotal = 0;
@@ -578,5 +578,3 @@ export default function POSPage() {
     </div>
   );
 }
-
-    
