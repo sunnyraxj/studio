@@ -480,12 +480,12 @@ export default function POSPage() {
                                 </div>
                                 <Collapsible>
                                     <CollapsibleTrigger asChild>
-                                        <Button variant="link" className="p-0 h-auto text-muted-foreground">
+                                        <Button variant="outline" size="sm" className="w-full">
                                             More Customer Details
-                                            <ChevronDown className="h-4 w-4 ml-1" />
+                                            <ChevronDown className="h-4 w-4 ml-2" />
                                         </Button>
                                     </CollapsibleTrigger>
-                                    <CollapsibleContent className="space-y-4 mt-2">
+                                    <CollapsibleContent className="space-y-4 mt-4">
                                         <div className="space-y-2">
                                             <Label htmlFor="customer-address">Address</Label>
                                             <Textarea id="customer-address" placeholder="Enter full address" value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} />
@@ -558,5 +558,3 @@ export default function POSPage() {
     </div>
   );
 }
-
-    
