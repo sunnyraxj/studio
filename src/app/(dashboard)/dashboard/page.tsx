@@ -14,7 +14,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
-import { IndianRupee } from 'lucide-react';
+import { IndianRupee, PartyPopper } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { subDays } from 'date-fns';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
@@ -23,6 +23,7 @@ import { MarginOverviewCard } from './components/margin-overview-card';
 import { cn } from '@/lib/utils';
 import { MonthlySalesChart } from './components/monthly-sales-chart';
 import { TopProductsChart } from './components/top-products-chart';
+import { Button } from '@/components/ui/button';
 
 
 // Common Types
@@ -69,6 +70,7 @@ export type Customer = {
 
 type UserProfile = {
   shopId?: string;
+  subscriptionType?: 'New' | 'Renew';
 };
 
 // Demo Data
@@ -186,13 +188,39 @@ export default function DashboardPage() {
 
 
   const isLoading = isAllSalesLoading && !isDemoMode;
+  const isNewSubscriber = userData?.subscriptionType === 'New';
 
   return (
     <TooltipProvider>
     <div className="flex-1 space-y-6">
-        <h2 className="text-3xl font-bold tracking-tight">
-            {isDemoMode ? 'Dashboard (Demo Mode)' : 'Dashboard'}
-        </h2>
+        <div className="flex items-center justify-between">
+            <h2 className="text-3xl font-bold tracking-tight">
+                {isDemoMode ? 'Dashboard (Demo Mode)' : 'Dashboard'}
+            </h2>
+        </div>
+        
+        {isNewSubscriber && (
+            <Card className="bg-accent/50 border-primary/50">
+                <CardHeader className="flex flex-row items-start gap-4">
+                    <div className="p-3 rounded-full bg-primary/20 text-primary">
+                        <PartyPopper className="h-6 w-6" />
+                    </div>
+                    <div>
+                        <CardTitle>Welcome to Apna Billing ERP!</CardTitle>
+                        <CardDescription>Congratulations on your new subscription. We're thrilled to have you on board.</CardDescription>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground mb-4">
+                       You're all set to start managing your business. The best place to start is by adding products to your inventory.
+                    </p>
+                    <Link href="/dashboard/inventory/add" passHref>
+                        <Button>Add Your First Product</Button>
+                    </Link>
+                </CardContent>
+            </Card>
+        )}
+
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
             <TabsList>
                 <TabsTrigger value="overview">Overview</TabsTrigger>
