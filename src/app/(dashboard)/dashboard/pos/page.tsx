@@ -465,7 +465,7 @@ export default function POSPage() {
                             </div>
                             <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
                                 <SelectTrigger className="w-[180px]">
-                                    <SelectValue placeholder="Filter material" />
+                                    <SelectValue placeholder="Material Filter" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {uniqueMaterials.map(material => (
@@ -705,5 +705,3 @@ export default function POSPage() {
     </>
   );
 }
-
-    
