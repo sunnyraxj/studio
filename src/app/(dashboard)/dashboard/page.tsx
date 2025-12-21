@@ -33,9 +33,17 @@ export type Sale = {
   customer: {
     name: string;
     phone?: string;
+    address?: string;
+    pin?: string;
+    state?: string;
+    gstin?: string;
   };
   date: string;
   total: number;
+  subtotal: number;
+  cgst: number;
+  sgst: number;
+  igst: number;
   items: SaleItem[];
   paymentMode: 'cash' | 'card' | 'upi' | 'both';
   paymentDetails?: {
@@ -86,17 +94,17 @@ type UserProfile = {
 
 // Demo Data
 const demoSales: Sale[] = [
-    { id: '1', invoiceNumber: 'INV123', date: new Date().toISOString(), customer: { name: 'Ravi Kumar', phone: '9876543210' }, total: 2500, paymentMode: 'upi', items: [{ productId: '1', name: 'T-Shirt', quantity: 2, price: 500, margin: 25, sku: 'TS-01', hsn: '6109', gst: 5 }, { productId: '2', name: 'Jeans', quantity: 1, price: 1500, margin: 30, sku: 'JN-01', hsn: '6203', gst: 5 }] },
-    { id: '2', invoiceNumber: 'INV124', date: new Date(Date.now() - 86400000).toISOString(), customer: { name: 'Priya Sharma', phone: '9876543211' }, total: 1200, paymentMode: 'card', items: [{ productId: '3', name: 'Sneakers', quantity: 1, price: 1200, margin: 40, sku: 'SH-01', hsn: '6404', gst: 18 }] },
-    { id: '3', invoiceNumber: 'INV125', date: new Date(Date.now() - 172800000).toISOString(), customer: { name: 'Amit Singh', phone: '9876543212' }, total: 3500, paymentMode: 'cash', items: [{ productId: '4', name: 'Watch', quantity: 1, price: 3500, margin: 50, sku: 'WT-01', hsn: '9102', gst: 18 }] },
+    { id: '1', invoiceNumber: 'D-INV-001', customer: { name: 'Ravi Kumar', phone: '9876543210', state: 'Assam', gstin: '18ABCDE1234F1Z5' }, date: new Date().toISOString(), total: 2625, subtotal: 2500, cgst: 62.5, sgst: 62.5, igst: 0, items: [{ productId: '1', name: 'T-Shirt', quantity: 2, price: 500, margin: 25, sku: 'TS-01', hsn: '6109', gst: 5 }, { productId: '2', name: 'Jeans', quantity: 1, price: 1500, margin: 30, sku: 'JN-01', hsn: '6203', gst: 5 }] },
+    { id: '2', invoiceNumber: 'D-INV-002', date: new Date(Date.now() - 86400000).toISOString(), customer: { name: 'Priya Sharma', phone: '9876543211', state: 'Delhi' }, total: 1416, subtotal: 1200, cgst: 0, sgst: 0, igst: 216, items: [{ productId: '3', name: 'Sneakers', quantity: 1, price: 1200, margin: 40, sku: 'SH-01', hsn: '6404', gst: 18 }] },
+    { id: '3', invoiceNumber: 'D-INV-003', date: new Date(Date.now() - 172800000).toISOString(), customer: { name: 'Amit Singh', phone: '9876543212', state: 'Assam' }, total: 4130, subtotal: 3500, cgst: 315, sgst: 315, igst: 0, items: [{ productId: '4', name: 'Watch', quantity: 1, price: 3500, margin: 50, sku: 'WT-01', hsn: '9102', gst: 18 }] },
+    { id: '4', invoiceNumber: 'D-INV-004', date: new Date().toISOString(), customer: { name: 'Sunita Gupta', state: 'Assam' }, total: 5000, subtotal: 5000, cgst: 0, sgst: 0, igst: 0, paymentMode: 'both', items: [], paymentDetails: { cash: 2000, card: 3000 } },
 ];
 
 export const demoCustomers: Customer[] = [
-    { id: '1', name: 'Ravi Kumar', phone: '9876543210', invoiceNumbers: ['INV123', 'INV128'], lastPurchaseDate: new Date().toISOString() },
-    { id: '2', name: 'Priya Sharma', phone: '9876543211', invoiceNumbers: ['INV124'], lastPurchaseDate: new Date(Date.now() - 86400000).toISOString() },
-    { id: '3', name: 'Amit Singh', phone: '9876543212', invoiceNumbers: ['INV125', 'INV129', 'INV130'], lastPurchaseDate: new Date(Date.now() - 172800000).toISOString() },
-    { id: '4', name: 'Sunita Gupta', phone: '9876543213', invoiceNumbers: ['INV126'], lastPurchaseDate: new Date(Date.now() - 259200000).toISOString() },
-    { id: '5', name: 'Vikas Patel', phone: '9876543214', invoiceNumbers: ['INV127'], lastPurchaseDate: new Date(Date.now() - 345600000).toISOString() },
+    { id: '1', name: 'Ravi Kumar', phone: '9876543210', invoiceNumbers: ['D-INV-001'], lastPurchaseDate: new Date().toISOString() },
+    { id: '2', name: 'Priya Sharma', phone: '9876543211', invoiceNumbers: ['D-INV-002'], lastPurchaseDate: new Date(Date.now() - 86400000).toISOString() },
+    { id: '3', name: 'Amit Singh', phone: '9876543212', invoiceNumbers: ['D-INV-003'], lastPurchaseDate: new Date(Date.now() - 172800000).toISOString() },
+    { id: '4', name: 'Sunita Gupta', phone: '9876543213', invoiceNumbers: ['D-INV-004'], lastPurchaseDate: new Date().toISOString() },
 ];
 
 const LoadingComponent = () => (
@@ -125,6 +133,9 @@ const CustomersTab = dynamic(() => import('./components/customers-tab').then(mod
   loading: () => <LoadingComponent />,
 });
 const PaymentsTab = dynamic(() => import('./components/payments-tab').then(mod => mod.PaymentsTab), {
+  loading: () => <LoadingComponent />,
+});
+const GstTab = dynamic(() => import('./components/gst-tab').then(mod => mod.GstTab), {
   loading: () => <LoadingComponent />,
 });
 
@@ -238,6 +249,7 @@ export default function DashboardPage() {
                 <TabsTrigger value="reports">Reports</TabsTrigger>
                 <TabsTrigger value="payments">Payments</TabsTrigger>
                 <TabsTrigger value="customers">Customers</TabsTrigger>
+                <TabsTrigger value="gst">GST Reports</TabsTrigger>
             </TabsList>
             <TabsContent value="overview" className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -319,10 +331,11 @@ export default function DashboardPage() {
             <TabsContent value="customers">
                 <CustomersTab isDemoMode={isDemoMode} />
             </TabsContent>
+            <TabsContent value="gst">
+                <GstTab />
+            </TabsContent>
         </Tabs>
     </div>
     </TooltipProvider>
   );
 }
-
-    
