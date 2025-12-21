@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -134,7 +133,6 @@ export default function POSPage() {
     const currentYear = new Date().getFullYear();
     const salesCollectionRef = collection(firestore, `shops/${shopId}/sales`);
     
-    // Query for the last sale of the current year
     const q = query(
         salesCollectionRef, 
         orderBy('date', 'desc'), 
@@ -146,7 +144,7 @@ export default function POSPage() {
     
     if (!querySnapshot.empty) {
         const lastSale = querySnapshot.docs[0].data() as Sale;
-        const lastInvoice = lastSale.invoiceNumber; // e.g., "INV-2024-0015"
+        const lastInvoice = lastSale.invoiceNumber;
         
         const parts = lastInvoice.split('-');
         if (parts.length === 3) {
@@ -206,20 +204,39 @@ export default function POSPage() {
   const removeItem = (productId: string) => {
     setCart((prevCart) => prevCart.filter((item) => item.product.id !== productId));
   };
-
-  const getSubtotal = () => {
-    return cart.reduce((acc, item) => {
-      const itemTotal = item.product.price * item.quantity;
-      const discountAmount = itemTotal * (item.discount / 100);
-      return acc + (itemTotal - discountAmount);
-    }, 0);
-  };
-
-  const subtotal = getSubtotal();
-  const taxRate = 0.05; // 5%
-  const tax = subtotal * taxRate;
-  const total = subtotal + tax;
   
+  const { subtotal, cgst, sgst, igst, total } = useEffect(() => {
+    const isIntraState = customerState.toLowerCase().trim() === 'assam';
+
+    let subtotal = 0;
+    let cgst = 0;
+    let sgst = 0;
+    let igst = 0;
+
+    cart.forEach(item => {
+        const itemTotal = item.product.price * item.quantity;
+        const discountAmount = itemTotal * (item.discount / 100);
+        const taxableValue = itemTotal - discountAmount;
+        subtotal += taxableValue;
+
+        const gstRate = (item.product.gst || 0) / 100;
+        const itemGstAmount = taxableValue * gstRate;
+
+        if (isIntraState) {
+            cgst += itemGstAmount / 2;
+            sgst += itemGstAmount / 2;
+        } else {
+            igst += itemGstAmount;
+        }
+    });
+
+    const total = subtotal + cgst + sgst + igst;
+
+    return { subtotal, cgst, sgst, igst, total };
+
+  }, [cart, customerState]);
+
+
   const totalPaid = (paymentDetails.cash || 0) + (paymentDetails.card || 0) + (paymentDetails.upi || 0);
   const remainingBalance = total - totalPaid;
 
@@ -277,8 +294,9 @@ export default function POSPage() {
       date: new Date().toISOString(),
       total: total,
       subtotal: subtotal,
-      tax: tax,
-      taxRate: taxRate,
+      cgst,
+      sgst,
+      igst,
       items: cart.map(item => ({
         productId: item.product.id,
         name: item.product.name,
@@ -497,7 +515,7 @@ export default function POSPage() {
                                             </div>
                                             <div className="space-y-2">
                                                 <Label htmlFor="customer-state">State</Label>
-                                                <Input id="customer-state" placeholder="e.g. Delhi" value={customerState} onChange={(e) => setCustomerState(e.target.value)} />
+                                                <Input id="customer-state" placeholder="e.g. Assam" value={customerState} onChange={(e) => setCustomerState(e.target.value)} />
                                             </div>
                                         </div>
                                         <div className="space-y-2">
@@ -541,9 +559,11 @@ export default function POSPage() {
                 </div>
                 <CardFooter className="mt-auto flex-none">
                     <div className='w-full space-y-4'>
-                        <div className="space-y-1">
+                        <div className="space-y-1 text-sm">
                             <div className="flex justify-between"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>
-                            <div className="flex justify-between"><span>Tax ({(taxRate * 100).toFixed(0)}%)</span><span>₹{tax.toFixed(2)}</span></div>
+                            {cgst > 0 && <div className="flex justify-between"><span>CGST</span><span>₹{cgst.toFixed(2)}</span></div>}
+                            {sgst > 0 && <div className="flex justify-between"><span>SGST</span><span>₹{sgst.toFixed(2)}</span></div>}
+                            {igst > 0 && <div className="flex justify-between"><span>IGST</span><span>₹{igst.toFixed(2)}</span></div>}
                             <Separator />
                             <div className="flex justify-between font-semibold text-lg"><span>Total</span><span>₹{total.toFixed(2)}</span></div>
                         </div>
@@ -558,3 +578,5 @@ export default function POSPage() {
     </div>
   );
 }
+
+    
