@@ -101,8 +101,8 @@ export const Invoice: React.FC<InvoiceProps> = ({ sale, settings }) => {
                     </div>
                 </div>
                 <div className="text-right">
-                    <h2 className="text-xl font-bold uppercase">Tax Invoice</h2>
-                    <p><strong>Invoice No:</strong> {invoiceNumber}</p>
+                    <h2 className="text-xl font-bold uppercase">Delivery Challan</h2>
+                    <p><strong>Challan No:</strong> {invoiceNumber}</p>
                     <p><strong>Date:</strong> {format(new Date(date), 'dd-MMM-yyyy')}</p>
                 </div>
             </div>
@@ -206,3 +206,5 @@ export const Invoice: React.FC<InvoiceProps> = ({ sale, settings }) => {
         </div>
     );
 };
+
+    

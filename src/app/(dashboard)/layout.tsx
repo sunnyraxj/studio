@@ -80,7 +80,7 @@ const navLinks = [
    {
     href: '/dashboard/challan',
     icon: FileText,
-    label: 'Invoice',
+    label: 'Challan',
   },
   {
     href: '/dashboard/inventory',
@@ -355,3 +355,5 @@ export default function DashboardLayout({
     </SidebarProvider>
   );
 }
+
+    

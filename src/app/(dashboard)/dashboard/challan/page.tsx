@@ -373,10 +373,10 @@ export default function InvoicePage() {
             <div className="flex items-start">
               <div className="ml-3 flex-1">
                 <p className="text-sm font-medium text-gray-900">
-                  Invoice Generated!
+                  Challan Generated!
                 </p>
                 <p className="mt-1 text-sm text-gray-500">
-                  Invoice {invoiceNumber} has been recorded.
+                  Challan {invoiceNumber} has been recorded.
                 </p>
               </div>
             </div>
@@ -398,7 +398,7 @@ export default function InvoicePage() {
   }
 
 
-  const generateInvoice = async () => {
+  const generateChallan = async () => {
     if (paymentMode === 'both' && remainingBalance.toFixed(2) !== '0.00') {
         hotToast.error('The total paid amount does not match the total sale amount.');
         return;
@@ -448,7 +448,7 @@ export default function InvoicePage() {
     }
 
     try {
-      const salesCollectionRef = collection(firestore, `shops/${shopId}/sales`);
+      const salesCollectionRef = collection(firestore, `shops/${shopId}/challans`);
       await addDoc(salesCollectionRef, saleData);
       showPrintToast();
     } catch(error: any) {
@@ -594,9 +594,9 @@ export default function InvoicePage() {
         <div className="lg:col-span-5 flex flex-col h-full">
             <Card className="h-full flex flex-col rounded-lg">
                 <CardHeader>
-                    <CardTitle>Tax Invoice</CardTitle>
+                    <CardTitle>Delivery Challan</CardTitle>
                     <CardDescription>
-                        {invoiceNumber ? `Invoice #${invoiceNumber}` : '...'}
+                        {invoiceNumber ? `Challan #${invoiceNumber}` : '...'}
                     </CardDescription>
                 </CardHeader>
                 <div className="flex-grow overflow-hidden">
@@ -738,7 +738,7 @@ export default function InvoicePage() {
                             <div className="flex justify-between font-semibold text-lg"><span>Total</span><span>₹{total.toFixed(2)}</span></div>
                         </div>
                         <div className='w-full space-y-2'>
-                            <Button className="w-full" disabled={cart.length === 0 || (paymentMode === 'both' && remainingBalance.toFixed(2) !== '0.00')} onClick={generateInvoice}>Generate Invoice</Button>
+                            <Button className="w-full" disabled={cart.length === 0 || (paymentMode === 'both' && remainingBalance.toFixed(2) !== '0.00')} onClick={generateChallan}>Generate Challan</Button>
                             <Button variant="destructive" className="w-full" onClick={clearSale} disabled={cart.length === 0}><Trash2 className="mr-2 h-4 w-4" /> Clear</Button>
                         </div>
                     </div>
@@ -754,8 +754,8 @@ export default function InvoicePage() {
     <Dialog open={isInvoiceOpen && !!lastSaleData} onOpenChange={(open) => { if (!open) { setIsInvoiceOpen(false); setLastSaleData(null); }}}>
         <DialogContent className="max-w-4xl p-0 border-0">
              <DialogHeader className="sr-only">
-                <DialogTitle>Invoice</DialogTitle>
-                <DialogDescription>A preview of the invoice for printing.</DialogDescription>
+                <DialogTitle>Challan</DialogTitle>
+                <DialogDescription>A preview of the challan for printing.</DialogDescription>
             </DialogHeader>
              <div ref={invoiceRef}>
                  <Invoice sale={lastSaleData} settings={shopSettings} />
