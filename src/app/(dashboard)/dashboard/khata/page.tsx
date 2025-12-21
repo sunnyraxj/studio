@@ -380,8 +380,8 @@ export default function KhataBookPage() {
                 <p className="text-sm text-muted-foreground">Grand Total Due</p>
                 <p className="text-2xl font-bold text-destructive">₹{grandTotalDue.toLocaleString('en-IN')}</p>
             </div>
-            <Button onClick={() => setIsAddDialogOpen(true)}>
-                <PlusCircle className="mr-2 h-4 w-4" /> Add New Udhar
+            <Button onClick={() => setIsAddDialogOpen(true)} className="bg-green-600 hover:bg-green-700">
+                <PlusCircle className="mr-2 h-4 w-4" /> Add New Credit
             </Button>
         </div>
       </CardHeader>
@@ -524,7 +524,7 @@ export default function KhataBookPage() {
        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add New Credit (Udhar)</DialogTitle>
+            <DialogTitle>Add New Credit</DialogTitle>
             <DialogDescription>
               Enter the details for the new credit entry.
             </DialogDescription>
