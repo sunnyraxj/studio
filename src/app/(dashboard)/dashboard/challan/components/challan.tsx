@@ -27,6 +27,7 @@ type Challan = {
   };
   challanNumber: string;
   notes?: string;
+  paymentMode?: string;
 };
 
 interface ChallanProps {
@@ -44,7 +45,8 @@ export const Challan: React.FC<ChallanProps> = ({ challan, settings }) => {
         date,
         customer,
         items,
-        notes
+        notes,
+        paymentMode
     } = challan;
 
     return (
@@ -69,6 +71,7 @@ export const Challan: React.FC<ChallanProps> = ({ challan, settings }) => {
                  <div className="text-right">
                     <p><strong>Challan No:</strong> {challanNumber}</p>
                     <p><strong>Date:</strong> {format(new Date(date), 'dd-MMM-yyyy')}</p>
+                    {paymentMode && paymentMode !== 'none' && <p><strong>Payment Mode:</strong> <span className="capitalize">{paymentMode}</span></p>}
                     <div className="mt-4">
                         <h3 className="font-bold mb-1">To (Billed To & Shipped To):</h3>
                         <p className="font-semibold">{customer.name}</p>

@@ -25,6 +25,10 @@ import {
 import { PlusCircle, Search, Trash2, MinusCircle, ChevronDown } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import {
+  RadioGroup,
+  RadioGroupItem,
+} from '@/components/ui/radio-group';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -118,6 +122,7 @@ export default function ChallanPage() {
   const [selectedMaterial, setSelectedMaterial] = useState('All');
   const [challanNumber, setChallanNumber] = useState('');
   const [challanNotes, setChallanNotes] = useState('');
+  const [paymentMode, setPaymentMode] = useState('none');
 
   const [isChallanOpen, setIsChallanOpen] = useState(false);
   const [lastChallanData, setLastChallanData] = useState<any>(null);
@@ -221,6 +226,7 @@ export default function ChallanPage() {
     setCustomerState('');
     setCustomerGstin('');
     setChallanNotes('');
+    setPaymentMode('none');
     generateNextChallanNumber();
   };
 
@@ -243,6 +249,7 @@ export default function ChallanPage() {
       },
       challanNumber: challanNumber,
       notes: challanNotes,
+      paymentMode: paymentMode,
     };
     
     setLastChallanData(challanData);
@@ -419,6 +426,15 @@ export default function ChallanPage() {
                                         </div>
                                     </CollapsibleContent>
                                 </Collapsible>
+                                <div className="space-y-2">
+                                    <Label>Payment Mode</Label>
+                                    <RadioGroup value={paymentMode} onValueChange={setPaymentMode} className="flex items-center flex-wrap gap-x-4 gap-y-2">
+                                        <div className="flex items-center space-x-2"><RadioGroupItem value="none" id="none" /><Label htmlFor="none">None</Label></div>
+                                        <div className="flex items-center space-x-2"><RadioGroupItem value="cash" id="cash" /><Label htmlFor="cash">Cash</Label></div>
+                                        <div className="flex items-center space-x-2"><RadioGroupItem value="card" id="card" /><Label htmlFor="card">Card</Label></div>
+                                        <div className="flex items-center space-x-2"><RadioGroupItem value="upi" id="upi" /><Label htmlFor="upi">UPI</Label></div>
+                                    </RadioGroup>
+                                </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="challan-notes">Notes / Remarks</Label>
                                     <Textarea id="challan-notes" placeholder="e.g., Vehicle number, transport details" value={challanNotes} onChange={(e) => setChallanNotes(e.target.value)} />
