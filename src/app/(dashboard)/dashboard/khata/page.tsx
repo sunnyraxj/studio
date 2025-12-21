@@ -287,6 +287,7 @@ export default function KhataBookPage() {
     state: { sorting, expanded },
     onSortingChange: setSorting,
     onExpandedChange: setExpanded,
+    getRowCanExpand: () => true,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
