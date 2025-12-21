@@ -223,7 +223,7 @@
         },
         "paymentMode": {
           "type": "string",
-          "enum": ["cash", "card", "upi", "both"]
+          "enum": ["cash", "card", "upi", "both", "credit"]
         },
         "paymentDetails": {
           "type": "object",
@@ -232,6 +232,19 @@
             "card": { "type": "number" },
             "upi": { "type": "number" }
           }
+        },
+        "status": {
+            "type": "string",
+            "enum": ["paid", "partial", "unpaid"],
+            "description": "The payment status of the sale."
+        },
+        "amountPaid": {
+            "type": "number",
+            "description": "The amount paid by the customer."
+        },
+        "amountDue": {
+            "type": "number",
+            "description": "The outstanding amount due from the customer."
         }
       },
       "required": [
@@ -239,7 +252,10 @@
         "date",
         "total",
         "items",
-        "paymentMode"
+        "paymentMode",
+        "status",
+        "amountPaid",
+        "amountDue"
       ]
     }
   },

@@ -21,6 +21,7 @@ import {
   IndianRupee,
   CreditCard,
   AlertTriangle,
+  BookUser,
 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -78,6 +79,11 @@ const navLinks = [
     href: '/dashboard/inventory',
     icon: Package,
     label: 'Inventory',
+  },
+  {
+    href: '/dashboard/khata',
+    icon: BookUser,
+    label: 'Khata Book',
   },
   {
     href: '/dashboard/subscription',
