@@ -492,10 +492,20 @@ export default function POSPage() {
                                         <Input id="customer-name" placeholder="Enter customer name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
                                     </div>
                                     <div className="space-y-2">
+                                         <Label htmlFor="customer-state">State</Label>
+                                         <Input id="customer-state" placeholder="e.g. Assam" value={customerState} onChange={(e) => setCustomerState(e.target.value)} />
+                                    </div>
+                                </div>
+                                 <div className="grid grid-cols-2 gap-4">
+                                     <div className="space-y-2">
                                         <Label htmlFor="customer-phone">Customer Phone</Label>
                                         <Input id="customer-phone" placeholder="Enter phone number" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
                                     </div>
-                                </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="customer-pin">PIN Code</Label>
+                                        <Input id="customer-pin" placeholder="e.g. 110001" value={customerPin} onChange={(e) => setCustomerPin(e.target.value)} />
+                                    </div>
+                                 </div>
                                 <Collapsible>
                                     <CollapsibleTrigger asChild>
                                         <Button variant="outline" size="sm" className="w-full">
@@ -507,16 +517,6 @@ export default function POSPage() {
                                         <div className="space-y-2">
                                             <Label htmlFor="customer-address">Address</Label>
                                             <Textarea id="customer-address" placeholder="Enter full address" value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} />
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="customer-pin">PIN Code</Label>
-                                                <Input id="customer-pin" placeholder="e.g. 110001" value={customerPin} onChange={(e) => setCustomerPin(e.target.value)} />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="customer-state">State</Label>
-                                                <Input id="customer-state" placeholder="e.g. Assam" value={customerState} onChange={(e) => setCustomerState(e.target.value)} />
-                                            </div>
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="customer-gstin">Customer GSTIN</Label>
