@@ -1,3 +1,4 @@
+
 "use client"
 
 // Inspired by react-hot-toast library
@@ -193,8 +194,5 @@ function useToast() {
   }
 }
 
-function ToasterProvider({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
-}
 
-export { useToast, toast, ToasterProvider }
+export { useToast, toast }

@@ -39,7 +39,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, doc, addDoc, query, orderBy, limit, getDocs } from 'firebase/firestore';
-import { toast } from '@/hooks/use-toast.tsx';
+import { toast as hotToast } from 'react-hot-toast';
 import {
   Collapsible,
   CollapsibleContent,
@@ -258,11 +258,7 @@ export default function InvoicePage() {
 
   const addQuickItemToCart = () => {
     if (!quickItemName || !quickItemQty || !quickItemPrice) {
-      toast({
-        variant: 'destructive',
-        title: 'Missing Details',
-        description: 'Please enter item name, quantity, and MRP.',
-      });
+      hotToast.error('Please enter item name, quantity, and MRP.');
       return;
     }
 
@@ -365,14 +361,46 @@ export default function InvoicePage() {
     setPaymentDetails({ cash: 0, card: 0, upi: 0 });
     generateNextInvoiceNumber();
   };
+  
+  const showPrintToast = () => {
+      hotToast.custom((t) => (
+        <div
+          className={`${
+            t.visible ? 'animate-enter' : 'animate-leave'
+          } max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
+        >
+          <div className="flex-1 w-0 p-4">
+            <div className="flex items-start">
+              <div className="ml-3 flex-1">
+                <p className="text-sm font-medium text-gray-900">
+                  Invoice Generated!
+                </p>
+                <p className="mt-1 text-sm text-gray-500">
+                  Invoice {invoiceNumber} has been recorded.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="flex border-l border-gray-200">
+            <button
+              onClick={() => {
+                hotToast.dismiss(t.id);
+                setIsInvoiceOpen(true);
+              }}
+              className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-indigo-600 hover:text-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              View & Print
+            </button>
+          </div>
+        </div>
+      ), { duration: 5000 });
+      clearSale();
+  }
+
 
   const generateInvoice = async () => {
     if (paymentMode === 'both' && remainingBalance.toFixed(2) !== '0.00') {
-        toast({
-            variant: 'destructive',
-            title: 'Payment Mismatch',
-            description: 'The total paid amount does not match the total sale amount.'
-        });
+        hotToast.error('The total paid amount does not match the total sale amount.');
         return;
     }
 
@@ -410,37 +438,21 @@ export default function InvoicePage() {
     setLastSaleData(saleData);
 
     if (isDemoMode) {
-      toast({
-        title: 'Invoice Generated (Demo)',
-        description: `Invoice ${invoiceNumber} is ready to print.`
-      });
-      setIsInvoiceOpen(true);
+      showPrintToast();
       return;
     }
     
     if (!firestore || !shopId) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Cannot find your shop. Please ensure you are subscribed.'
-      });
+      hotToast.error('Cannot find your shop. Please ensure you are subscribed.');
       return;
     }
 
     try {
       const salesCollectionRef = collection(firestore, `shops/${shopId}/sales`);
       await addDoc(salesCollectionRef, saleData);
-      toast({
-        title: 'Sale Completed',
-        description: `Sale ${invoiceNumber} has been recorded.`
-      });
-      setIsInvoiceOpen(true);
+      showPrintToast();
     } catch(error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error completing sale',
-        description: error.message
-      })
+      hotToast.error(`Error completing sale: ${error.message}`);
     }
   };
 
@@ -739,7 +751,7 @@ export default function InvoicePage() {
             {lastSaleData && <Invoice sale={lastSaleData} settings={shopSettings} />}
         </div>
     </div>
-    <Dialog open={isInvoiceOpen && !!lastSaleData} onOpenChange={(open) => { if (!open) { setIsInvoiceOpen(false); setLastSaleData(null); clearSale(); }}}>
+    <Dialog open={isInvoiceOpen && !!lastSaleData} onOpenChange={(open) => { if (!open) { setIsInvoiceOpen(false); setLastSaleData(null); }}}>
         <DialogContent className="max-w-4xl p-0 border-0">
              <DialogHeader className="sr-only">
                 <DialogTitle>Invoice</DialogTitle>

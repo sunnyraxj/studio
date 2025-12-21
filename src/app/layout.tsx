@@ -5,7 +5,7 @@ import { Inter, Inter as FontSans } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { FirebaseClientProvider } from '@/firebase';
 import { Toaster } from '@/components/ui/toaster';
-import { ToasterProvider } from '@/hooks/use-toast.tsx';
+import { Toaster as HotToaster } from 'react-hot-toast';
 
 const fontSans = FontSans({
   subsets: ['latin'],
@@ -25,12 +25,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={cn("min-h-screen bg-background font-sans antialiased", fontSans.variable)}>
-        <ToasterProvider>
-          <FirebaseClientProvider>
-            {children}
-          </FirebaseClientProvider>
-        </ToasterProvider>
+        <FirebaseClientProvider>
+          {children}
+        </FirebaseClientProvider>
         <Toaster />
+        <HotToaster />
       </body>
     </html>
   );
