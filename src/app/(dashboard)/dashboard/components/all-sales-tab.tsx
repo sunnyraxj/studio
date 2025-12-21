@@ -12,6 +12,7 @@ import {
   getExpandedRowModel,
   SortingState,
   ExpandedState,
+  PaginationState,
 } from '@tanstack/react-table';
 import {
   Table,
@@ -37,6 +38,8 @@ import { X, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { Sale } from '../page';
+import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, limit, startAfter, getDocs, where, Query, DocumentData, getCountFromServer } from 'firebase/firestore';
 
 
 const salesColumns: ColumnDef<Sale>[] = [
@@ -86,11 +89,31 @@ const salesColumns: ColumnDef<Sale>[] = [
   },
 ];
 
-export function AllSalesTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoading: boolean }) {
+export function AllSalesTab() {
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const isDemoMode = !user;
+
+  const userDocRef = useMemoFirebase(() => {
+    if (isDemoMode || !firestore) return null;
+    return doc(firestore, `users/${user.uid}`);
+  }, [user, firestore, isDemoMode]);
+  const { data: userData } = useDoc(userDocRef);
+  const shopId = userData?.shopId;
+
+  const [data, setData] = useState<Sale[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [pageCount, setPageCount] = useState(0);
+  
   const [sorting, setSorting] = useState<SortingState>([{ id: 'date', desc: true }]);
   const [expanded, setExpanded] = useState<ExpandedState>({});
+  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 30,
+  });
+
+  const [lastVisible, setLastVisible] = useState<DocumentData | null>(null);
   
-  const [filteredData, setFilteredData] = useState<Sale[]>([]);
   const [isFilterApplied, setIsFilterApplied] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -101,49 +124,81 @@ export function AllSalesTab({ salesData, isLoading }: { salesData: Sale[] | null
   const [endMonth, setEndMonth] = useState('');
   const [endYear, setEndYear] = useState('');
   
-  const originalData = useMemo(() => salesData || [], [salesData]);
+  const buildQuery = () => {
+    if (!firestore || !shopId) return null;
 
-  useEffect(() => {
-    let data = originalData;
+    const salesCollectionRef = collection(firestore, `shops/${shopId}/sales`);
+    let q: Query = salesCollectionRef;
+    
+    const queryConstraints = [];
+    
+    if (sorting.length > 0) {
+      queryConstraints.push(orderBy(sorting[0].id, sorting[0].desc ? 'desc' : 'asc'));
+    } else {
+      queryConstraints.push(orderBy('date', 'desc'));
+    }
 
-    // Date filtering
     const startDateStr = `${startYear}-${startMonth.padStart(2, '0')}-${startDay.padStart(2, '0')}`;
     const endDateStr = `${endYear}-${endMonth.padStart(2, '0')}-${endDay.padStart(2, '0')}`;
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
     endDate.setHours(23, 59, 59, 999);
-
+    
     const isValidStartDate = !isNaN(startDate.getTime()) && startDay && startMonth && startYear;
     const isValidEndDate = !isNaN(endDate.getTime()) && endDay && endMonth && endYear;
     
-    let applied = false;
-    if (isFilterApplied) {
-        if (isValidStartDate) {
-            data = data.filter(item => new Date(item.date) >= startDate);
-            applied = true;
-        }
-        if (isValidEndDate) {
-            data = data.filter(item => new Date(item.date) <= endDate);
-            applied = true;
-        }
+    if (isValidStartDate) queryConstraints.push(where('date', '>=', startDate.toISOString()));
+    if (isValidEndDate) queryConstraints.push(where('date', '<=', endDate.toISOString()));
+    
+    if (searchTerm) {
+        // Firestore doesn't support OR queries on different fields easily.
+        // We will filter by the primary search term which is customer name for now.
+        queryConstraints.push(where('customer.name', '>=', searchTerm));
+        queryConstraints.push(where('customer.name', '<=', searchTerm + '\uf8ff'));
     }
     
-    // Search filtering
-    if (searchTerm) {
-        data = data.filter(sale => 
-            sale.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            sale.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        applied = true;
+    return query(salesCollectionRef, ...queryConstraints);
+  }
+
+  const fetchData = async () => {
+    if (isDemoMode) return;
+    const q = buildQuery();
+    if (!q) return;
+
+    setIsLoading(true);
+
+    try {
+      const countSnapshot = await getCountFromServer(q);
+      setPageCount(Math.ceil(countSnapshot.data().count / pageSize));
+
+      let finalQuery: Query = q;
+      if (pageIndex > 0 && lastVisible) {
+        finalQuery = query(q, startAfter(lastVisible), limit(pageSize));
+      } else {
+        finalQuery = query(q, limit(pageSize));
+      }
+
+      const querySnapshot = await getDocs(finalQuery);
+      const sales: Sale[] = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Sale));
+      setData(sales);
+      setLastVisible(querySnapshot.docs[querySnapshot.docs.length - 1]);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    setFilteredData(data);
-    setIsFilterApplied(applied || !!searchTerm || (isFilterApplied && (isValidStartDate || isValidEndDate)));
-
-  },[originalData, startDay, startMonth, startYear, endDay, endMonth, endYear, searchTerm, isFilterApplied]);
+  useEffect(() => {
+    if (!isDemoMode) {
+      fetchData();
+    }
+  }, [pageIndex, pageSize, sorting, isFilterApplied]);
 
   const handleFilter = () => {
-    setIsFilterApplied(true);
+    setPageIndex(0); // Reset to first page
+    setLastVisible(null);
+    setIsFilterApplied(true); // Trigger re-fetch
   };
   
   const handleClearFilter = () => {
@@ -154,25 +209,26 @@ export function AllSalesTab({ salesData, isLoading }: { salesData: Sale[] | null
     setEndMonth('');
     setEndYear('');
     setSearchTerm('');
+    setPageIndex(0);
+    setLastVisible(null);
     setIsFilterApplied(false);
   }
 
   const table = useReactTable({
-    data: filteredData,
+    data,
     columns: salesColumns,
-    state: { sorting, expanded },
+    pageCount,
+    state: { sorting, expanded, pagination: { pageIndex, pageSize } },
     onSortingChange: setSorting,
     onExpandedChange: setExpanded,
+    onPaginationChange: setPagination,
     getRowCanExpand: () => true,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getExpandedRowModel: getExpandedRowModel(),
-    initialState: {
-      pagination: {
-        pageSize: 30,
-      },
-    },
+    manualPagination: true,
+    manualSorting: true,
+    manualFiltering: true,
   });
 
   return (
@@ -211,7 +267,7 @@ export function AllSalesTab({ salesData, isLoading }: { salesData: Sale[] | null
                   </div>
                 </div>
                 <Button onClick={handleFilter} size="sm">Filter</Button>
-                {isFilterApplied && (
+                {(isFilterApplied || searchTerm) && (
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleClearFilter}>
                       <X className="h-4 w-4" />
                       <span className="sr-only">Clear Filter</span>

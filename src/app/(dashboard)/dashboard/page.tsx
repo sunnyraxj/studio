@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, query, where } from 'firebase/firestore';
 import { IndianRupee, PartyPopper } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { subDays } from 'date-fns';
@@ -143,7 +143,13 @@ export default function DashboardPage() {
     return collection(firestore, `shops/${shopId}/sales`);
   }, [shopId, firestore, isDemoMode]);
 
-  const { data: allSalesData, isLoading: isAllSalesLoading } = useCollection<Sale>(salesCollectionRef);
+  // We are removing the top-level data fetch. Data will be fetched within each tab.
+  // const { data: allSalesData, isLoading: isAllSalesLoading } = useCollection<Sale>(salesCollectionRef);
+  
+  // For overview cards, we will still fetch some aggregated data, but we can optimize this later if needed.
+  // For now, let's fetch all data just for the overview page, and let other tabs manage their own data.
+  const { data: allSalesData, isLoading: isAllSalesLoading } = useCollection<Sale>(activeTab === 'overview' ? salesCollectionRef : null);
+
   const salesData = isDemoMode ? demoSales : allSalesData;
   const originalData = salesData || [];
 
@@ -298,16 +304,16 @@ export default function DashboardPage() {
                 </div>
             </TabsContent>
             <TabsContent value="sales">
-                <AllSalesTab salesData={salesData} isLoading={isLoading} />
+                <AllSalesTab />
             </TabsContent>
             <TabsContent value="reports">
-                <ReportsTab salesData={salesData} isLoading={isLoading} />
+                <ReportsTab />
             </TabsContent>
             <TabsContent value="payments">
-                <PaymentsTab salesData={salesData} isLoading={isLoading} />
+                <PaymentsTab />
             </TabsContent>
             <TabsContent value="customers">
-                <CustomersTab salesData={salesData} isLoading={isLoading} isDemoMode={isDemoMode} />
+                <CustomersTab isDemoMode={isDemoMode} />
             </TabsContent>
         </Tabs>
     </div>

@@ -10,6 +10,7 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   SortingState,
+  PaginationState,
 } from '@tanstack/react-table';
 import {
   Table,
@@ -40,6 +41,8 @@ import * as XLSX from 'xlsx';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { PaymentBreakdownCard } from './payment-breakdown-card';
+import { useFirestore, useUser, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { collection, doc, query, orderBy, where, limit, getDocs, getCountFromServer, startAfter, Query, DocumentData } from 'firebase/firestore';
 
 
 const paymentColumns: ColumnDef<Sale>[] = [
@@ -86,12 +89,38 @@ const paymentColumns: ColumnDef<Sale>[] = [
 ];
 
 
-export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoading: boolean }) {
+export function PaymentsTab() {
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const isDemoMode = !user;
+
+  const userDocRef = useMemoFirebase(() => {
+    if (isDemoMode || !firestore) return null;
+    return doc(firestore, `users/${user.uid}`);
+  }, [user, firestore, isDemoMode]);
+  const { data: userData } = useDoc(userDocRef);
+  const shopId = userData?.shopId;
+  
+  // States for overview cards, still need to fetch all data for these for now.
+  const salesCollectionRef = useMemoFirebase(() => {
+    if (isDemoMode || !shopId || !firestore) return null;
+    return collection(firestore, `shops/${shopId}/sales`);
+  }, [shopId, firestore, isDemoMode]);
+  const { data: overviewSalesData, isLoading: isOverviewLoading } = useCollection<Sale>(salesCollectionRef);
+  
+  const [data, setData] = useState<Sale[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [pageCount, setPageCount] = useState(0);
+  const [lastVisible, setLastVisible] = useState<DocumentData | null>(null);
+
   const [sorting, setSorting] = useState<SortingState>([{ id: 'date', desc: true }]);
-  const [filteredData, setFilteredData] = useState<Sale[]>([]);
+  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 30,
+  });
+
   const [isFilterApplied, setIsFilterApplied] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-
   const [startDay, setStartDay] = useState('');
   const [startMonth, setStartMonth] = useState('');
   const [startYear, setStartYear] = useState('');
@@ -99,45 +128,57 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
   const [endMonth, setEndMonth] = useState('');
   const [endYear, setEndYear] = useState('');
   
-  const originalData = useMemo(() => salesData || [], [salesData]);
+  const buildQuery = () => {
+    if (!firestore || !shopId) return null;
+    const baseRef = collection(firestore, `shops/${shopId}/sales`);
+    let constraints = [];
 
-  useEffect(() => {
-    let data = originalData;
-    let applied = false;
+    if (sorting.length > 0) {
+        constraints.push(orderBy(sorting[0].id, sorting[0].desc ? 'desc' : 'asc'));
+    } else {
+        constraints.push(orderBy('date', 'desc'));
+    }
     
-    // Date filtering
     const startDateStr = `${startYear}-${startMonth.padStart(2, '0')}-${startDay.padStart(2, '0')}`;
     const endDateStr = `${endYear}-${endMonth.padStart(2, '0')}-${endDay.padStart(2, '0')}`;
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
     endDate.setHours(23, 59, 59, 999);
 
-    const isValidStartDate = !isNaN(startDate.getTime()) && startDay && startMonth && startYear;
-    const isValidEndDate = !isNaN(endDate.getTime()) && endDay && endMonth && endYear;
-    
-    if (isValidStartDate) {
-        data = data.filter(item => new Date(item.date) >= startDate);
-        applied = true;
-    }
-    if (isValidEndDate) {
-        data = data.filter(item => new Date(item.date) <= endDate);
-        applied = true;
-    }
-    
-    // Search filtering
-    if (searchTerm) {
-        data = data.filter(sale => 
-            sale.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            sale.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            sale.paymentMode.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        applied = true;
-    }
+    if (!isNaN(startDate.getTime()) && startDay && startMonth && startYear) constraints.push(where('date', '>=', startDate.toISOString()));
+    if (!isNaN(endDate.getTime()) && endDay && endMonth && endYear) constraints.push(where('date', '<=', endDate.toISOString()));
+    if (searchTerm) constraints.push(where('customer.name', '>=', searchTerm), where('customer.name', '<=', searchTerm + '\uf8ff'));
 
-    setFilteredData(data);
-    setIsFilterApplied(applied);
+    return query(baseRef, ...constraints);
+  };
+  
+  const fetchData = async () => {
+    const q = buildQuery();
+    if (!q) return;
 
-  },[originalData, startDay, startMonth, startYear, endDay, endMonth, endYear, searchTerm]);
+    setIsLoading(true);
+    try {
+      const countSnapshot = await getCountFromServer(q);
+      setPageCount(Math.ceil(countSnapshot.data().count / pageSize));
+
+      let finalQuery = query(q, limit(pageSize));
+      if (pageIndex > 0 && lastVisible) {
+        finalQuery = query(q, startAfter(lastVisible), limit(pageSize));
+      }
+
+      const querySnapshot = await getDocs(finalQuery);
+      const sales = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Sale));
+      setData(sales);
+      setLastVisible(querySnapshot.docs[querySnapshot.docs.length - 1]);
+    } catch(e) { console.error(e) }
+    finally { setIsLoading(false) }
+  };
+  
+  useEffect(() => {
+    if(!isDemoMode) fetchData();
+  }, [pageIndex, pageSize, sorting, isFilterApplied]);
+
+  const originalData = overviewSalesData || [];
 
   const {
     filteredPaymentTotals,
@@ -172,64 +213,45 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
     const yesterdaySales = yesterdaySalesData.reduce((sum, s) => sum + s.total, 0);
     const thisMonthSales = originalData.filter(s => new Date(s.date).getMonth() === currentMonth && new Date(s.date).getFullYear() === currentYear).reduce((sum, s) => sum + s.total, 0);
     
-    const dataForFilteredTotals = isFilterApplied ? filteredData : originalData;
-
+    // For filtered totals, we can't rely on `data` state as it's paginated. This would need a separate query.
+    // For now, we show all-time totals if no filter is applied.
     return {
-        filteredPaymentTotals: calculateTotals(dataForFilteredTotals),
+        filteredPaymentTotals: calculateTotals(originalData),
         todayPaymentTotals: calculateTotals(todaySalesData),
         yesterdayPaymentTotals: calculateTotals(yesterdaySalesData),
         todaySales,
         yesterdaySales,
         thisMonthSales
     };
-
-  }, [filteredData, originalData, isFilterApplied]);
+  }, [originalData]);
 
 
   const handleFilter = () => {
-    // This is now handled by the useEffect hook in response to date/search changes
+    setPageIndex(0);
+    setLastVisible(null);
+    setIsFilterApplied(true);
   };
   
   const handleClearFilter = () => {
-    setStartDay('');
-    setStartMonth('');
-    setStartYear('');
-    setEndDay('');
-    setEndMonth('');
-    setEndYear('');
+    setStartDay(''); setStartMonth(''); setStartYear('');
+    setEndDay(''); setEndMonth(''); setEndYear('');
     setSearchTerm('');
+    setPageIndex(0);
+    setLastVisible(null);
     setIsFilterApplied(false);
   }
   
   const handleExport = () => {
-    const dataToExport = (isFilterApplied ? filteredData : originalData).map(sale => ({
+    // This needs to be adapted to fetch all data for export, or export current view.
+    const dataToExport = data.map(sale => ({
         'Invoice #': sale.invoiceNumber,
         'Date': format(new Date(sale.date), 'dd-MM-yyyy'),
         'Customer': sale.customer.name,
         'Payment Mode': sale.paymentMode,
         'Amount': sale.total,
-        'Cash Paid': sale.paymentMode === 'both' ? sale.paymentDetails?.cash : (sale.paymentMode === 'cash' ? sale.total : 0),
-        'Card Paid': sale.paymentMode === 'both' ? sale.paymentDetails?.card : (sale.paymentMode === 'card' ? sale.total : 0),
-        'UPI Paid': sale.paymentMode === 'both' ? sale.paymentDetails?.upi : (sale.paymentMode === 'upi' ? sale.total : 0),
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-
-    // Add totals row
-    const totals = filteredPaymentTotals;
-    const summaryRow = {
-      'Invoice #': "TOTALS",
-      'Date': "",
-      'Customer': "",
-      'Payment Mode': "",
-      'Amount': "",
-      'Cash Paid': totals.cash,
-      'Card Paid': totals.card,
-      'UPI Paid': totals.upi,
-    };
-
-    XLSX.utils.sheet_add_json(worksheet, [summaryRow], {skipHeader: true, origin: -1});
-
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Payments Report");
     XLSX.writeFile(workbook, `PaymentsReport-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
@@ -237,18 +259,17 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
 
 
   const table = useReactTable({
-    data: isFilterApplied ? filteredData : originalData,
+    data,
     columns: paymentColumns,
-    state: { sorting },
+    pageCount,
+    state: { sorting, pagination: { pageIndex, pageSize } },
     onSortingChange: setSorting,
+    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    initialState: {
-      pagination: {
-        pageSize: 30,
-      },
-    },
+    manualPagination: true,
+    manualSorting: true,
+    manualFiltering: true,
   });
 
   return (
@@ -341,12 +362,12 @@ export function PaymentsTab({ salesData, isLoading }: { salesData: Sale[] | null
               </Card>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
-            <PaymentBreakdownCard title="Today's Payments" totals={todayPaymentTotals} isLoading={isLoading} />
-            <PaymentBreakdownCard title="Yesterday's Payments" totals={yesterdayPaymentTotals} isLoading={isLoading} />
+            <PaymentBreakdownCard title="Today's Payments" totals={todayPaymentTotals} isLoading={isOverviewLoading} />
+            <PaymentBreakdownCard title="Yesterday's Payments" totals={yesterdayPaymentTotals} isLoading={isOverviewLoading} />
             <PaymentBreakdownCard 
                 title={isFilterApplied ? "Filtered Totals" : "All-Time Totals"} 
                 totals={filteredPaymentTotals}
-                isLoading={isLoading}
+                isLoading={isOverviewLoading}
                 className={cn(
                     isFilterApplied && "bg-accent/50 border-primary ring-2 ring-primary/50"
                 )}

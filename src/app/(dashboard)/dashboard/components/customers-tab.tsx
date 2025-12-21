@@ -36,6 +36,8 @@ import { Input } from '@/components/ui/input';
 import type { Sale, Customer } from '../page';
 import { demoCustomers } from '../page';
 import { Badge } from '@/components/ui/badge';
+import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 
 
 const customerColumns: ColumnDef<Customer>[] = [
@@ -86,10 +88,29 @@ const customerColumns: ColumnDef<Customer>[] = [
   },
 ];
 
-export function CustomersTab({ salesData, isLoading, isDemoMode }: { salesData: Sale[] | null, isLoading: boolean, isDemoMode: boolean }) {
+export function CustomersTab({ isDemoMode }: { isDemoMode: boolean }) {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'lastPurchaseDate', desc: true }]);
   const [searchTerm, setSearchTerm] = useState('');
   
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const userDocRef = useMemoFirebase(() => {
+    if (isDemoMode || !firestore) return null;
+    return doc(firestore, `users/${user.uid}`);
+  }, [user, firestore, isDemoMode]);
+  const { data: userData } = useDoc(userDocRef);
+  const shopId = userData?.shopId;
+
+  const salesCollectionRef = useMemoFirebase(() => {
+    if (isDemoMode || !shopId || !firestore) return null;
+    return collection(firestore, `shops/${shopId}/sales`);
+  }, [shopId, firestore, isDemoMode]);
+  
+  // NOTE: This still fetches all sales data to aggregate customers.
+  // For millions of records, this should be replaced with a server-side aggregation/function.
+  const { data: salesData, isLoading } = useCollection<Sale>(salesCollectionRef);
+
   const customersData = useMemo(() => {
     if (isDemoMode) return demoCustomers;
     if (!salesData) return [];

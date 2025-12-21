@@ -9,6 +9,8 @@ import {
   useReactTable,
   getPaginationRowModel,
   VisibilityState,
+  PaginationState,
+  SortingState,
 } from '@tanstack/react-table';
 import {
   Table,
@@ -37,6 +39,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import type { Sale, ReportItem } from '../page';
+import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
+import { collection, query, where, orderBy, getDocs, limit, startAfter, getCountFromServer, Query, DocumentData } from 'firebase/firestore';
 
 
 const reportsColumns: ColumnDef<ReportItem>[] = [
@@ -58,15 +62,29 @@ const reportsColumns: ColumnDef<ReportItem>[] = [
 ];
 
 
-export function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null, isLoading: boolean }) {
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
-    hsn: false,
-  });
+export function ReportsTab() {
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const isDemoMode = !user;
+
+  const userDocRef = useMemoFirebase(() => {
+    if (isDemoMode || !firestore) return null;
+    return doc(firestore, `users/${user.uid}`);
+  }, [user, firestore, isDemoMode]);
+  const { data: userData } = useDoc(userDocRef);
+  const shopId = userData?.shopId;
+
+  const [data, setData] = useState<ReportItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [pageCount, setPageCount] = useState(0);
+  const [lastVisible, setLastVisible] = useState<DocumentData | null>(null);
+
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({ hsn: false });
+  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 30 });
+  const [sorting, setSorting] = useState<SortingState>([]);
   
-  const [filteredData, setFilteredData] = useState<ReportItem[]>([]);
   const [isFilterApplied, setIsFilterApplied] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-
   const [startDay, setStartDay] = useState('');
   const [startMonth, setStartMonth] = useState('');
   const [startYear, setStartYear] = useState('');
@@ -74,87 +92,92 @@ export function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null,
   const [endMonth, setEndMonth] = useState('');
   const [endYear, setEndYear] = useState('');
 
-  const reportData = useMemo(() => {
-    if (!salesData) return [];
-    return salesData.flatMap(sale => sale.items.map(item => ({ ...item, saleDate: sale.date })));
-  }, [salesData]);
-  
-  useEffect(() => {
-    let data = reportData;
-
-     // Date filtering
+  const buildQuery = () => {
+    if (!firestore || !shopId) return null;
+    // Note: Firestore doesn't allow querying subcollections directly.
+    // This implementation will fetch sales and then flatten them.
+    // For true scalability, a separate 'saleItems' root collection would be needed.
+    const baseRef = collection(firestore, `shops/${shopId}/sales`);
+    let constraints = [orderBy('date', 'desc')];
+    
     const startDateStr = `${startYear}-${startMonth.padStart(2, '0')}-${startDay.padStart(2, '0')}`;
     const endDateStr = `${endYear}-${endMonth.padStart(2, '0')}-${endDay.padStart(2, '0')}`;
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
     endDate.setHours(23, 59, 59, 999);
-
-    const isValidStartDate = !isNaN(startDate.getTime()) && startDay && startMonth && startYear;
-    const isValidEndDate = !isNaN(endDate.getTime()) && endDay && endMonth && endYear;
     
-    let applied = false;
-    if (isFilterApplied) {
-        if (isValidStartDate) {
-            data = data.filter(item => new Date(item.saleDate) >= startDate);
-            applied = true;
-        }
-        if (isValidEndDate) {
-            data = data.filter(item => new Date(item.saleDate) <= endDate);
-            applied = true;
-        }
-    }
+    if (!isNaN(startDate.getTime()) && startDay && startMonth && startYear) constraints.push(where('date', '>=', startDate.toISOString()));
+    if (!isNaN(endDate.getTime()) && endDay && endMonth && endYear) constraints.push(where('date', '<=', endDate.toISOString()));
+    
+    return query(baseRef, ...constraints);
+  }
 
-    // Search filtering
-    if (searchTerm) {
-        data = data.filter(item => 
-            item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (item.sku && item.sku.toLowerCase().includes(searchTerm.toLowerCase()))
+  const fetchData = async () => {
+    const q = buildQuery();
+    if (!q) return;
+
+    setIsLoading(true);
+    try {
+      // This approach is not fully paginated for report items, as it fetches sales first.
+      // True item-level pagination requires a different data model.
+      const querySnapshot = await getDocs(query(q, limit(100))); // Fetch 100 sales at a time to get items
+      const sales = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Sale));
+      
+      let reportItems = sales.flatMap(sale => sale.items.map(item => ({ ...item, saleDate: sale.date })));
+      
+      if (searchTerm) {
+        reportItems = reportItems.filter(item =>
+          item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (item.sku && item.sku.toLowerCase().includes(searchTerm.toLowerCase()))
         );
-        applied = true;
+      }
+      
+      setData(reportItems);
+      setPageCount(Math.ceil(reportItems.length / pageSize));
+    } catch(e) {
+      console.error(e)
+    } finally {
+      setIsLoading(false);
     }
-    
-    setFilteredData(data);
-    setIsFilterApplied(applied || !!searchTerm || (isFilterApplied && (isValidStartDate || isValidEndDate)));
+  };
 
-  }, [reportData, startDay, startMonth, startYear, endDay, endMonth, endYear, searchTerm, isFilterApplied]);
+  useEffect(() => {
+    if(!isDemoMode) fetchData();
+  }, [pageIndex, pageSize, isFilterApplied]);
 
   const handleFilter = () => {
+    setPageIndex(0);
     setIsFilterApplied(true);
   };
   
   const handleClearFilter = () => {
-    setStartDay('');
-    setStartMonth('');
-    setStartYear('');
-    setEndDay('');
-    setEndMonth('');
-    setEndYear('');
+    setStartDay(''); setStartMonth(''); setStartYear('');
+    setEndDay(''); setEndMonth(''); setEndYear('');
     setSearchTerm('');
+    setPageIndex(0);
     setIsFilterApplied(false);
   }
 
   const totalSales = useMemo(() => {
-    return filteredData.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  }, [filteredData]);
+    return data.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  }, [data]);
 
   const table = useReactTable({
-    data: filteredData,
+    data,
     columns: reportsColumns,
+    pageCount,
     state: {
         columnVisibility,
+        pagination: { pageIndex, pageSize },
     },
     onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    initialState: {
-      pagination: {
-        pageSize: 30,
-      },
-    },
+    manualPagination: true,
   });
 
   const handleExport = () => {
-    const dataToExport = filteredData.map(item => ({
+    const dataToExport = data.map(item => ({
         'Product Name': item.name,
         'Product Code': item.sku,
         'Date Sold': format(new Date(item.saleDate), 'dd-MM-yyyy'),
@@ -223,7 +246,7 @@ export function ReportsTab({ salesData, isLoading }: { salesData: Sale[] | null,
               <Separator orientation="vertical" className="h-10" />
               <Tooltip>
                   <TooltipTrigger asChild>
-                      <Button variant="outline" onClick={handleExport} disabled={filteredData.length === 0}>
+                      <Button variant="outline" onClick={handleExport} disabled={data.length === 0}>
                           <FileDown className="mr-2 h-4 w-4" /> Export
                       </Button>
                   </TooltipTrigger>
