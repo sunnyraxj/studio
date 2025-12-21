@@ -68,6 +68,7 @@ export default function AddProductPage() {
   const [hsn, setHsn] = useState('');
   const [productCode, setProductCode] = useState('');
   const [category, setCategory] = useState('');
+  const [material, setMaterial] = useState('');
   const [size, setSize] = useState('');
   const [qty, setQty] = useState('');
   const [unit, setUnit] = useState('pcs');
@@ -144,6 +145,7 @@ export default function AddProductPage() {
       hsn: hsn,
       sku: finalSku,
       category: category,
+      material: material,
       size: size,
       stock: parseInt(qty) || 0,
       unit: unit,
@@ -181,6 +183,7 @@ export default function AddProductPage() {
         'GST (%)': '',
         'HSN Code': '',
         'Category': '',
+        'Material': '',
         'Size': '',
         'Opening Quantity': '',
         'Unit': 'pcs',
@@ -243,6 +246,7 @@ export default function AddProductPage() {
               gst: parseInt(product['GST (%)']) || 0,
               hsn: product['HSN Code'] || '',
               category: product['Category'] || '',
+              material: product['Material'] || '',
               size: product['Size'] || '',
               stock: stock,
               unit: product['Unit'] || 'pcs',
@@ -381,6 +385,15 @@ export default function AddProductPage() {
               placeholder="e.g., Apparel"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="material">Material</Label>
+            <Input
+              id="material"
+              placeholder="e.g., Cotton"
+              value={material}
+              onChange={(e) => setMaterial(e.target.value)}
             />
           </div>
            <div className="space-y-2">

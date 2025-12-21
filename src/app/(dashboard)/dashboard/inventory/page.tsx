@@ -68,6 +68,7 @@ export type InventoryItem = {
   dateAdded: string; // Stored as ISO string
   expiryDate?: string | null; // Stored as 'YYYY-MM-DD'
   category: string;
+  material: string;
   size: string;
   gst: number;
   hsn: string;
@@ -111,6 +112,11 @@ export const columns: ColumnDef<InventoryItem>[] = [
     accessorKey: 'category',
     header: 'Category',
     cell: ({ row }) => <div>{row.getValue('category')}</div>,
+  },
+  {
+    accessorKey: 'material',
+    header: 'Material',
+    cell: ({ row }) => <div>{row.getValue('material')}</div>,
   },
   {
     accessorKey: 'size',
@@ -325,6 +331,7 @@ export default function InventoryPage() {
         hsn: false,
         sku: false,
         margin: false,
+        material: false,
     });
   const [rowSelection, setRowSelection] = React.useState({});
   const [searchBy, setSearchBy] = React.useState('name');
@@ -451,6 +458,10 @@ export default function InventoryPage() {
                 <div className="flex items-center space-x-2">
                     <RadioGroupItem value="category" id="category" />
                     <Label htmlFor="category">Category</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="material" id="material" />
+                    <Label htmlFor="material">Material</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                     <RadioGroupItem value="price" id="price" />
