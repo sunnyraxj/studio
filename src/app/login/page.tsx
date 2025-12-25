@@ -278,9 +278,12 @@ function LoginForm() {
                 </Button>
               </div>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex-col gap-4">
               <Button className="w-full" onClick={handleLogin}>
                 Login
+              </Button>
+              <Button variant="link" size="sm" asChild>
+                <Link href="/">Back to Home</Link>
               </Button>
             </CardFooter>
           </Card>
@@ -359,10 +362,13 @@ function LoginForm() {
                     </Button>
                 </div>
                 </CardContent>
-                <CardFooter>
-                <Button className="w-full" onClick={handleSignUp}>
-                    Sign Up
-                </Button>
+                <CardFooter className="flex-col gap-4">
+                  <Button className="w-full" onClick={handleSignUp}>
+                      Sign Up
+                  </Button>
+                  <Button variant="link" size="sm" asChild>
+                    <Link href="/">Back to Home</Link>
+                  </Button>
                 </CardFooter>
             </Card>
             </TabsContent>
