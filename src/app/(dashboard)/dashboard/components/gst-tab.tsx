@@ -68,18 +68,14 @@ type ShopSettings = {
     companyState?: string;
 };
 
-const demoSales: Sale[] = [
-    { id: '1', invoiceNumber: 'D-INV-001', customer: { name: 'Demo Customer 1', state: 'Assam', gstin: '18ABCDE1234F1Z5' }, date: new Date().toISOString(), total: 1120, subtotal: 1000, cgst: 60, sgst: 60, igst: 0, items: [], paymentMode: 'cash' },
-    { id: '2', invoiceNumber: 'D-INV-002', customer: { name: 'Demo Customer 2', state: 'Delhi' }, date: new Date().toISOString(), total: 2240, subtotal: 2000, cgst: 0, sgst: 0, igst: 240, items: [], paymentMode: 'upi' },
-    { id: '3', invoiceNumber: 'D-INV-003', customer: { name: 'Demo Customer 3', state: 'Assam' }, date: new Date(new Date().setDate(new Date().getDate() - 35)).toISOString(), total: 560, subtotal: 500, cgst: 30, sgst: 30, igst: 0, items: [], paymentMode: 'card' },
-];
-
-
 // Main GST Page Component
-export function GstTab() {
+interface GstTabProps {
+  isDemoMode: boolean;
+  demoSales: Sale[];
+}
+export function GstTab({ isDemoMode, demoSales }: GstTabProps) {
     const { user } = useUser();
     const firestore = useFirestore();
-    const isDemoMode = !user;
 
     const [month, setMonth] = useState((new Date().getMonth() + 1).toString());
     const [year, setYear] = useState(new Date().getFullYear().toString());
@@ -118,14 +114,11 @@ export function GstTab() {
     const { gstReportData, totals } = useMemo(() => {
         let sourceData = isDemoMode ? demoSales : (salesData || []);
         
-        // Filter by month/year for demo data
-        if (isDemoMode) {
-            sourceData = sourceData.filter(sale => {
-                const saleDate = new Date(sale.date);
-                return saleDate.getFullYear().toString() === year && (saleDate.getMonth() + 1).toString() === month;
-            });
-        }
-
+        sourceData = sourceData.filter(sale => {
+            const saleDate = new Date(sale.date);
+            return saleDate.getFullYear().toString() === year && (saleDate.getMonth() + 1).toString() === month;
+        });
+        
         let filteredSales = sourceData;
 
         if (invoiceType === 'B2B') {
@@ -158,7 +151,7 @@ export function GstTab() {
         }, { taxableSales: 0, cgst: 0, sgst: 0, igst: 0 });
 
         return { gstReportData: reportItems, totals };
-    }, [salesData, invoiceType, shopState, isDemoMode, month, year]);
+    }, [salesData, demoSales, isDemoMode, invoiceType, shopState, month, year]);
 
     const [sorting, setSorting] = React.useState<SortingState>([
         { id: 'invoiceDate', desc: true },

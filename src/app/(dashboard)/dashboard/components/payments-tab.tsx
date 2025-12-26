@@ -44,12 +44,6 @@ import { PaymentBreakdownCard } from './payment-breakdown-card';
 import { useFirestore, useUser, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc, query, orderBy, where, limit, getDocs, getCountFromServer, startAfter, Query, DocumentData } from 'firebase/firestore';
 
-const demoSales: Sale[] = [
-    { id: '1', invoiceNumber: 'D-INV-001', date: new Date().toISOString(), customer: { name: 'Ravi Kumar' }, total: 2500, paymentMode: 'upi', items: [], paymentDetails: { upi: 2500 } },
-    { id: '2', invoiceNumber: 'D-INV-002', date: new Date(Date.now() - 86400000).toISOString(), customer: { name: 'Priya Sharma' }, total: 1200, paymentMode: 'card', items: [], paymentDetails: { card: 1200 } },
-    { id: '3', invoiceNumber: 'D-INV-003', date: new Date(Date.now() - 172800000).toISOString(), customer: { name: 'Amit Singh' }, total: 3500, paymentMode: 'cash', items: [], paymentDetails: { cash: 3500 } },
-    { id: '4', invoiceNumber: 'D-INV-004', date: new Date().toISOString(), customer: { name: 'Sunita Gupta' }, total: 5000, paymentMode: 'both', items: [], paymentDetails: { cash: 2000, card: 3000 } },
-];
 
 const paymentColumns: ColumnDef<Sale>[] = [
   {
@@ -94,11 +88,14 @@ const paymentColumns: ColumnDef<Sale>[] = [
   },
 ];
 
+interface PaymentsTabProps {
+  isDemoMode: boolean;
+  demoSales: Sale[];
+}
 
-export function PaymentsTab() {
+export function PaymentsTab({ isDemoMode, demoSales }: PaymentsTabProps) {
   const { user } = useUser();
   const firestore = useFirestore();
-  const isDemoMode = !user;
 
   const userDocRef = useMemoFirebase(() => {
     if (isDemoMode || !user || !firestore) return null;
@@ -159,12 +156,6 @@ export function PaymentsTab() {
   };
   
   const fetchData = async () => {
-    if (isDemoMode) {
-      setData(demoSales);
-      setPageCount(Math.ceil(demoSales.length / pageSize));
-      return;
-    }
-
     const q = buildQuery();
     if (!q) return;
 
@@ -187,8 +178,30 @@ export function PaymentsTab() {
   };
   
   useEffect(() => {
-    fetchData();
-  }, [shopId, pageIndex, pageSize, sorting, isFilterActive, isDemoMode]);
+    if (isDemoMode) {
+      let filtered = demoSales;
+
+      if (searchTerm) {
+        filtered = filtered.filter(s => s.customer.name.toLowerCase().includes(searchTerm.toLowerCase()));
+      }
+      
+      const startDate = new Date(`${startYear}-${startMonth.padStart(2, '0')}-${startDay.padStart(2, '0')}`);
+      const endDate = new Date(`${endYear}-${endMonth.padStart(2, '0')}-${endDay.padStart(2, '0')}`);
+      endDate.setHours(23, 59, 59, 999);
+      
+      const isValidStartDate = !isNaN(startDate.getTime()) && startDay && startMonth && startYear;
+      const isValidEndDate = !isNaN(endDate.getTime()) && endDay && endMonth && endYear;
+
+      if (isValidStartDate) filtered = filtered.filter(s => new Date(s.date) >= startDate);
+      if (isValidEndDate) filtered = filtered.filter(s => new Date(s.date) <= endDate);
+
+      setData(filtered.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize));
+      setPageCount(Math.ceil(filtered.length / pageSize));
+    } else {
+      fetchData();
+    }
+  }, [shopId, pageIndex, pageSize, sorting, isFilterActive, isDemoMode, demoSales, searchTerm, startDay, startMonth, startYear, endDay, endMonth, endYear]);
+
 
   const originalData = isDemoMode ? demoSales : (overviewSalesData || []);
 
@@ -221,19 +234,15 @@ export function PaymentsTab() {
     const todaySalesData = originalData.filter(s => new Date(s.date).toDateString() === todayStr);
     const yesterdaySalesData = originalData.filter(s => new Date(s.date).toDateString() === yesterdayStr);
 
-    const todaySales = todaySalesData.reduce((sum, s) => sum + s.total, 0);
-    const yesterdaySales = yesterdaySalesData.reduce((sum, s) => sum + s.total, 0);
-    const thisMonthSales = originalData.filter(s => new Date(s.date).getMonth() === currentMonth && new Date(s.date).getFullYear() === currentYear).reduce((sum, s) => sum + s.total, 0);
-    
     return {
-        filteredPaymentTotals: calculateTotals(originalData),
+        filteredPaymentTotals: calculateTotals(data), // use filtered data for this
         todayPaymentTotals: calculateTotals(todaySalesData),
         yesterdayPaymentTotals: calculateTotals(yesterdaySalesData),
-        todaySales,
-        yesterdaySales,
-        thisMonthSales
+        todaySales: todaySalesData.reduce((sum, s) => sum + s.total, 0),
+        yesterdaySales: yesterdaySalesData.reduce((sum, s) => sum + s.total, 0),
+        thisMonthSales: originalData.filter(s => new Date(s.date).getMonth() === currentMonth && new Date(s.date).getFullYear() === currentYear).reduce((sum, s) => sum + s.total, 0),
     };
-  }, [originalData]);
+  }, [originalData, data]);
 
 
   const handleFilter = () => {
@@ -256,7 +265,6 @@ export function PaymentsTab() {
   const isAnyFilterApplied = !!(searchTerm || startDay || endDay);
   
   const handleExport = () => {
-    // This needs to be adapted to fetch all data for export, or export current view.
     const dataToExport = data.map(sale => ({
         'Invoice #': sale.invoiceNumber,
         'Date': format(new Date(sale.date), 'dd-MM-yyyy'),
@@ -299,7 +307,7 @@ export function PaymentsTab() {
              <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                    placeholder="Search customer, invoice, mode..."
+                    placeholder="Search customer..."
                     className="pl-8 w-64"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}

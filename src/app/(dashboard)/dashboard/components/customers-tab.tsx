@@ -35,7 +35,6 @@ import { Search } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { Input } from '@/components/ui/input';
 import type { Sale, Customer } from '../page';
-import { demoCustomers } from '../page';
 import { Badge } from '@/components/ui/badge';
 import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, getDocs, orderBy, limit, startAfter, where, Query, DocumentData, getCountFromServer } from 'firebase/firestore';
@@ -89,7 +88,12 @@ const customerColumns: ColumnDef<Customer>[] = [
   },
 ];
 
-export function CustomersTab({ isDemoMode }: { isDemoMode: boolean }) {
+interface CustomersTabProps {
+  isDemoMode: boolean;
+  demoSales: Sale[];
+}
+
+export function CustomersTab({ isDemoMode, demoSales }: CustomersTabProps) {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'lastPurchaseDate', desc: true }]);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -113,17 +117,52 @@ export function CustomersTab({ isDemoMode }: { isDemoMode: boolean }) {
 
   const fetchData = async () => {
     if (isDemoMode) {
-      setData(demoCustomers);
-      setPageCount(Math.ceil(demoCustomers.length / pageSize));
+      let salesData = demoSales;
+      const customerMap = new Map<string, any>();
+
+        salesData.forEach((sale) => {
+          if (!sale.customer || (!sale.customer.phone && !sale.customer.name)) return;
+          const customerKey = sale.customer.phone || sale.customer.name.toLowerCase();
+
+          if (customerMap.has(customerKey)) {
+            const existing = customerMap.get(customerKey);
+            existing.invoiceNumbers.add(sale.invoiceNumber);
+            if (new Date(sale.date) > new Date(existing.lastPurchaseDate)) {
+                existing.lastPurchaseDate = sale.date;
+            }
+          } else {
+            customerMap.set(customerKey, {
+              id: customerKey,
+              name: sale.customer.name,
+              phone: sale.customer.phone || '',
+              invoiceNumbers: new Set([sale.invoiceNumber]),
+              lastPurchaseDate: sale.date,
+            });
+          }
+        });
+        
+        let allCustomers = Array.from(customerMap.values()).map(c => ({
+            ...c,
+            invoiceNumbers: Array.from(c.invoiceNumbers),
+        }));
+
+        if (searchTerm) {
+            allCustomers = allCustomers.filter(customer => 
+                customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (customer.phone && customer.phone.includes(searchTerm))
+            );
+        }
+        allCustomers.sort((a, b) => new Date(b.lastPurchaseDate).getTime() - new Date(a.lastPurchaseDate).getTime());
+        
+        setPageCount(Math.ceil(allCustomers.length / pageSize));
+        setData(allCustomers.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize));
+
       return;
     }
     if (!shopId || !firestore) return;
 
     setIsLoading(true);
     
-    // This is still inefficient and should be replaced with a dedicated 'customers' collection
-    // that is updated via a Cloud Function on sale creation/update for scalability.
-    // For now, we fetch all sales and aggregate on the client.
     try {
         const salesCollectionRef = collection(firestore, `shops/${shopId}/sales`);
         const querySnapshot = await getDocs(query(salesCollectionRef, orderBy('date', 'desc')));
@@ -195,7 +234,7 @@ export function CustomersTab({ isDemoMode }: { isDemoMode: boolean }) {
 
   useEffect(() => {
     fetchData();
-  }, [pageIndex, pageSize, shopId, firestore, isDemoMode, searchTerm, sorting]);
+  }, [pageIndex, pageSize, shopId, firestore, isDemoMode, searchTerm, sorting, demoSales]);
   
 
   const table = useReactTable({
@@ -298,5 +337,3 @@ export function CustomersTab({ isDemoMode }: { isDemoMode: boolean }) {
     </Card>
   );
 }
-
-    

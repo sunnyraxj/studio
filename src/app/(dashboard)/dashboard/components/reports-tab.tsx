@@ -42,10 +42,6 @@ import type { Sale, ReportItem } from '../page';
 import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, getDocs, limit, startAfter, getCountFromServer, Query, DocumentData, doc } from 'firebase/firestore';
 
-const demoSales: Sale[] = [
-    { id: '1', invoiceNumber: 'D-INV-001', date: new Date().toISOString(), customer: { name: 'Ravi Kumar' }, total: 2500, paymentMode: 'upi', items: [{ productId: '1', name: 'T-Shirt', quantity: 2, price: 500, margin: 25, sku: 'TS-01', hsn: '6109', gst: 5 }, { productId: '2', name: 'Jeans', quantity: 1, price: 1500, margin: 30, sku: 'JN-01', hsn: '6203', gst: 5 }] },
-    { id: '2', invoiceNumber: 'D-INV-002', date: new Date(Date.now() - 86400000).toISOString(), customer: { name: 'Priya Sharma' }, total: 1200, paymentMode: 'card', items: [{ productId: '3', name: 'Sneakers', quantity: 1, price: 1200, margin: 40, sku: 'SH-01', hsn: '6404', gst: 18 }] },
-];
 
 const reportsColumns: ColumnDef<ReportItem>[] = [
   { accessorKey: 'name', header: 'Product Name', cell: ({ row }) => <div className="font-medium">{row.getValue('name')}</div> },
@@ -66,11 +62,15 @@ const reportsColumns: ColumnDef<ReportItem>[] = [
 ];
 
 
-export function ReportsTab() {
+interface ReportsTabProps {
+  isDemoMode: boolean;
+  demoSales: Sale[];
+}
+
+export function ReportsTab({ isDemoMode, demoSales }: ReportsTabProps) {
   const { user } = useUser();
   const firestore = useFirestore();
-  const isDemoMode = !user;
-
+  
   const userDocRef = useMemoFirebase(() => {
     if (isDemoMode || !user || !firestore) return null;
     return doc(firestore, `users/${user.uid}`);
@@ -115,8 +115,27 @@ export function ReportsTab() {
 
   const fetchData = async () => {
     if (isDemoMode) {
-        const reportItems = demoSales.flatMap(sale => sale.items.map(item => ({ ...item, saleDate: sale.date })));
-        setData(reportItems);
+        let reportItems = demoSales.flatMap(sale => sale.items.map(item => ({ ...item, saleDate: sale.date })));
+        
+        if (searchTerm) {
+          reportItems = reportItems.filter(item =>
+            item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (item.sku && item.sku.toLowerCase().includes(searchTerm.toLowerCase()))
+          );
+        }
+        
+        const startDate = new Date(`${startYear}-${startMonth.padStart(2, '0')}-${startDay.padStart(2, '0')}`);
+        const endDate = new Date(`${endYear}-${endMonth.padStart(2, '0')}-${endDay.padStart(2, '0')}`);
+        endDate.setHours(23, 59, 59, 999);
+        
+        const isValidStartDate = !isNaN(startDate.getTime()) && startDay && startMonth && startYear;
+        const isValidEndDate = !isNaN(endDate.getTime()) && endDay && endMonth && endYear;
+        
+        if (isValidStartDate) reportItems = reportItems.filter(i => new Date(i.saleDate) >= startDate);
+        if (isValidEndDate) reportItems = reportItems.filter(i => new Date(i.saleDate) <= endDate);
+
+        const paginatedItems = reportItems.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize);
+        setData(paginatedItems);
         setPageCount(Math.ceil(reportItems.length / pageSize));
         return;
     }
@@ -126,8 +145,6 @@ export function ReportsTab() {
 
     setIsLoading(true);
     try {
-      // NOTE: This fetch-all approach is not scalable for pagination with large datasets.
-      // A better approach for production would be server-side aggregation or a more complex query structure.
       const querySnapshot = await getDocs(query(q, limit(100))); 
       const sales = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Sale));
       
@@ -152,7 +169,7 @@ export function ReportsTab() {
 
   useEffect(() => {
     fetchData();
-  }, [shopId, pageIndex, pageSize, isFilterActive, searchTerm, isDemoMode]);
+  }, [shopId, pageIndex, pageSize, isFilterActive, searchTerm, isDemoMode, demoSales, startDay, startMonth, startYear, endDay, endMonth, endYear]);
 
   const handleFilter = () => {
     setPageIndex(0);

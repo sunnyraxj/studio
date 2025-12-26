@@ -41,12 +41,6 @@ import type { Sale } from '../page';
 import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit, startAfter, getDocs, where, Query, DocumentData, getCountFromServer, doc } from 'firebase/firestore';
 
-const demoSales: Sale[] = [
-    { id: '1', invoiceNumber: 'D-INV-001', date: new Date().toISOString(), customer: { name: 'Ravi Kumar', phone: '9876543210' }, total: 2500, paymentMode: 'upi', items: [{ productId: '1', name: 'T-Shirt', quantity: 2, price: 500, margin: 25, sku: 'TS-01', hsn: '6109', gst: 5 }, { productId: '2', name: 'Jeans', quantity: 1, price: 1500, margin: 30, sku: 'JN-01', hsn: '6203', gst: 5 }] },
-    { id: '2', invoiceNumber: 'D-INV-002', date: new Date(Date.now() - 86400000).toISOString(), customer: { name: 'Priya Sharma', phone: '9876543211' }, total: 1200, paymentMode: 'card', items: [{ productId: '3', name: 'Sneakers', quantity: 1, price: 1200, margin: 40, sku: 'SH-01', hsn: '6404', gst: 18 }] },
-    { id: '3', invoiceNumber: 'D-INV-003', date: new Date(Date.now() - 172800000).toISOString(), customer: { name: 'Amit Singh', phone: '9876543212' }, total: 3500, paymentMode: 'cash', items: [{ productId: '4', name: 'Watch', quantity: 1, price: 3500, margin: 50, sku: 'WT-01', hsn: '9102', gst: 18 }] },
-];
-
 const salesColumns: ColumnDef<Sale>[] = [
   {
     id: 'expander',
@@ -94,10 +88,15 @@ const salesColumns: ColumnDef<Sale>[] = [
   },
 ];
 
-export function AllSalesTab() {
+interface AllSalesTabProps {
+  isDemoMode: boolean;
+  demoSales: Sale[];
+  setDemoSales: React.Dispatch<React.SetStateAction<Sale[]>>;
+}
+
+export function AllSalesTab({ isDemoMode, demoSales, setDemoSales }: AllSalesTabProps) {
   const { user } = useUser();
   const firestore = useFirestore();
-  const isDemoMode = !user;
 
   const userDocRef = useMemoFirebase(() => {
     if (isDemoMode || !firestore || !user) return null;
@@ -199,13 +198,36 @@ export function AllSalesTab() {
   };
 
   useEffect(() => {
-    fetchData();
-  }, [shopId, pageIndex, pageSize, sorting, isFilterActive, isDemoMode]);
+    if (isDemoMode) {
+      let filtered = demoSales;
+
+      if (searchTerm) {
+        filtered = filtered.filter(s => 
+            s.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+            s.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()));
+      }
+      
+      const startDate = new Date(`${startYear}-${startMonth.padStart(2, '0')}-${startDay.padStart(2, '0')}`);
+      const endDate = new Date(`${endYear}-${endMonth.padStart(2, '0')}-${endDay.padStart(2, '0')}`);
+      endDate.setHours(23, 59, 59, 999);
+      
+      const isValidStartDate = !isNaN(startDate.getTime()) && startDay && startMonth && startYear;
+      const isValidEndDate = !isNaN(endDate.getTime()) && endDay && endMonth && endYear;
+
+      if (isValidStartDate) filtered = filtered.filter(s => new Date(s.date) >= startDate);
+      if (isValidEndDate) filtered = filtered.filter(s => new Date(s.date) <= endDate);
+
+      setData(filtered);
+      setPageCount(Math.ceil(filtered.length / pageSize));
+    } else {
+      fetchData();
+    }
+  }, [shopId, pageIndex, pageSize, sorting, isFilterActive, isDemoMode, demoSales, searchTerm, startDay, startMonth, startYear, endDay, endMonth, endYear]);
 
   const handleFilter = () => {
-    setPageIndex(0); // Reset to first page
+    setPageIndex(0);
     setLastVisible(null);
-    setIsFilterActive(prev => !prev); // Trigger re-fetch
+    setIsFilterActive(prev => !prev);
   };
   
   const handleClearFilter = () => {
@@ -226,7 +248,7 @@ export function AllSalesTab() {
   const isAnyFilterApplied = !!(searchTerm || startDay || endDay);
 
   const table = useReactTable({
-    data,
+    data: isDemoMode ? data : data,
     columns: salesColumns,
     pageCount,
     state: { sorting, expanded, pagination: { pageIndex, pageSize } },

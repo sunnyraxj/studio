@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import {
@@ -27,6 +27,17 @@ import { Button } from '@/components/ui/button';
 
 
 // Common Types
+export type SaleItem = {
+  productId: string;
+  name: string;
+  quantity: number;
+  price: number;
+  margin: number;
+  sku?: string;
+  hsn?: string;
+  gst?: number;
+};
+
 export type Sale = {
   id: string;
   invoiceNumber: string;
@@ -51,17 +62,6 @@ export type Sale = {
     card?: number;
     upi?: number;
   }
-};
-
-export type SaleItem = {
-  productId: string;
-  name: string;
-  quantity: number;
-  price: number;
-  margin: number;
-  sku?: string;
-  hsn?: string;
-  gst?: number;
 };
 
 export type ReportItem = SaleItem & {
@@ -93,7 +93,7 @@ type UserProfile = {
 };
 
 // Demo Data
-const demoSales: Sale[] = [
+const initialDemoSales: Sale[] = [
     { id: '1', invoiceNumber: 'D-INV-001', customer: { name: 'Ravi Kumar', phone: '9876543210', state: 'Assam', gstin: '18ABCDE1234F1Z5' }, date: new Date().toISOString(), total: 2625, subtotal: 2500, cgst: 62.5, sgst: 62.5, igst: 0, items: [{ productId: '1', name: 'T-Shirt', quantity: 2, price: 500, margin: 25, sku: 'TS-01', hsn: '6109', gst: 5 }, { productId: '2', name: 'Jeans', quantity: 1, price: 1500, margin: 30, sku: 'JN-01', hsn: '6203', gst: 5 }] },
     { id: '2', invoiceNumber: 'D-INV-002', date: new Date(Date.now() - 86400000).toISOString(), customer: { name: 'Priya Sharma', phone: '9876543211', state: 'Delhi' }, total: 1416, subtotal: 1200, cgst: 0, sgst: 0, igst: 216, items: [{ productId: '3', name: 'Sneakers', quantity: 1, price: 1200, margin: 40, sku: 'SH-01', hsn: '6404', gst: 18 }] },
     { id: '3', invoiceNumber: 'D-INV-003', date: new Date(Date.now() - 172800000).toISOString(), customer: { name: 'Amit Singh', phone: '9876543212', state: 'Assam' }, total: 4130, subtotal: 3500, cgst: 315, sgst: 315, igst: 0, items: [{ productId: '4', name: 'Watch', quantity: 1, price: 3500, margin: 50, sku: 'WT-01', hsn: '9102', gst: 18 }] },
@@ -106,6 +106,7 @@ export const demoCustomers: Customer[] = [
     { id: '3', name: 'Amit Singh', phone: '9876543212', invoiceNumbers: ['D-INV-003'], lastPurchaseDate: new Date(Date.now() - 172800000).toISOString() },
     { id: '4', name: 'Sunita Gupta', phone: '9876543213', invoiceNumbers: ['D-INV-004'], lastPurchaseDate: new Date().toISOString() },
 ];
+
 
 const LoadingComponent = () => (
   <Card>
@@ -146,6 +147,9 @@ export default function DashboardPage() {
   const firestore = useFirestore();
   const isDemoMode = !user;
   const [activeTab, setActiveTab] = useState('overview');
+  
+  // Centralized state for demo data
+  const [demoSales, setDemoSales] = useState<Sale[]>(initialDemoSales);
 
   const userDocRef = useMemoFirebase(() => {
     if (isDemoMode || !firestore) return null;
@@ -320,19 +324,19 @@ export default function DashboardPage() {
                 </div>
             </TabsContent>
             <TabsContent value="sales">
-                <AllSalesTab />
+                <AllSalesTab isDemoMode={isDemoMode} demoSales={demoSales} setDemoSales={setDemoSales} />
             </TabsContent>
             <TabsContent value="reports">
-                <ReportsTab />
+                <ReportsTab isDemoMode={isDemoMode} demoSales={demoSales} />
             </TabsContent>
             <TabsContent value="payments">
-                <PaymentsTab />
+                <PaymentsTab isDemoMode={isDemoMode} demoSales={demoSales} />
             </TabsContent>
             <TabsContent value="customers">
-                <CustomersTab isDemoMode={isDemoMode} />
+                <CustomersTab isDemoMode={isDemoMode} demoSales={demoSales} />
             </TabsContent>
             <TabsContent value="gst">
-                <GstTab />
+                <GstTab isDemoMode={isDemoMode} demoSales={demoSales} />
             </TabsContent>
         </Tabs>
     </div>
