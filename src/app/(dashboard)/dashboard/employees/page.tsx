@@ -69,6 +69,11 @@ type SalaryPayment = {
     notes: string;
 }
 
+const demoEmployeesData: Employee[] = [
+    { id: 'emp1', name: 'Arun Kumar', phone: '9876543210', address: '123 Main St, Delhi', role: 'Sales Manager', joiningDate: '2023-01-15T00:00:00.000Z', monthlySalary: 35000, bankDetails: { bankName: 'HDFC Bank', accountNumber: '...1234', ifscCode: 'HDFC000123' }, salaryPayments: [{id: 'p1', paymentDate: new Date().toISOString(), amount: 35000, notes: 'Salary for last month'}] },
+    { id: 'emp2', name: 'Sunita Sharma', phone: '9876543211', address: '456 MG Road, Mumbai', role: 'Cashier', joiningDate: '2023-03-20T00:00:00.000Z', monthlySalary: 22000, bankDetails: { upiId: 'sunita@upi' }, salaryPayments: [] },
+];
+
 export default function EmployeesPage() {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'name', desc: false }]);
   const [expanded, setExpanded] = useState<ExpandedState>({});
@@ -97,6 +102,8 @@ export default function EmployeesPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const isDemoMode = !user;
+
+  const [demoEmployees, setDemoEmployees] = useState(demoEmployeesData);
   
   const userDocRef = useMemoFirebase(() => {
     if (isDemoMode || !firestore) return null;
@@ -114,7 +121,7 @@ export default function EmployeesPage() {
   const { data: employeesData, isLoading } = useCollection<Employee>(employeesQuery);
 
   const filteredData = useMemo(() => {
-     let data = employeesData || [];
+     let data = isDemoMode ? demoEmployees : (employeesData || []);
      if (searchTerm) {
         data = data.filter(employee => 
             employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -123,7 +130,7 @@ export default function EmployeesPage() {
         );
      }
      return data;
-  }, [employeesData, searchTerm]);
+  }, [employeesData, searchTerm, isDemoMode, demoEmployees]);
   
   const columns: ColumnDef<Employee>[] = [
     {
@@ -209,25 +216,29 @@ export default function EmployeesPage() {
         return;
     }
     const newEmployee = {
+        id: `demo-${Date.now()}`,
         name,
         phone,
         address,
         role,
         joiningDate: new Date(joiningDate).toISOString(),
         monthlySalary: parseFloat(monthlySalary),
-        bankDetails: { bankName, accountNumber, ifscCode, upiId }
+        bankDetails: { bankName, accountNumber, ifscCode, upiId },
+        salaryPayments: []
     }
     
     if (isDemoMode) {
+        setDemoEmployees(prev => [...prev, newEmployee]);
         toast({ title: 'Success (Demo)', description: `${name} has been added.`});
     } else {
          if (!shopId || !firestore) {
             toast({ variant: 'destructive', title: 'Error', description: 'Shop not found.' });
             return;
         }
+        const { id, ...employeeData } = newEmployee; // Don't save demo id to firestore
         const employeesCollection = collection(firestore, `shops/${shopId}/employees`);
         try {
-            await addDoc(employeesCollection, newEmployee);
+            await addDoc(employeesCollection, employeeData);
             toast({ title: 'Success', description: `${name} has been added to your staff.`});
         } catch(e: any) {
              toast({ variant: 'destructive', title: 'Error', description: e.message });
@@ -245,18 +256,29 @@ export default function EmployeesPage() {
     }
     
     const newPayment = {
+      id: `demo-pay-${Date.now()}`,
       paymentDate: paymentDate.toISOString(),
       amount: parseFloat(paymentAmount),
       notes: paymentNotes
     };
 
     if (isDemoMode) {
-      toast({ title: 'Success (Demo)', description: `Paid ₹${paymentAmount} to ${selectedEmployee.name}.` });
+        setDemoEmployees(prev => prev.map(emp => {
+            if (emp.id === selectedEmployee.id) {
+                return {
+                    ...emp,
+                    salaryPayments: [...(emp.salaryPayments || []), newPayment]
+                }
+            }
+            return emp;
+        }))
+        toast({ title: 'Success (Demo)', description: `Paid ₹${paymentAmount} to ${selectedEmployee.name}.` });
     } else {
       if (!shopId || !firestore) return;
+      const {id, ...paymentData} = newPayment;
       const paymentsCollection = collection(firestore, `shops/${shopId}/employees/${selectedEmployee.id}/salaryPayments`);
       try {
-        await addDoc(paymentsCollection, newPayment);
+        await addDoc(paymentsCollection, paymentData);
         toast({ title: 'Success', description: `Salary paid to ${selectedEmployee.name}.` });
       } catch (e: any) {
         toast({ variant: 'destructive', title: 'Error', description: e.message });
@@ -337,7 +359,7 @@ export default function EmployeesPage() {
                                     <p><strong>UPI ID:</strong> {row.original.bankDetails?.upiId || 'N/A'}</p>
                                 </div>
                             </div>
-                            <SalaryPaymentHistory employee={row.original} />
+                            <SalaryPaymentHistory employee={row.original} isDemoMode={isDemoMode} />
                           </div>
                         </TableCell>
                       </TableRow>
@@ -415,10 +437,9 @@ export default function EmployeesPage() {
   );
 }
 
-const SalaryPaymentHistory: React.FC<{ employee: Employee }> = ({ employee }) => {
+const SalaryPaymentHistory: React.FC<{ employee: Employee, isDemoMode: boolean }> = ({ employee, isDemoMode }) => {
     const { user } = useUser();
     const firestore = useFirestore();
-    const isDemoMode = !user;
     
     const userDocRef = useMemoFirebase(() => {
         if (isDemoMode || !firestore) return null;
@@ -433,13 +454,15 @@ const SalaryPaymentHistory: React.FC<{ employee: Employee }> = ({ employee }) =>
     }, [shopId, firestore, isDemoMode, employee.id]);
 
     const { data: paymentsData, isLoading } = useCollection<SalaryPayment>(paymentsQuery);
+    
+    const data = isDemoMode ? employee.salaryPayments : paymentsData;
 
     if (isLoading && !isDemoMode) return <p>Loading payment history...</p>
 
     return (
         <div className="mt-4">
             <h5 className="font-semibold mb-2">Salary Payment History</h5>
-            {paymentsData && paymentsData.length > 0 ? (
+            {data && data.length > 0 ? (
                  <Table>
                     <TableHeader>
                         <TableRow>
@@ -449,7 +472,7 @@ const SalaryPaymentHistory: React.FC<{ employee: Employee }> = ({ employee }) =>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {paymentsData.map(p => (
+                        {data.map(p => (
                             <TableRow key={p.id}>
                                 <TableCell>{format(new Date(p.paymentDate), 'dd MMM, yyyy')}</TableCell>
                                 <TableCell>{p.notes}</TableCell>
