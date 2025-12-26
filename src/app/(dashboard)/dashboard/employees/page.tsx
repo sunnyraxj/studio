@@ -244,6 +244,12 @@ const EmployeeDetailsDialog: React.FC<{ employee: Employee | null, open: boolean
                             <DialogTitle className="text-2xl">{employee.name}</DialogTitle>
                             <DialogDescription>{employee.role}</DialogDescription>
                         </div>
+                        <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" onClick={() => handleWhatsApp(employee)} disabled={!employee.phone}>
+                                <MessageSquare className="mr-2 h-4 w-4" /> WhatsApp
+                            </Button>
+                            <Button variant="secondary" size="sm" onClick={() => onOpenChange(false)}>Close</Button>
+                        </div>
                     </div>
                 </DialogHeader>
                  <div className="py-4 space-y-6 max-h-[70vh] overflow-y-auto pr-2">
@@ -284,12 +290,6 @@ const EmployeeDetailsDialog: React.FC<{ employee: Employee | null, open: boolean
                     
                     <SalaryPaymentHistory employee={employee} payments={salaryPayments} isLoading={isLoading} />
                 </div>
-                <DialogFooter>
-                    <Button variant="outline" size="sm" onClick={() => handleWhatsApp(employee)} disabled={!employee.phone}>
-                        <MessageSquare className="mr-2 h-4 w-4" /> WhatsApp
-                    </Button>
-                    <Button variant="secondary" onClick={() => onOpenChange(false)}>Close</Button>
-                </DialogFooter>
             </DialogContent>
         </Dialog>
     )
