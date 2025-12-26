@@ -44,6 +44,12 @@ import { Calendar } from '@/components/ui/calendar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 
 
 type Employee = {
@@ -94,42 +100,71 @@ const paymentHistoryColumns: ColumnDef<SalaryPayment>[] = [
 
 const SalaryPaymentHistory: React.FC<{ employee: Employee, payments: SalaryPayment[], isLoading: boolean }> = ({ employee, payments, isLoading }) => {
     
-    const table = useReactTable({
-        data: payments,
-        columns: paymentHistoryColumns,
-        getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        initialState: {
-            pagination: { pageSize: 30 }
-        }
-    });
+    const monthlyPayments = useMemo(() => {
+        if (!payments) return {};
+        return payments.reduce((acc, payment) => {
+            const monthKey = format(new Date(payment.paymentDate), 'yyyy-MM');
+            if (!acc[monthKey]) {
+                acc[monthKey] = [];
+            }
+            acc[monthKey].push(payment);
+            return acc;
+        }, {} as Record<string, SalaryPayment[]>);
+    }, [payments]);
+
+    const sortedMonthKeys = useMemo(() => {
+        return Object.keys(monthlyPayments).sort().reverse();
+    }, [monthlyPayments]);
 
     return (
         <div className="mt-4">
             <h5 className="font-semibold mb-2">Salary Payment History</h5>
             {isLoading ? <p>Loading payment history...</p> 
-            : payments && payments.length > 0 ? (
-                 <div className="space-y-4">
-                    <div className="rounded-md border">
-                        <Table>
-                            <TableHeader>
-                                {table.getHeaderGroups().map(hg => (
-                                    <TableRow key={hg.id}>{hg.headers.map(h => <TableHead key={h.id}>{flexRender(h.column.columnDef.header, h.getContext())}</TableHead>)}</TableRow>
-                                ))}
-                            </TableHeader>
-                            <TableBody>
-                                {table.getRowModel().rows.map(row => (
-                                    <TableRow key={row.id}>
-                                        {row.getVisibleCells().map(cell => (
-                                            <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
-                                        ))}
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                    {table.getPageCount() > 1 && <DataTablePagination table={table} />}
-                 </div>
+            : sortedMonthKeys && sortedMonthKeys.length > 0 ? (
+                <Accordion type="single" collapsible className="w-full">
+                    {sortedMonthKeys.map(monthKey => {
+                        const monthPayments = monthlyPayments[monthKey];
+                        const totalMonthPayment = monthPayments.reduce((sum, p) => sum + p.amount, 0);
+                        const monthDate = new Date(monthKey + '-02'); // Use day 2 to avoid timezone issues
+                        
+                        return (
+                            <AccordionItem value={monthKey} key={monthKey}>
+                                <AccordionTrigger>
+                                    <div className="flex justify-between w-full pr-4">
+                                        <span className="font-semibold">{format(monthDate, 'MMMM yyyy')}</span>
+                                        <span className="font-bold text-green-600">Total Paid: ₹{totalMonthPayment.toLocaleString('en-IN')}</span>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent>
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Date</TableHead>
+                                                <TableHead>Notes</TableHead>
+                                                <TableHead>Mode</TableHead>
+                                                <TableHead className="text-right">Amount</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {monthPayments.map(payment => (
+                                                <TableRow key={payment.id}>
+                                                    <TableCell>{format(new Date(payment.paymentDate), 'dd MMM')}</TableCell>
+                                                    <TableCell>{payment.notes}</TableCell>
+                                                    <TableCell>
+                                                        <div className="capitalize flex items-center">
+                                                            {getModeIcon(payment.paymentMode)}{payment.paymentMode === 'bank' ? 'Bank Transfer' : payment.paymentMode}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="text-right font-semibold">₹{payment.amount.toLocaleString('en-IN')}</TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </AccordionContent>
+                            </AccordionItem>
+                        )
+                    })}
+                </Accordion>
             ) : (
                 <p className="text-sm text-muted-foreground">No salary payments recorded yet.</p>
             )}
