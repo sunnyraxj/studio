@@ -106,11 +106,11 @@ const SalaryPaymentHistory: React.FC<{ employee: Employee, payments: SalaryPayme
 }
 
 const DetailItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string | React.ReactNode }) => (
-    <div className="flex items-start gap-3">
-        <Icon className="h-4 w-4 text-muted-foreground mt-1 flex-shrink-0" />
-        <div className="flex flex-col">
-            <span className="text-xs text-muted-foreground">{label}</span>
-            <span className="text-sm font-semibold">{value || 'N/A'}</span>
+    <div className="flex items-start gap-2">
+        <Icon className="h-3.5 w-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
+        <div>
+            <p className="text-xs text-muted-foreground">{label}</p>
+            <p className="text-xs font-semibold">{value || 'N/A'}</p>
         </div>
     </div>
 )
@@ -195,19 +195,18 @@ const EmployeeDetailsDialog: React.FC<{ employee: Employee | null, open: boolean
 
                      <Card>
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-base">Contact & Financial Details</CardTitle>
+                            <CardTitle className="text-sm">Contact & Financial Details</CardTitle>
                         </CardHeader>
-                        <CardContent className="flex flex-wrap gap-x-6 gap-y-4">
+                        <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-3">
                             <DetailItem icon={Phone} label="Phone" value={employee.phone} />
                             <DetailItem icon={CalendarIcon} label="Joining Date" value={format(new Date(employee.joiningDate), 'dd MMM, yyyy')} />
-                             <div className="w-full">
-                                <DetailItem icon={MapPin} label="Address" value={employee.address} />
-                            </div>
-                            <Separator className="w-full" />
-                            <DetailItem icon={Landmark} label="Bank" value={employee.bankDetails?.bankName} />
+                            <DetailItem icon={Banknote} label="UPI ID" value={employee.bankDetails?.upiId} />
+                             <DetailItem icon={Landmark} label="Bank" value={employee.bankDetails?.bankName} />
                             <DetailItem icon={Fingerprint} label="Account No" value={employee.bankDetails?.accountNumber} />
                             <DetailItem icon={Hash} label="IFSC Code" value={employee.bankDetails?.ifscCode} />
-                            <DetailItem icon={Banknote} label="UPI ID" value={employee.bankDetails?.upiId} />
+                             <div className="col-span-full">
+                                <DetailItem icon={MapPin} label="Address" value={employee.address} />
+                            </div>
                         </CardContent>
                     </Card>
                     
