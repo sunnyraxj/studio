@@ -459,7 +459,7 @@ const SalaryPaymentHistory: React.FC<{ employee: Employee, isDemoMode: boolean }
 
     const { data: paymentsData, isLoading } = useCollection<SalaryPayment>(paymentsQuery);
     
-    const data = isDemoMode ? employee.salaryPayments : paymentsData;
+    const data = isDemoMode ? employee.salaryPayments || [] : paymentsData;
 
     return (
         <div className="mt-4">
