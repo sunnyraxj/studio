@@ -406,7 +406,7 @@ export default function EmployeesPage() {
                                     <p><strong>Address:</strong> {row.original.address || 'N/A'}</p>
                                 </div>
                                 <div className="space-y-1 p-3 rounded-md border bg-background">
-                                    <p className="font-semibold text-muted-foreground">Bank Details</p>
+                                    <p className="font-semibold text-muted-foreground">Bank & UPI Details</p>
                                     <p><strong>Bank:</strong> {row.original.bankDetails?.bankName || 'N/A'}</p>
                                     <p><strong>A/C No:</strong> {row.original.bankDetails?.accountNumber || 'N/A'}</p>
                                     <p><strong>IFSC:</strong> {row.original.bankDetails?.ifscCode || 'N/A'}</p>
