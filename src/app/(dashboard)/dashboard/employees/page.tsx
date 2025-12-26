@@ -172,7 +172,9 @@ const EmployeeDetailsDialog: React.FC<{ employee: Employee | null, open: boolean
         
         const now = new Date();
         const joining = new Date(employee.joiningDate);
-        const monthsWorked = differenceInMonths(now, startOfMonth(joining)) + 1;
+        // Calculate the number of full months passed since the start of the joining month.
+        // We don't include the current month in the calculation.
+        const monthsWorked = differenceInMonths(now, startOfMonth(joining));
         
         const totalAccrued = monthsWorked * employee.monthlySalary;
         const totalPaid = salaryPayments.reduce((sum, p) => sum + p.amount, 0);
