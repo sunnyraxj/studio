@@ -82,7 +82,7 @@ export default function EmployeesPage() {
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [role, setRole] = useState('');
-  const [joiningDate, setJoiningDate] = useState<Date>();
+  const [joiningDate, setJoiningDate] = useState('');
   const [monthlySalary, setMonthlySalary] = useState('');
   const [bankName, setBankName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
@@ -195,7 +195,7 @@ export default function EmployeesPage() {
     setPhone('');
     setAddress('');
     setRole('');
-    setJoiningDate(undefined);
+    setJoiningDate('');
     setMonthlySalary('');
     setBankName('');
     setAccountNumber('');
@@ -213,7 +213,7 @@ export default function EmployeesPage() {
         phone,
         address,
         role,
-        joiningDate: joiningDate.toISOString(),
+        joiningDate: new Date(joiningDate).toISOString(),
         monthlySalary: parseFloat(monthlySalary),
         bankDetails: { bankName, accountNumber, ifscCode, upiId }
     }
@@ -365,12 +365,9 @@ export default function EmployeesPage() {
                  <div className="space-y-2"><Label htmlFor="address">Address</Label><Textarea id="address" value={address} onChange={e => setAddress(e.target.value)} /></div>
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2"><Label htmlFor="role">Role / Designation</Label><Input id="role" value={role} onChange={e => setRole(e.target.value)} /></div>
-                    <div className="space-y-2"><Label htmlFor="joiningDate">Joining Date*</Label>
-                        <Popover><PopoverTrigger asChild>
-                            <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !joiningDate && "text-muted-foreground")}>
-                                <CalendarIcon className="mr-2 h-4 w-4" />{joiningDate ? format(joiningDate, "PPP") : <span>Pick a date</span>}
-                            </Button>
-                        </PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={joiningDate} onSelect={setJoiningDate} initialFocus /></PopoverContent></Popover>
+                    <div className="space-y-2">
+                      <Label htmlFor="joiningDate">Joining Date*</Label>
+                      <Input id="joiningDate" type="date" value={joiningDate} onChange={e => setJoiningDate(e.target.value)} />
                     </div>
                 </div>
                 <div className="space-y-2"><Label htmlFor="salary">Monthly Salary (₹)*</Label><Input id="salary" type="number" value={monthlySalary} onChange={e => setMonthlySalary(e.target.value)} /></div>
@@ -467,6 +464,3 @@ const SalaryPaymentHistory: React.FC<{ employee: Employee }> = ({ employee }) =>
         </div>
     )
 }
-
-
-    
