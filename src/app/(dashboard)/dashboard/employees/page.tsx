@@ -76,45 +76,60 @@ const demoEmployeesData: Employee[] = [
     { id: 'emp2', name: 'Sunita Sharma', phone: '9876543211', address: '456 MG Road, Mumbai', role: 'Cashier', joiningDate: '2023-03-20T00:00:00.000Z', monthlySalary: 22000, bankDetails: { upiId: 'sunita@upi' }, salaryPayments: [] },
 ];
 
+const getModeIcon = (mode: string) => {
+    switch(mode) {
+        case 'cash': return <Banknote className="h-4 w-4 mr-2 text-green-600" />;
+        case 'bank': return <University className="h-4 w-4 mr-2 text-blue-600" />;
+        case 'upi': return <Wallet className="h-4 w-4 mr-2 text-purple-600" />;
+        default: return null;
+    }
+}
+
+const paymentHistoryColumns: ColumnDef<SalaryPayment>[] = [
+    { accessorKey: 'paymentDate', header: 'Date', cell: ({ row }) => format(new Date(row.getValue('paymentDate')), 'dd MMM, yyyy')},
+    { accessorKey: 'notes', header: 'Notes' },
+    { accessorKey: 'paymentMode', header: 'Mode', cell: ({ row }) => <div className="capitalize flex items-center">{getModeIcon(row.getValue('paymentMode'))}{row.getValue('paymentMode') === 'bank' ? 'Bank Transfer' : row.getValue('paymentMode')}</div> },
+    { accessorKey: 'amount', header: () => <div className="text-right">Amount Paid</div>, cell: ({ row }) => <div className="text-right font-semibold">₹{row.original.amount.toLocaleString('en-IN')}</div>}
+];
+
 const SalaryPaymentHistory: React.FC<{ employee: Employee, payments: SalaryPayment[], isLoading: boolean }> = ({ employee, payments, isLoading }) => {
     
-    const getModeIcon = (mode: string) => {
-        switch(mode) {
-            case 'cash': return <Banknote className="h-4 w-4 mr-2 text-green-600" />;
-            case 'bank': return <University className="h-4 w-4 mr-2 text-blue-600" />;
-            case 'upi': return <Wallet className="h-4 w-4 mr-2 text-purple-600" />;
-            default: return null;
+    const table = useReactTable({
+        data: payments,
+        columns: paymentHistoryColumns,
+        getCoreRowModel: getCoreRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+        initialState: {
+            pagination: { pageSize: 30 }
         }
-    }
+    });
 
     return (
         <div className="mt-4">
             <h5 className="font-semibold mb-2">Salary Payment History</h5>
             {isLoading ? <p>Loading payment history...</p> 
             : payments && payments.length > 0 ? (
-                 <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Notes</TableHead>
-                            <TableHead>Mode</TableHead>
-                            <TableHead className="text-right">Amount Paid</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {payments.map(p => (
-                            <TableRow key={p.id}>
-                                <TableCell>{format(new Date(p.paymentDate), 'dd MMM, yyyy')}</TableCell>
-                                <TableCell>{p.notes}</TableCell>
-                                <TableCell className="capitalize flex items-center">
-                                    {getModeIcon(p.paymentMode)}
-                                    {p.paymentMode === 'bank' ? 'Bank Transfer' : p.paymentMode}
-                                </TableCell>
-                                <TableCell className="text-right font-semibold">₹{p.amount.toLocaleString('en-IN')}</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                 </Table>
+                 <div className="space-y-4">
+                    <div className="rounded-md border">
+                        <Table>
+                            <TableHeader>
+                                {table.getHeaderGroups().map(hg => (
+                                    <TableRow key={hg.id}>{hg.headers.map(h => <TableHead key={h.id}>{flexRender(h.column.columnDef.header, h.getContext())}</TableHead>)}</TableRow>
+                                ))}
+                            </TableHeader>
+                            <TableBody>
+                                {table.getRowModel().rows.map(row => (
+                                    <TableRow key={row.id}>
+                                        {row.getVisibleCells().map(cell => (
+                                            <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                                        ))}
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                    {table.getPageCount() > 1 && <DataTablePagination table={table} />}
+                 </div>
             ) : (
                 <p className="text-sm text-muted-foreground">No salary payments recorded yet.</p>
             )}
