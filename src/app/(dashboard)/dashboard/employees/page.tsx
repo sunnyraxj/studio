@@ -43,6 +43,7 @@ import { toast } from '@/hooks/use-toast.tsx';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type Employee = {
     id: string;
@@ -351,30 +352,32 @@ export default function EmployeesPage() {
       <Dialog open={isAddEmployeeOpen} onOpenChange={setIsAddEmployeeOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader><DialogTitle>Add New Employee</DialogTitle></DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label htmlFor="name">Name*</Label><Input id="name" value={name} onChange={e => setName(e.target.value)} /></div>
-              <div className="space-y-2"><Label htmlFor="phone">Phone</Label><Input id="phone" value={phone} onChange={e => setPhone(e.target.value)} /></div>
-            </div>
-             <div className="space-y-2"><Label htmlFor="address">Address</Label><Textarea id="address" value={address} onChange={e => setAddress(e.target.value)} /></div>
-            <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2"><Label htmlFor="role">Role / Designation</Label><Input id="role" value={role} onChange={e => setRole(e.target.value)} /></div>
-                <div className="space-y-2"><Label htmlFor="joiningDate">Joining Date*</Label>
-                    <Popover><PopoverTrigger asChild>
-                        <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !joiningDate && "text-muted-foreground")}>
-                            <CalendarIcon className="mr-2 h-4 w-4" />{joiningDate ? format(joiningDate, "PPP") : <span>Pick a date</span>}
-                        </Button>
-                    </PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={joiningDate} onSelect={setJoiningDate} initialFocus /></PopoverContent></Popover>
+            <ScrollArea className="max-h-[70vh] p-4">
+              <div className="grid gap-4 py-4 pr-2">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2"><Label htmlFor="name">Name*</Label><Input id="name" value={name} onChange={e => setName(e.target.value)} /></div>
+                  <div className="space-y-2"><Label htmlFor="phone">Phone</Label><Input id="phone" value={phone} onChange={e => setPhone(e.target.value)} /></div>
                 </div>
-            </div>
-            <div className="space-y-2"><Label htmlFor="salary">Monthly Salary (₹)*</Label><Input id="salary" type="number" value={monthlySalary} onChange={e => setMonthlySalary(e.target.value)} /></div>
-            <h4 className="font-semibold text-muted-foreground pt-4 border-t">Bank Details (Optional)</h4>
-            <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2"><Label htmlFor="bankName">Bank Name</Label><Input id="bankName" value={bankName} onChange={e => setBankName(e.target.value)} /></div>
-                <div className="space-y-2"><Label htmlFor="ifsc">IFSC Code</Label><Input id="ifsc" value={ifscCode} onChange={e => setIfscCode(e.target.value)} /></div>
-            </div>
-            <div className="space-y-2"><Label htmlFor="accountNumber">Account Number</Label><Input id="accountNumber" value={accountNumber} onChange={e => setAccountNumber(e.target.value)} /></div>
-          </div>
+                 <div className="space-y-2"><Label htmlFor="address">Address</Label><Textarea id="address" value={address} onChange={e => setAddress(e.target.value)} /></div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2"><Label htmlFor="role">Role / Designation</Label><Input id="role" value={role} onChange={e => setRole(e.target.value)} /></div>
+                    <div className="space-y-2"><Label htmlFor="joiningDate">Joining Date*</Label>
+                        <Popover><PopoverTrigger asChild>
+                            <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !joiningDate && "text-muted-foreground")}>
+                                <CalendarIcon className="mr-2 h-4 w-4" />{joiningDate ? format(joiningDate, "PPP") : <span>Pick a date</span>}
+                            </Button>
+                        </PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={joiningDate} onSelect={setJoiningDate} initialFocus /></PopoverContent></Popover>
+                    </div>
+                </div>
+                <div className="space-y-2"><Label htmlFor="salary">Monthly Salary (₹)*</Label><Input id="salary" type="number" value={monthlySalary} onChange={e => setMonthlySalary(e.target.value)} /></div>
+                <h4 className="font-semibold text-muted-foreground pt-4 border-t">Bank Details (Optional)</h4>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2"><Label htmlFor="bankName">Bank Name</Label><Input id="bankName" value={bankName} onChange={e => setBankName(e.target.value)} /></div>
+                    <div className="space-y-2"><Label htmlFor="ifsc">IFSC Code</Label><Input id="ifsc" value={ifscCode} onChange={e => setIfscCode(e.target.value)} /></div>
+                </div>
+                <div className="space-y-2"><Label htmlFor="accountNumber">Account Number</Label><Input id="accountNumber" value={accountNumber} onChange={e => setAccountNumber(e.target.value)} /></div>
+              </div>
+            </ScrollArea>
           <DialogFooter>
             <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
             <Button onClick={handleAddEmployee}>Save Employee</Button>
@@ -459,5 +462,6 @@ const SalaryPaymentHistory: React.FC<{ employee: Employee }> = ({ employee }) =>
         </div>
     )
 }
+
 
     
