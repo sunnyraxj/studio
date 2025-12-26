@@ -61,17 +61,14 @@ type AggregatedKhata = {
     entries: KhataEntry[];
 }
 
-let demoKhataEntries: KhataEntry[] = [
-    { id: 'k1', customerName: 'Rohan Sharma', customerPhone: '9876543210', amount: 1500, notes: 'Groceries', date: new Date(Date.now() - 86400000 * 2).toISOString(), status: 'unpaid', type: 'credit' },
-    { id: 'k2', customerName: 'Priya Patel', customerPhone: '9876543211', amount: 800, notes: '2 T-shirts', date: new Date(Date.now() - 86400000 * 5).toISOString(), status: 'unpaid', type: 'credit' },
-    { id: 'k3', customerName: 'Rohan Sharma', customerPhone: '9876543210', amount: -500, notes: 'Paid back a bit', date: new Date(Date.now() - 86400000 * 1).toISOString(), status: 'paid', type: 'payment' },
-    { id: 'k4', customerName: 'Amit Singh', customerPhone: '9876543212', amount: 6200, notes: 'Building materials', date: new Date(Date.now() - 86400000 * 10).toISOString(), status: 'unpaid', type: 'credit' },
-    { id: 'k5', customerName: 'Sunita Devi', customerPhone: '9876543213', amount: 350, notes: 'Snacks and drinks', date: new Date(Date.now() - 86400000 * 3).toISOString(), status: 'unpaid', type: 'credit' },
-    { id: 'k6', customerName: 'Priya Patel', customerPhone: '9876543211', amount: 200, notes: 'More items', date: new Date(Date.now() - 86400000 * 3).toISOString(), status: 'unpaid', type: 'credit' },
-];
 
+interface KhataBookPageProps {
+    isDemoMode: boolean;
+    demoKhataEntries: KhataEntry[];
+    setDemoKhataEntries: React.Dispatch<React.SetStateAction<KhataEntry[]>>;
+}
 
-export default function KhataBookPage() {
+export default function KhataBookPage({ isDemoMode, demoKhataEntries, setDemoKhataEntries }: KhataBookPageProps) {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'totalDue', desc: true }]);
   const [expanded, setExpanded] = useState<ExpandedState>({});
   const [searchTerm, setSearchTerm] = useState('');
@@ -91,9 +88,6 @@ export default function KhataBookPage() {
   
   const { user } = useUser();
   const firestore = useFirestore();
-  const isDemoMode = !user;
-
-  const [localDemoData, setLocalDemoData] = useState<KhataEntry[]>(demoKhataEntries);
 
   const userDocRef = useMemoFirebase(() => {
     if (isDemoMode || !firestore) return null;
@@ -111,7 +105,7 @@ export default function KhataBookPage() {
   const { data: khataData, isLoading } = useCollection<KhataEntry>(khataQuery);
 
   const aggregatedData = useMemo(() => {
-    const dataToProcess = isDemoMode ? localDemoData : (khataData || []);
+    const dataToProcess = isDemoMode ? demoKhataEntries : (khataData || []);
     if (dataToProcess.length === 0) return [];
     
     const customerMap = new Map<string, AggregatedKhata>();
@@ -139,7 +133,7 @@ export default function KhataBookPage() {
     });
 
     return Array.from(customerMap.values());
-  }, [khataData, isDemoMode, localDemoData]);
+  }, [khataData, isDemoMode, demoKhataEntries]);
 
   const filteredData = useMemo(() => {
      let data = aggregatedData;
@@ -160,7 +154,7 @@ export default function KhataBookPage() {
   
   const handleMarkAsPaid = async (entryId: string) => {
     if (isDemoMode) {
-        setLocalDemoData(prevData =>
+        setDemoKhataEntries(prevData =>
             prevData.map(entry =>
                 entry.id === entryId ? { ...entry, status: 'paid' } : entry
             )
@@ -328,7 +322,7 @@ export default function KhataBookPage() {
     };
 
     if (isDemoMode) {
-        setLocalDemoData(prevData => [{...newEntry, id: `demo-${Date.now()}`}, ...prevData]);
+        setDemoKhataEntries(prevData => [{...newEntry, id: `demo-${Date.now()}`}, ...prevData]);
         toast({ title: 'Success (Demo)', description: 'New credit entry added to memory.'});
     } else {
         if (!shopId || !firestore) {
@@ -368,7 +362,7 @@ export default function KhataBookPage() {
     };
 
      if (isDemoMode) {
-        setLocalDemoData(prevData => [{...newEntry, id: `demo-pay-${Date.now()}`}, ...prevData]);
+        setDemoKhataEntries(prevData => [{...newEntry, id: `demo-pay-${Date.now()}`}, ...prevData]);
         toast({ title: 'Success (Demo)', description: 'Payment recorded in memory.'});
     } else {
          if (!shopId || !firestore) {
@@ -660,5 +654,3 @@ export default function KhataBookPage() {
     </Card>
   );
 }
-
-    
