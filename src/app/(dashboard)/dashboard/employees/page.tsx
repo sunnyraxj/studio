@@ -148,6 +148,12 @@ const EmployeeDetailsDialog: React.FC<{ employee: Employee | null, open: boolean
         
         return { totalAccrued, totalPaid, balanceDue };
     }, [employee, salaryPayments]);
+    
+    const balanceLabel = useMemo(() => {
+        if (balanceDue > 0) return 'Need to Pay';
+        if (balanceDue < 0) return 'Advance Amount';
+        return 'Settled';
+    }, [balanceDue]);
 
 
     const handleWhatsApp = (emp: Employee) => {
@@ -187,14 +193,14 @@ const EmployeeDetailsDialog: React.FC<{ employee: Employee | null, open: boolean
                                 <p className="text-lg font-bold text-green-600">₹{totalPaid.toLocaleString('en-IN')}</p>
                             </div>
                             <div>
-                                <p className="text-sm text-muted-foreground">Balance Due</p>
-                                <p className="text-lg font-bold text-destructive">₹{balanceDue.toLocaleString('en-IN')}</p>
+                                <p className="text-sm text-muted-foreground">{balanceLabel}</p>
+                                <p className={cn("text-lg font-bold", balanceDue > 0 ? 'text-destructive' : 'text-green-600')}>{balanceDue === 0 ? '₹0' : `₹${Math.abs(balanceDue).toLocaleString('en-IN')}`}</p>
                             </div>
                         </div>
                     </div>
 
                      <Card>
-                        <CardHeader className="pb-2">
+                        <CardHeader className="pb-2 pt-4">
                             <CardTitle className="text-sm">Contact & Financial Details</CardTitle>
                         </CardHeader>
                         <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-3">
