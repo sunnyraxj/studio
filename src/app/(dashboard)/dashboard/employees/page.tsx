@@ -30,7 +30,7 @@ import { DataTablePagination } from '@/components/data-table-pagination';
 import { format, differenceInMonths, startOfMonth } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { CaretSortIcon } from '@radix-ui/react-icons';
-import { Search, PlusCircle, HandCoins, Calendar as CalendarIcon, MessageSquare, Phone, MapPin, Banknote, Landmark, Hash, Fingerprint } from 'lucide-react';
+import { Search, PlusCircle, HandCoins, Calendar as CalendarIcon, MessageSquare, Phone, MapPin, Banknote, Landmark, Hash, Fingerprint, Wallet, University } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -43,6 +43,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+
 
 type Employee = {
     id: string;
@@ -66,14 +68,24 @@ type SalaryPayment = {
     paymentDate: string;
     amount: number;
     notes: string;
-}
+    paymentMode: 'cash' | 'bank' | 'upi';
+};
 
 const demoEmployeesData: Employee[] = [
-    { id: 'emp1', name: 'Arun Kumar', phone: '9876543210', address: '123 Main St, Delhi', role: 'Sales Manager', joiningDate: '2023-01-15T00:00:00.000Z', monthlySalary: 35000, bankDetails: { bankName: 'HDFC Bank', accountNumber: '...1234', ifscCode: 'HDFC000123', upiId: 'arun.kumar@okhdfc' }, salaryPayments: [{id: 'p1', paymentDate: new Date(Date.now() - 86400000 * 30).toISOString(), amount: 35000, notes: 'Salary for last month'}] },
+    { id: 'emp1', name: 'Arun Kumar', phone: '9876543210', address: '123 Main St, Delhi', role: 'Sales Manager', joiningDate: '2023-01-15T00:00:00.000Z', monthlySalary: 35000, bankDetails: { bankName: 'HDFC Bank', accountNumber: '...1234', ifscCode: 'HDFC000123', upiId: 'arun.kumar@okhdfc' }, salaryPayments: [{id: 'p1', paymentDate: new Date(Date.now() - 86400000 * 30).toISOString(), amount: 35000, notes: 'Salary for last month', paymentMode: 'bank'}] },
     { id: 'emp2', name: 'Sunita Sharma', phone: '9876543211', address: '456 MG Road, Mumbai', role: 'Cashier', joiningDate: '2023-03-20T00:00:00.000Z', monthlySalary: 22000, bankDetails: { upiId: 'sunita@upi' }, salaryPayments: [] },
 ];
 
 const SalaryPaymentHistory: React.FC<{ employee: Employee, payments: SalaryPayment[], isLoading: boolean }> = ({ employee, payments, isLoading }) => {
+    
+    const getModeIcon = (mode: string) => {
+        switch(mode) {
+            case 'cash': return <Banknote className="h-4 w-4 mr-2 text-green-600" />;
+            case 'bank': return <University className="h-4 w-4 mr-2 text-blue-600" />;
+            case 'upi': return <Wallet className="h-4 w-4 mr-2 text-purple-600" />;
+            default: return null;
+        }
+    }
 
     return (
         <div className="mt-4">
@@ -85,6 +97,7 @@ const SalaryPaymentHistory: React.FC<{ employee: Employee, payments: SalaryPayme
                         <TableRow>
                             <TableHead>Date</TableHead>
                             <TableHead>Notes</TableHead>
+                            <TableHead>Mode</TableHead>
                             <TableHead className="text-right">Amount Paid</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -93,6 +106,10 @@ const SalaryPaymentHistory: React.FC<{ employee: Employee, payments: SalaryPayme
                             <TableRow key={p.id}>
                                 <TableCell>{format(new Date(p.paymentDate), 'dd MMM, yyyy')}</TableCell>
                                 <TableCell>{p.notes}</TableCell>
+                                <TableCell className="capitalize flex items-center">
+                                    {getModeIcon(p.paymentMode)}
+                                    {p.paymentMode === 'bank' ? 'Bank Transfer' : p.paymentMode}
+                                </TableCell>
                                 <TableCell className="text-right font-semibold">₹{p.amount.toLocaleString('en-IN')}</TableCell>
                             </TableRow>
                         ))}
@@ -206,8 +223,8 @@ const EmployeeDetailsDialog: React.FC<{ employee: Employee | null, open: boolean
                         <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-3">
                             <DetailItem icon={Phone} label="Phone" value={employee.phone} />
                             <DetailItem icon={CalendarIcon} label="Joining Date" value={format(new Date(employee.joiningDate), 'dd MMM, yyyy')} />
-                            <DetailItem icon={Banknote} label="UPI ID" value={employee.bankDetails?.upiId} />
-                             <DetailItem icon={Landmark} label="Bank" value={employee.bankDetails?.bankName} />
+                            <DetailItem icon={Wallet} label="UPI ID" value={employee.bankDetails?.upiId} />
+                            <DetailItem icon={Landmark} label="Bank" value={employee.bankDetails?.bankName} />
                             <DetailItem icon={Fingerprint} label="Account No" value={employee.bankDetails?.accountNumber} />
                             <DetailItem icon={Hash} label="IFSC Code" value={employee.bankDetails?.ifscCode} />
                              <div className="col-span-full">
@@ -250,6 +267,7 @@ export default function EmployeesPage() {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
   const [paymentDate, setPaymentDate] = useState<Date>();
+  const [paymentMode, setPaymentMode] = useState<'cash' | 'bank' | 'upi'>('bank');
 
   const { user } = useUser();
   const firestore = useFirestore();
@@ -402,11 +420,12 @@ export default function EmployeesPage() {
       return;
     }
     
-    const newPayment = {
+    const newPayment: SalaryPayment = {
       id: `demo-pay-${Date.now()}`,
       paymentDate: paymentDate.toISOString(),
       amount: parseFloat(paymentAmount),
-      notes: paymentNotes
+      notes: paymentNotes,
+      paymentMode: paymentMode,
     };
 
     if (isDemoMode) {
@@ -548,6 +567,14 @@ export default function EmployeesPage() {
                             <CalendarIcon className="mr-2 h-4 w-4" />{paymentDate ? format(paymentDate, "PPP") : <span>Pick a date</span>}
                         </Button>
                     </PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={paymentDate} onSelect={setPaymentDate} initialFocus /></PopoverContent></Popover>
+                </div>
+                 <div className="space-y-2">
+                    <Label>Payment Mode</Label>
+                    <RadioGroup value={paymentMode} onValueChange={(v) => setPaymentMode(v as 'cash' | 'bank' | 'upi')} className="flex items-center gap-4">
+                        <div className="flex items-center space-x-2"><RadioGroupItem value="cash" id="cash" /><Label htmlFor="cash">Cash</Label></div>
+                        <div className="flex items-center space-x-2"><RadioGroupItem value="bank" id="bank" /><Label htmlFor="bank">Bank Transfer</Label></div>
+                        <div className="flex items-center space-x-2"><RadioGroupItem value="upi" id="upi" /><Label htmlFor="upi">UPI</Label></div>
+                    </RadioGroup>
                 </div>
                 <div className="space-y-2"><Label htmlFor="pay-notes">Notes (Optional)</Label><Textarea id="pay-notes" value={paymentNotes} onChange={e => setPaymentNotes(e.target.value)} placeholder="e.g., Full salary for Oct" /></div>
             </div>
