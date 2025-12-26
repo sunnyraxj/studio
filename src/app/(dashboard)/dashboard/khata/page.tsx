@@ -507,7 +507,7 @@ export default function KhataBookPage() {
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {row.original.entries.map((entry) => (
+                                {row.original.entries.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((entry) => (
                                   <TableRow key={entry.id}>
                                     <TableCell>{format(new Date(entry.date), 'dd MMM yyyy')}</TableCell>
                                     <TableCell>{entry.notes}</TableCell>
@@ -661,3 +661,4 @@ export default function KhataBookPage() {
   );
 }
 
+    
