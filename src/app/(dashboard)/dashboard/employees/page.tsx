@@ -174,7 +174,7 @@ const SalaryPaymentHistory: React.FC<{ employee: Employee, payments: SalaryPayme
 
 const DetailItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string | React.ReactNode }) => (
     <div className="flex items-start gap-2">
-        <Icon className="h-3.5 w-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
+        <Icon className="h-3 w-3 text-muted-foreground mt-0.5 flex-shrink-0" />
         <div>
             <p className="text-xs text-muted-foreground">{label}</p>
             <p className="text-xs font-semibold">{value || 'N/A'}</p>
@@ -244,9 +244,6 @@ const EmployeeDetailsDialog: React.FC<{ employee: Employee | null, open: boolean
                             <DialogTitle className="text-2xl">{employee.name}</DialogTitle>
                             <DialogDescription>{employee.role}</DialogDescription>
                         </div>
-                        <Button variant="outline" size="sm" onClick={() => handleWhatsApp(employee)} disabled={!employee.phone}>
-                            <MessageSquare className="mr-2 h-4 w-4" /> WhatsApp
-                        </Button>
                     </div>
                 </DialogHeader>
                  <div className="py-4 space-y-6 max-h-[70vh] overflow-y-auto pr-2">
@@ -288,6 +285,9 @@ const EmployeeDetailsDialog: React.FC<{ employee: Employee | null, open: boolean
                     <SalaryPaymentHistory employee={employee} payments={salaryPayments} isLoading={isLoading} />
                 </div>
                 <DialogFooter>
+                    <Button variant="outline" size="sm" onClick={() => handleWhatsApp(employee)} disabled={!employee.phone}>
+                        <MessageSquare className="mr-2 h-4 w-4" /> WhatsApp
+                    </Button>
                     <Button variant="secondary" onClick={() => onOpenChange(false)}>Close</Button>
                 </DialogFooter>
             </DialogContent>
