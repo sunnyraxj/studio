@@ -346,6 +346,42 @@
             "status": { "type": "string", "enum": ["unpaid", "paid"] }
         },
         "required": ["id", "customerName", "amount", "date", "status"]
+    },
+    "Employee": {
+        "type": "object",
+        "title": "Employee",
+        "description": "Represents a shop employee.",
+        "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" },
+            "phone": { "type": "string" },
+            "address": { "type": "string" },
+            "role": { "type": "string" },
+            "joiningDate": { "type": "string", "format": "date-time" },
+            "monthlySalary": { "type": "number" },
+            "bankDetails": {
+                "type": "object",
+                "properties": {
+                    "bankName": { "type": "string" },
+                    "accountNumber": { "type": "string" },
+                    "ifscCode": { "type": "string" }
+                }
+            }
+        },
+        "required": ["id", "name", "joiningDate", "monthlySalary"]
+    },
+    "SalaryPayment": {
+        "type": "object",
+        "title": "Salary Payment",
+        "description": "Represents a single salary payment to an employee.",
+        "properties": {
+            "id": { "type": "string" },
+            "employeeId": { "type": "string" },
+            "paymentDate": { "type": "string", "format": "date-time" },
+            "amount": { "type": "number" },
+            "notes": { "type": "string" }
+        },
+        "required": ["id", "employeeId", "paymentDate", "amount"]
     }
   },
   "auth": {
@@ -417,6 +453,24 @@
             "$ref": "#/backend/entities/KhataEntry"
           },
           "description": "Credit ledger entries for a specific shop."
+        }
+      },
+      {
+        "path": "/shops/{shopId}/employees/{employeeId}",
+        "definition": {
+          "schema": {
+            "$ref": "#/backend/entities/Employee"
+          },
+          "description": "Employee records for a specific shop."
+        }
+      },
+      {
+        "path": "/shops/{shopId}/employees/{employeeId}/salaryPayments/{paymentId}",
+        "definition": {
+          "schema": {
+            "$ref": "#/backend/entities/SalaryPayment"
+          },
+          "description": "Salary payment history for a specific employee."
         }
       }
     ]

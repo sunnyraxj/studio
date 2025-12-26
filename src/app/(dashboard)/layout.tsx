@@ -88,6 +88,11 @@ const navLinks = [
     label: 'Inventory',
   },
   {
+    href: '/dashboard/employees',
+    icon: Users,
+    label: 'Employees',
+  },
+  {
     href: '/dashboard/khata',
     icon: BookUser,
     label: 'Khata Book',
