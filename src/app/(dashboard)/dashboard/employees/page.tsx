@@ -30,7 +30,7 @@ import { DataTablePagination } from '@/components/data-table-pagination';
 import { format, differenceInMonths, startOfMonth } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { CaretSortIcon } from '@radix-ui/react-icons';
-import { Search, PlusCircle, HandCoins, Calendar as CalendarIcon, MessageSquare } from 'lucide-react';
+import { Search, PlusCircle, HandCoins, Calendar as CalendarIcon, MessageSquare, Phone, MapPin, Banknote, Landmark, Hash, Fingerprint } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -105,6 +105,16 @@ const SalaryPaymentHistory: React.FC<{ employee: Employee, payments: SalaryPayme
     )
 }
 
+const DetailItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string | React.ReactNode }) => (
+    <div className="flex items-start gap-3">
+        <Icon className="h-4 w-4 text-muted-foreground mt-1 flex-shrink-0" />
+        <div className="flex flex-col">
+            <span className="text-xs text-muted-foreground">{label}</span>
+            <span className="text-sm font-semibold">{value || 'N/A'}</span>
+        </div>
+    </div>
+)
+
 const EmployeeDetailsDialog: React.FC<{ employee: Employee | null, open: boolean, onOpenChange: (open: boolean) => void, isDemoMode: boolean }> = ({ employee, open, onOpenChange, isDemoMode }) => {
     const { user } = useUser();
     const firestore = useFirestore();
@@ -164,7 +174,7 @@ const EmployeeDetailsDialog: React.FC<{ employee: Employee | null, open: boolean
                         </Button>
                     </div>
                 </DialogHeader>
-                 <div className="py-4 space-y-6 max-h-[70vh] overflow-y-auto">
+                 <div className="py-4 space-y-6 max-h-[70vh] overflow-y-auto pr-2">
                     <div className="p-4 rounded-lg bg-muted/50 border">
                         <h4 className="font-semibold text-muted-foreground mb-3">Salary Overview</h4>
                         <div className="grid grid-cols-3 gap-4 text-center">
@@ -183,25 +193,32 @@ const EmployeeDetailsDialog: React.FC<{ employee: Employee | null, open: boolean
                         </div>
                     </div>
 
-                    <div className="space-y-4 text-sm">
-                        <h4 className="font-semibold text-muted-foreground">Contact & Role</h4>
-                        <div className="grid grid-cols-2 gap-x-8 gap-y-2">
-                             <div className="flex justify-between"><span className="text-muted-foreground">Phone:</span><span className="font-medium">{employee.phone || 'N/A'}</span></div>
-                             <div className="flex justify-between"><span className="text-muted-foreground">Joining Date:</span><span className="font-medium">{format(new Date(employee.joiningDate), 'dd MMM, yyyy')}</span></div>
-                             <div className="flex justify-between col-span-2"><span className="text-muted-foreground">Address:</span><span className="font-medium text-right">{employee.address || 'N/A'}</span></div>
-                        </div>
+                    <div className="space-y-4">
+                        <Card>
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-base">Contact & Role</CardTitle>
+                            </CardHeader>
+                            <CardContent className="grid grid-cols-2 gap-4">
+                                <DetailItem icon={Phone} label="Phone" value={employee.phone} />
+                                <DetailItem icon={CalendarIcon} label="Joining Date" value={format(new Date(employee.joiningDate), 'dd MMM, yyyy')} />
+                                <div className="col-span-2">
+                                    <DetailItem icon={MapPin} label="Address" value={employee.address} />
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                             <CardHeader className="pb-2">
+                                <CardTitle className="text-base">Bank & UPI Details</CardTitle>
+                            </CardHeader>
+                            <CardContent className="grid grid-cols-2 gap-4">
+                                <DetailItem icon={Landmark} label="Bank" value={employee.bankDetails?.bankName} />
+                                <DetailItem icon={Fingerprint} label="Account No" value={employee.bankDetails?.accountNumber} />
+                                <DetailItem icon={Hash} label="IFSC Code" value={employee.bankDetails?.ifscCode} />
+                                <DetailItem icon={Banknote} label="UPI ID" value={employee.bankDetails?.upiId} />
+                            </CardContent>
+                        </Card>
                     </div>
-                    <Separator />
-                     <div className="space-y-4 text-sm">
-                        <h4 className="font-semibold text-muted-foreground">Bank & UPI Details</h4>
-                        <div className="grid grid-cols-2 gap-x-8 gap-y-2">
-                             <div className="flex justify-between"><span className="text-muted-foreground">Bank:</span><span className="font-medium">{employee.bankDetails?.bankName || 'N/A'}</span></div>
-                             <div className="flex justify-between"><span className="text-muted-foreground">Account No:</span><span className="font-medium">{employee.bankDetails?.accountNumber || 'N/A'}</span></div>
-                             <div className="flex justify-between"><span className="text-muted-foreground">IFSC:</span><span className="font-medium">{employee.bankDetails?.ifscCode || 'N/A'}</span></div>
-                             <div className="flex justify-between"><span className="text-muted-foreground">UPI ID:</span><span className="font-medium">{employee.bankDetails?.upiId || 'N/A'}</span></div>
-                        </div>
-                    </div>
-                    <Separator />
+                    
                     <SalaryPaymentHistory employee={employee} payments={salaryPayments} isLoading={isLoading} />
                 </div>
                 <DialogFooter>
