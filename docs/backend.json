@@ -364,7 +364,8 @@
                 "properties": {
                     "bankName": { "type": "string" },
                     "accountNumber": { "type": "string" },
-                    "ifscCode": { "type": "string" }
+                    "ifscCode": { "type": "string" },
+                    "upiId": { "type": "string" }
                 }
             }
         },

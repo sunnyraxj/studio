@@ -57,6 +57,7 @@ type Employee = {
         bankName?: string;
         accountNumber?: string;
         ifscCode?: string;
+        upiId?: string;
     };
     salaryPayments?: SalaryPayment[];
 };
@@ -86,6 +87,7 @@ export default function EmployeesPage() {
   const [bankName, setBankName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [ifscCode, setIfscCode] = useState('');
+  const [upiId, setUpiId] = useState('');
 
   // Form state for salary payment
   const [paymentAmount, setPaymentAmount] = useState('');
@@ -198,6 +200,7 @@ export default function EmployeesPage() {
     setBankName('');
     setAccountNumber('');
     setIfscCode('');
+    setUpiId('');
   }
 
   const handleAddEmployee = async () => {
@@ -212,7 +215,7 @@ export default function EmployeesPage() {
         role,
         joiningDate: joiningDate.toISOString(),
         monthlySalary: parseFloat(monthlySalary),
-        bankDetails: { bankName, accountNumber, ifscCode }
+        bankDetails: { bankName, accountNumber, ifscCode, upiId }
     }
     
     if (isDemoMode) {
@@ -331,6 +334,7 @@ export default function EmployeesPage() {
                                     <p><strong>Bank:</strong> {row.original.bankDetails?.bankName || 'N/A'}</p>
                                     <p><strong>A/C No:</strong> {row.original.bankDetails?.accountNumber || 'N/A'}</p>
                                     <p><strong>IFSC:</strong> {row.original.bankDetails?.ifscCode || 'N/A'}</p>
+                                    <p><strong>UPI ID:</strong> {row.original.bankDetails?.upiId || 'N/A'}</p>
                                 </div>
                             </div>
                             <SalaryPaymentHistory employee={row.original} />
@@ -376,6 +380,7 @@ export default function EmployeesPage() {
                     <div className="space-y-2"><Label htmlFor="ifsc">IFSC Code</Label><Input id="ifsc" value={ifscCode} onChange={e => setIfscCode(e.target.value)} /></div>
                 </div>
                 <div className="space-y-2"><Label htmlFor="accountNumber">Account Number</Label><Input id="accountNumber" value={accountNumber} onChange={e => setAccountNumber(e.target.value)} /></div>
+                <div className="space-y-2"><Label htmlFor="upiId">UPI ID</Label><Input id="upiId" value={upiId} onChange={e => setUpiId(e.target.value)} /></div>
               </div>
             </ScrollArea>
           <DialogFooter>
