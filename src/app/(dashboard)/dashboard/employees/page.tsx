@@ -27,7 +27,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { DataTablePagination } from '@/components/data-table-pagination';
-import { format } from 'date-fns';
+import { format, differenceInMonths, startOfMonth } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { CaretSortIcon } from '@radix-ui/react-icons';
 import { Search, PlusCircle, HandCoins, Calendar as CalendarIcon, MessageSquare } from 'lucide-react';
@@ -73,31 +73,13 @@ const demoEmployeesData: Employee[] = [
     { id: 'emp2', name: 'Sunita Sharma', phone: '9876543211', address: '456 MG Road, Mumbai', role: 'Cashier', joiningDate: '2023-03-20T00:00:00.000Z', monthlySalary: 22000, bankDetails: { upiId: 'sunita@upi' }, salaryPayments: [] },
 ];
 
-const SalaryPaymentHistory: React.FC<{ employee: Employee, isDemoMode: boolean }> = ({ employee, isDemoMode }) => {
-    const { user } = useUser();
-    const firestore = useFirestore();
-    
-    const userDocRef = useMemoFirebase(() => {
-        if (!user || !firestore || isDemoMode) return null;
-        return doc(firestore, `users/${user.uid}`);
-    }, [user, firestore, isDemoMode]);
-    const { data: userData } = useDoc(userDocRef);
-    const shopId = userData?.shopId;
-
-    const paymentsQuery = useMemoFirebase(() => {
-        if (isDemoMode || !shopId || !firestore) return null;
-        return query(collection(firestore, `shops/${shopId}/employees/${employee.id}/salaryPayments`), orderBy('paymentDate', 'desc'));
-    }, [shopId, firestore, isDemoMode, employee.id]);
-
-    const { data: paymentsData, isLoading } = useCollection<SalaryPayment>(paymentsQuery);
-    
-    const data = isDemoMode ? employee.salaryPayments || [] : paymentsData;
+const SalaryPaymentHistory: React.FC<{ employee: Employee, payments: SalaryPayment[], isLoading: boolean }> = ({ employee, payments, isLoading }) => {
 
     return (
         <div className="mt-4">
             <h5 className="font-semibold mb-2">Salary Payment History</h5>
-            {isLoading && !isDemoMode ? <p>Loading payment history...</p> 
-            : data && data.length > 0 ? (
+            {isLoading ? <p>Loading payment history...</p> 
+            : payments && payments.length > 0 ? (
                  <Table>
                     <TableHeader>
                         <TableRow>
@@ -107,7 +89,7 @@ const SalaryPaymentHistory: React.FC<{ employee: Employee, isDemoMode: boolean }
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {data.map(p => (
+                        {payments.map(p => (
                             <TableRow key={p.id}>
                                 <TableCell>{format(new Date(p.paymentDate), 'dd MMM, yyyy')}</TableCell>
                                 <TableCell>{p.notes}</TableCell>
@@ -120,6 +102,113 @@ const SalaryPaymentHistory: React.FC<{ employee: Employee, isDemoMode: boolean }
                 <p className="text-sm text-muted-foreground">No salary payments recorded yet.</p>
             )}
         </div>
+    )
+}
+
+const EmployeeDetailsDialog: React.FC<{ employee: Employee | null, open: boolean, onOpenChange: (open: boolean) => void, isDemoMode: boolean }> = ({ employee, open, onOpenChange, isDemoMode }) => {
+    const { user } = useUser();
+    const firestore = useFirestore();
+    
+    const userDocRef = useMemoFirebase(() => {
+        if (!user || !firestore || isDemoMode) return null;
+        return doc(firestore, `users/${user.uid}`);
+    }, [user, firestore, isDemoMode]);
+    const { data: userData } = useDoc(userDocRef);
+    const shopId = userData?.shopId;
+
+    const paymentsQuery = useMemoFirebase(() => {
+        if (isDemoMode || !shopId || !firestore || !employee) return null;
+        return query(collection(firestore, `shops/${shopId}/employees/${employee.id}/salaryPayments`), orderBy('paymentDate', 'desc'));
+    }, [shopId, firestore, isDemoMode, employee]);
+
+    const { data: paymentsData, isLoading } = useCollection<SalaryPayment>(paymentsQuery);
+    
+    const salaryPayments = isDemoMode ? employee?.salaryPayments || [] : paymentsData || [];
+
+    const { totalAccrued, totalPaid, balanceDue } = useMemo(() => {
+        if (!employee) return { totalAccrued: 0, totalPaid: 0, balanceDue: 0 };
+        
+        const now = new Date();
+        const joining = new Date(employee.joiningDate);
+        const monthsWorked = differenceInMonths(now, startOfMonth(joining)) + 1;
+        
+        const totalAccrued = monthsWorked * employee.monthlySalary;
+        const totalPaid = salaryPayments.reduce((sum, p) => sum + p.amount, 0);
+        const balanceDue = totalAccrued - totalPaid;
+        
+        return { totalAccrued, totalPaid, balanceDue };
+    }, [employee, salaryPayments]);
+
+
+    const handleWhatsApp = (emp: Employee) => {
+        if (emp.phone) {
+            window.open(`https://wa.me/${emp.phone}`, '_blank');
+        } else {
+            toast({ variant: 'destructive', title: 'No Phone Number', description: 'This employee does not have a phone number saved.' });
+        }
+    };
+
+    if (!employee) return null;
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-3xl">
+                <DialogHeader>
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <DialogTitle className="text-2xl">{employee.name}</DialogTitle>
+                            <DialogDescription>{employee.role}</DialogDescription>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={() => handleWhatsApp(employee)} disabled={!employee.phone}>
+                            <MessageSquare className="mr-2 h-4 w-4" /> WhatsApp
+                        </Button>
+                    </div>
+                </DialogHeader>
+                 <div className="py-4 space-y-6 max-h-[70vh] overflow-y-auto">
+                    <div className="p-4 rounded-lg bg-muted/50 border">
+                        <h4 className="font-semibold text-muted-foreground mb-3">Salary Overview</h4>
+                        <div className="grid grid-cols-3 gap-4 text-center">
+                            <div>
+                                <p className="text-sm text-muted-foreground">Total Accrued</p>
+                                <p className="text-lg font-bold">₹{totalAccrued.toLocaleString('en-IN')}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">Total Paid</p>
+                                <p className="text-lg font-bold text-green-600">₹{totalPaid.toLocaleString('en-IN')}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">Balance Due</p>
+                                <p className="text-lg font-bold text-destructive">₹{balanceDue.toLocaleString('en-IN')}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4 text-sm">
+                        <h4 className="font-semibold text-muted-foreground">Contact & Role</h4>
+                        <div className="grid grid-cols-2 gap-x-8 gap-y-2">
+                             <div className="flex justify-between"><span className="text-muted-foreground">Phone:</span><span className="font-medium">{employee.phone || 'N/A'}</span></div>
+                             <div className="flex justify-between"><span className="text-muted-foreground">Joining Date:</span><span className="font-medium">{format(new Date(employee.joiningDate), 'dd MMM, yyyy')}</span></div>
+                             <div className="flex justify-between col-span-2"><span className="text-muted-foreground">Address:</span><span className="font-medium text-right">{employee.address || 'N/A'}</span></div>
+                        </div>
+                    </div>
+                    <Separator />
+                     <div className="space-y-4 text-sm">
+                        <h4 className="font-semibold text-muted-foreground">Bank & UPI Details</h4>
+                        <div className="grid grid-cols-2 gap-x-8 gap-y-2">
+                             <div className="flex justify-between"><span className="text-muted-foreground">Bank:</span><span className="font-medium">{employee.bankDetails?.bankName || 'N/A'}</span></div>
+                             <div className="flex justify-between"><span className="text-muted-foreground">Account No:</span><span className="font-medium">{employee.bankDetails?.accountNumber || 'N/A'}</span></div>
+                             <div className="flex justify-between"><span className="text-muted-foreground">IFSC:</span><span className="font-medium">{employee.bankDetails?.ifscCode || 'N/A'}</span></div>
+                             <div className="flex justify-between"><span className="text-muted-foreground">UPI ID:</span><span className="font-medium">{employee.bankDetails?.upiId || 'N/A'}</span></div>
+                        </div>
+                    </div>
+                    <Separator />
+                    <SalaryPaymentHistory employee={employee} payments={salaryPayments} isLoading={isLoading} />
+                </div>
+                <DialogFooter>
+                    <Button variant="secondary" onClick={() => onOpenChange(false)}>Close</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     )
 }
 
@@ -337,15 +426,8 @@ export default function EmployeesPage() {
     setPaymentDate(undefined);
   }
 
-  const handleWhatsApp = (employee: Employee) => {
-    if (employee.phone) {
-        window.open(`https://wa.me/${employee.phone}`, '_blank');
-    } else {
-        toast({ variant: 'destructive', title: 'No Phone Number', description: 'This employee does not have a phone number saved.' });
-    }
-  };
-
   return (
+    <>
     <Card>
       <CardHeader className="flex flex-row items-start justify-between">
         <div>
@@ -402,6 +484,7 @@ export default function EmployeesPage() {
         </div>
         <div className="py-4"><DataTablePagination table={table} /></div>
       </CardContent>
+      </Card>
 
       <Dialog open={isAddEmployeeOpen} onOpenChange={setIsAddEmployeeOpen}>
         <DialogContent className="sm:max-w-[600px]">
@@ -461,49 +544,12 @@ export default function EmployeesPage() {
         </DialogContent>
       </Dialog>
 
-      {selectedEmployee && (
-        <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-            <DialogContent className="sm:max-w-2xl">
-                <DialogHeader>
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <DialogTitle className="text-2xl">{selectedEmployee.name}</DialogTitle>
-                            <DialogDescription>{selectedEmployee.role}</DialogDescription>
-                        </div>
-                        <Button variant="outline" size="sm" onClick={() => handleWhatsApp(selectedEmployee)} disabled={!selectedEmployee.phone}>
-                            <MessageSquare className="mr-2 h-4 w-4" /> WhatsApp
-                        </Button>
-                    </div>
-                </DialogHeader>
-                 <div className="py-4 space-y-6 max-h-[70vh] overflow-y-auto">
-                    <div className="space-y-4 text-sm">
-                        <h4 className="font-semibold text-muted-foreground">Contact & Role</h4>
-                        <div className="grid grid-cols-2 gap-x-8 gap-y-2">
-                             <div className="flex justify-between"><span className="text-muted-foreground">Phone:</span><span className="font-medium">{selectedEmployee.phone || 'N/A'}</span></div>
-                             <div className="flex justify-between"><span className="text-muted-foreground">Joining Date:</span><span className="font-medium">{format(new Date(selectedEmployee.joiningDate), 'dd MMM, yyyy')}</span></div>
-                             <div className="flex justify-between col-span-2"><span className="text-muted-foreground">Address:</span><span className="font-medium text-right">{selectedEmployee.address || 'N/A'}</span></div>
-                        </div>
-                    </div>
-                    <Separator />
-                     <div className="space-y-4 text-sm">
-                        <h4 className="font-semibold text-muted-foreground">Bank & UPI Details</h4>
-                        <div className="grid grid-cols-2 gap-x-8 gap-y-2">
-                             <div className="flex justify-between"><span className="text-muted-foreground">Bank:</span><span className="font-medium">{selectedEmployee.bankDetails?.bankName || 'N/A'}</span></div>
-                             <div className="flex justify-between"><span className="text-muted-foreground">Account No:</span><span className="font-medium">{selectedEmployee.bankDetails?.accountNumber || 'N/A'}</span></div>
-                             <div className="flex justify-between"><span className="text-muted-foreground">IFSC:</span><span className="font-medium">{selectedEmployee.bankDetails?.ifscCode || 'N/A'}</span></div>
-                             <div className="flex justify-between"><span className="text-muted-foreground">UPI ID:</span><span className="font-medium">{selectedEmployee.bankDetails?.upiId || 'N/A'}</span></div>
-                        </div>
-                    </div>
-                    <Separator />
-                    <SalaryPaymentHistory employee={selectedEmployee} isDemoMode={isDemoMode} />
-                </div>
-                <DialogFooter>
-                    <Button variant="secondary" onClick={() => setIsDetailsOpen(false)}>Close</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-      )}
-
-    </Card>
+      <EmployeeDetailsDialog
+        employee={selectedEmployee}
+        open={isDetailsOpen}
+        onOpenChange={setIsDetailsOpen}
+        isDemoMode={isDemoMode}
+      />
+    </>
   );
 }
