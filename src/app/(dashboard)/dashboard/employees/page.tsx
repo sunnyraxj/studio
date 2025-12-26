@@ -32,12 +32,12 @@ import { DataTablePagination } from '@/components/data-table-pagination';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { CaretSortIcon, ChevronDownIcon, ChevronRightIcon } from '@radix-ui/react-icons';
-import { Search, PlusCircle, IndianRupee, HandCoins, Bank, Hash, Phone, Calendar as CalendarIcon } from 'lucide-react';
+import { Search, PlusCircle, HandCoins, Calendar as CalendarIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, doc, addDoc, updateDoc, orderBy } from 'firebase/firestore';
+import { collection, query, doc, addDoc, orderBy } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast.tsx';
 import { cn } from '@/lib/utils';
@@ -73,6 +73,56 @@ const demoEmployeesData: Employee[] = [
     { id: 'emp1', name: 'Arun Kumar', phone: '9876543210', address: '123 Main St, Delhi', role: 'Sales Manager', joiningDate: '2023-01-15T00:00:00.000Z', monthlySalary: 35000, bankDetails: { bankName: 'HDFC Bank', accountNumber: '...1234', ifscCode: 'HDFC000123', upiId: 'arun.kumar@okhdfc' }, salaryPayments: [{id: 'p1', paymentDate: new Date().toISOString(), amount: 35000, notes: 'Salary for last month'}] },
     { id: 'emp2', name: 'Sunita Sharma', phone: '9876543211', address: '456 MG Road, Mumbai', role: 'Cashier', joiningDate: '2023-03-20T00:00:00.000Z', monthlySalary: 22000, bankDetails: { upiId: 'sunita@upi' }, salaryPayments: [] },
 ];
+
+const SalaryPaymentHistory: React.FC<{ employee: Employee, isDemoMode: boolean }> = ({ employee, isDemoMode }) => {
+    const { user } = useUser();
+    const firestore = useFirestore();
+    
+    const userDocRef = useMemoFirebase(() => {
+        if (!user || !firestore || isDemoMode) return null;
+        return doc(firestore, `users/${user.uid}`);
+    }, [user, firestore, isDemoMode]);
+    const { data: userData } = useDoc(userDocRef);
+    const shopId = userData?.shopId;
+
+    const paymentsQuery = useMemoFirebase(() => {
+        if (isDemoMode || !shopId || !firestore) return null;
+        return query(collection(firestore, `shops/${shopId}/employees/${employee.id}/salaryPayments`), orderBy('paymentDate', 'desc'));
+    }, [shopId, firestore, isDemoMode, employee.id]);
+
+    const { data: paymentsData, isLoading } = useCollection<SalaryPayment>(paymentsQuery);
+    
+    const data = isDemoMode ? employee.salaryPayments || [] : paymentsData;
+
+    return (
+        <div className="mt-4">
+            <h5 className="font-semibold mb-2">Salary Payment History</h5>
+            {isLoading && !isDemoMode ? <p>Loading payment history...</p> 
+            : data && data.length > 0 ? (
+                 <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Notes</TableHead>
+                            <TableHead className="text-right">Amount Paid</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {data.map(p => (
+                            <TableRow key={p.id}>
+                                <TableCell>{format(new Date(p.paymentDate), 'dd MMM, yyyy')}</TableCell>
+                                <TableCell>{p.notes}</TableCell>
+                                <TableCell className="text-right font-semibold">₹{p.amount.toLocaleString('en-IN')}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                 </Table>
+            ) : (
+                <p className="text-sm text-muted-foreground">No salary payments recorded yet.</p>
+            )}
+        </div>
+    )
+}
 
 export default function EmployeesPage() {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'name', desc: false }]);
@@ -441,52 +491,4 @@ export default function EmployeesPage() {
   );
 }
 
-const SalaryPaymentHistory: React.FC<{ employee: Employee, isDemoMode: boolean }> = ({ employee, isDemoMode }) => {
-    const { user } = useUser();
-    const firestore = useFirestore();
     
-    const userDocRef = useMemoFirebase(() => {
-        if (!user || !firestore || isDemoMode) return null;
-        return doc(firestore, `users/${user.uid}`);
-    }, [user, firestore, isDemoMode]);
-    const { data: userData } = useDoc(userDocRef);
-    const shopId = userData?.shopId;
-
-    const paymentsQuery = useMemoFirebase(() => {
-        if (isDemoMode || !shopId || !firestore) return null;
-        return query(collection(firestore, `shops/${shopId}/employees/${employee.id}/salaryPayments`), orderBy('paymentDate', 'desc'));
-    }, [shopId, firestore, isDemoMode, employee.id]);
-
-    const { data: paymentsData, isLoading } = useCollection<SalaryPayment>(paymentsQuery);
-    
-    const data = isDemoMode ? employee.salaryPayments || [] : paymentsData;
-
-    return (
-        <div className="mt-4">
-            <h5 className="font-semibold mb-2">Salary Payment History</h5>
-            {isLoading && !isDemoMode ? <p>Loading payment history...</p> 
-            : data && data.length > 0 ? (
-                 <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Notes</TableHead>
-                            <TableHead className="text-right">Amount Paid</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {data.map(p => (
-                            <TableRow key={p.id}>
-                                <TableCell>{format(new Date(p.paymentDate), 'dd MMM, yyyy')}</TableCell>
-                                <TableCell>{p.notes}</TableCell>
-                                <TableCell className="text-right font-semibold">₹{p.amount.toLocaleString('en-IN')}</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                 </Table>
-            ) : (
-                <p className="text-sm text-muted-foreground">No salary payments recorded yet.</p>
-            )}
-        </div>
-    )
-}
