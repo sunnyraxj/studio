@@ -42,6 +42,7 @@ import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 
 type Employee = {
     id: string;
@@ -464,32 +465,38 @@ export default function EmployeesPage() {
         <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
             <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle>{selectedEmployee.name}</DialogTitle>
-                    <DialogDescription>{selectedEmployee.role}</DialogDescription>
-                </DialogHeader>
-                 <div className="p-4 bg-muted/50 space-y-4 max-h-[70vh] overflow-y-auto">
-                    <div className="flex justify-between items-center">
-                        <h4 className="font-bold">Details for {selectedEmployee.name}</h4>
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <DialogTitle className="text-2xl">{selectedEmployee.name}</DialogTitle>
+                            <DialogDescription>{selectedEmployee.role}</DialogDescription>
+                        </div>
                         <Button variant="outline" size="sm" onClick={() => handleWhatsApp(selectedEmployee)} disabled={!selectedEmployee.phone}>
                             <MessageSquare className="mr-2 h-4 w-4" /> WhatsApp
                         </Button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                        <div className="space-y-1 p-3 rounded-md border bg-background">
-                            <p className="font-semibold text-muted-foreground">Contact & Role</p>
-                            <p><strong>Joining Date:</strong> {format(new Date(selectedEmployee.joiningDate), 'dd MMM, yyyy')}</p>
-                            <p><strong>Address:</strong> {selectedEmployee.address || 'N/A'}</p>
-                        </div>
-                        <div className="space-y-1 p-3 rounded-md border bg-background">
-                            <p className="font-semibold text-muted-foreground">Bank & UPI Details</p>
-                            <p><strong>Bank:</strong> {selectedEmployee.bankDetails?.bankName || 'N/A'}</p>
-                            <p><strong>A/C No:</strong> {selectedEmployee.bankDetails?.accountNumber || 'N/A'}</p>
-                            <p><strong>IFSC:</strong> {selectedEmployee.bankDetails?.ifscCode || 'N/A'}</p>
-                            <p><strong>UPI ID:</strong> {selectedEmployee.bankDetails?.upiId || 'N/A'}</p>
+                </DialogHeader>
+                 <div className="py-4 space-y-6 max-h-[70vh] overflow-y-auto">
+                    <div className="space-y-4 text-sm">
+                        <h4 className="font-semibold text-muted-foreground">Contact & Role</h4>
+                        <div className="grid grid-cols-2 gap-x-8 gap-y-2">
+                             <div className="flex justify-between"><span className="text-muted-foreground">Phone:</span><span className="font-medium">{selectedEmployee.phone || 'N/A'}</span></div>
+                             <div className="flex justify-between"><span className="text-muted-foreground">Joining Date:</span><span className="font-medium">{format(new Date(selectedEmployee.joiningDate), 'dd MMM, yyyy')}</span></div>
+                             <div className="flex justify-between col-span-2"><span className="text-muted-foreground">Address:</span><span className="font-medium text-right">{selectedEmployee.address || 'N/A'}</span></div>
                         </div>
                     </div>
+                    <Separator />
+                     <div className="space-y-4 text-sm">
+                        <h4 className="font-semibold text-muted-foreground">Bank & UPI Details</h4>
+                        <div className="grid grid-cols-2 gap-x-8 gap-y-2">
+                             <div className="flex justify-between"><span className="text-muted-foreground">Bank:</span><span className="font-medium">{selectedEmployee.bankDetails?.bankName || 'N/A'}</span></div>
+                             <div className="flex justify-between"><span className="text-muted-foreground">Account No:</span><span className="font-medium">{selectedEmployee.bankDetails?.accountNumber || 'N/A'}</span></div>
+                             <div className="flex justify-between"><span className="text-muted-foreground">IFSC:</span><span className="font-medium">{selectedEmployee.bankDetails?.ifscCode || 'N/A'}</span></div>
+                             <div className="flex justify-between"><span className="text-muted-foreground">UPI ID:</span><span className="font-medium">{selectedEmployee.bankDetails?.upiId || 'N/A'}</span></div>
+                        </div>
+                    </div>
+                    <Separator />
                     <SalaryPaymentHistory employee={selectedEmployee} isDemoMode={isDemoMode} />
-                    </div>
+                </div>
                 <DialogFooter>
                     <Button variant="secondary" onClick={() => setIsDetailsOpen(false)}>Close</Button>
                 </DialogFooter>
@@ -500,5 +507,3 @@ export default function EmployeesPage() {
     </Card>
   );
 }
-
-    
