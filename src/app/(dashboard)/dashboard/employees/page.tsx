@@ -10,8 +10,6 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   SortingState,
-  getExpandedRowModel,
-  ExpandedState,
 } from '@tanstack/react-table';
 import {
   Table,
@@ -31,7 +29,7 @@ import {
 import { DataTablePagination } from '@/components/data-table-pagination';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { CaretSortIcon, ChevronDownIcon, ChevronRightIcon } from '@radix-ui/react-icons';
+import { CaretSortIcon } from '@radix-ui/react-icons';
 import { Search, PlusCircle, HandCoins, Calendar as CalendarIcon, MessageSquare } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -126,10 +124,10 @@ const SalaryPaymentHistory: React.FC<{ employee: Employee, isDemoMode: boolean }
 
 export default function EmployeesPage() {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'name', desc: false }]);
-  const [expanded, setExpanded] = useState<ExpandedState>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
   const [isPaySalaryOpen, setIsPaySalaryOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
   // Form state for new employee
@@ -184,15 +182,6 @@ export default function EmployeesPage() {
   
   const columns: ColumnDef<Employee>[] = [
     {
-      id: 'expander',
-      header: () => null,
-      cell: ({ row }) => (
-        <Button variant="ghost" size="icon" onClick={row.getToggleExpandedHandler()} className="h-10 w-10">
-          {row.getIsExpanded() ? <ChevronDownIcon /> : <ChevronRightIcon />}
-        </Button>
-      ),
-    },
-    {
       accessorKey: 'name',
       header: 'Name',
       cell: ({ row }) => <div className="font-medium">{row.original.name}</div>
@@ -222,7 +211,8 @@ export default function EmployeesPage() {
       cell: ({ row }) => {
         return (
           <div className="text-right">
-            <Button size="sm" onClick={() => {
+            <Button size="sm" onClick={(e) => {
+                e.stopPropagation();
                 setSelectedEmployee(row.original);
                 setPaymentDate(new Date()); // Default to today
                 setIsPaySalaryOpen(true);
@@ -238,14 +228,17 @@ export default function EmployeesPage() {
   const table = useReactTable({
     data: filteredData,
     columns,
-    state: { sorting, expanded },
+    state: { sorting },
     onSortingChange: setSorting,
-    onExpandedChange: setExpanded,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getExpandedRowModel: getExpandedRowModel(),
   });
+  
+  const handleRowClick = (employee: Employee) => {
+    setSelectedEmployee(employee);
+    setIsDetailsOpen(true);
+  }
 
   const clearAddEmployeeForm = () => {
     setName('');
@@ -394,42 +387,11 @@ export default function EmployeesPage() {
                 <TableRow><TableCell colSpan={columns.length} className="h-24 text-center">Loading Employees...</TableCell></TableRow>
               ) : table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => (
-                  <React.Fragment key={row.id}>
-                    <TableRow data-state={row.getIsExpanded() ? 'selected' : ''}>
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
-                      ))}
-                    </TableRow>
-                    {row.getIsExpanded() && (
-                      <TableRow>
-                        <TableCell colSpan={columns.length} className="p-0">
-                          <div className="p-4 bg-muted/50 space-y-4">
-                            <div className="flex justify-between items-center">
-                                <h4 className="font-bold">Details for {row.original.name}</h4>
-                                <Button variant="outline" size="sm" onClick={() => handleWhatsApp(row.original)} disabled={!row.original.phone}>
-                                  <MessageSquare className="mr-2 h-4 w-4" /> WhatsApp
-                                </Button>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                <div className="space-y-1 p-3 rounded-md border bg-background">
-                                    <p className="font-semibold text-muted-foreground">Contact & Role</p>
-                                    <p><strong>Joining Date:</strong> {format(new Date(row.original.joiningDate), 'dd MMM, yyyy')}</p>
-                                    <p><strong>Address:</strong> {row.original.address || 'N/A'}</p>
-                                </div>
-                                <div className="space-y-1 p-3 rounded-md border bg-background">
-                                    <p className="font-semibold text-muted-foreground">Bank & UPI Details</p>
-                                    <p><strong>Bank:</strong> {row.original.bankDetails?.bankName || 'N/A'}</p>
-                                    <p><strong>A/C No:</strong> {row.original.bankDetails?.accountNumber || 'N/A'}</p>
-                                    <p><strong>IFSC:</strong> {row.original.bankDetails?.ifscCode || 'N/A'}</p>
-                                    <p><strong>UPI ID:</strong> {row.original.bankDetails?.upiId || 'N/A'}</p>
-                                </div>
-                            </div>
-                            <SalaryPaymentHistory employee={row.original} isDemoMode={isDemoMode} />
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </React.Fragment>
+                  <TableRow key={row.id} onClick={() => handleRowClick(row.original)} className="cursor-pointer">
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                    ))}
+                  </TableRow>
                 ))
               ) : (
                 <TableRow><TableCell colSpan={columns.length} className="h-24 text-center">No employees found. Add your first one!</TableCell></TableRow>
@@ -498,6 +460,45 @@ export default function EmployeesPage() {
         </DialogContent>
       </Dialog>
 
+      {selectedEmployee && (
+        <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+            <DialogContent className="sm:max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>{selectedEmployee.name}</DialogTitle>
+                    <DialogDescription>{selectedEmployee.role}</DialogDescription>
+                </DialogHeader>
+                 <div className="p-4 bg-muted/50 space-y-4 max-h-[70vh] overflow-y-auto">
+                    <div className="flex justify-between items-center">
+                        <h4 className="font-bold">Details for {selectedEmployee.name}</h4>
+                        <Button variant="outline" size="sm" onClick={() => handleWhatsApp(selectedEmployee)} disabled={!selectedEmployee.phone}>
+                            <MessageSquare className="mr-2 h-4 w-4" /> WhatsApp
+                        </Button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div className="space-y-1 p-3 rounded-md border bg-background">
+                            <p className="font-semibold text-muted-foreground">Contact & Role</p>
+                            <p><strong>Joining Date:</strong> {format(new Date(selectedEmployee.joiningDate), 'dd MMM, yyyy')}</p>
+                            <p><strong>Address:</strong> {selectedEmployee.address || 'N/A'}</p>
+                        </div>
+                        <div className="space-y-1 p-3 rounded-md border bg-background">
+                            <p className="font-semibold text-muted-foreground">Bank & UPI Details</p>
+                            <p><strong>Bank:</strong> {selectedEmployee.bankDetails?.bankName || 'N/A'}</p>
+                            <p><strong>A/C No:</strong> {selectedEmployee.bankDetails?.accountNumber || 'N/A'}</p>
+                            <p><strong>IFSC:</strong> {selectedEmployee.bankDetails?.ifscCode || 'N/A'}</p>
+                            <p><strong>UPI ID:</strong> {selectedEmployee.bankDetails?.upiId || 'N/A'}</p>
+                        </div>
+                    </div>
+                    <SalaryPaymentHistory employee={selectedEmployee} isDemoMode={isDemoMode} />
+                    </div>
+                <DialogFooter>
+                    <Button variant="secondary" onClick={() => setIsDetailsOpen(false)}>Close</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+      )}
+
     </Card>
   );
 }
+
+    
