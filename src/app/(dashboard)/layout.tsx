@@ -88,11 +88,6 @@ const navLinks = [
     label: 'Inventory',
   },
   {
-    href: '/dashboard/employees',
-    icon: Users,
-    label: 'Employees',
-  },
-  {
     href: '/dashboard/khata',
     icon: BookUser,
     label: 'Khata Book',
@@ -345,8 +340,13 @@ export default function DashboardLayout({
       <div className="grid min-h-screen w-full" style={{gridTemplateColumns: 'auto 1fr'}}>
         <AppSidebar shopName={shopName} isExpired={isUIBlocked} />
         <div className="flex flex-col">
-          <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+          <header className="flex h-14 items-center justify-between gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
              <div className="w-full flex-1" />
+             <Link href="/dashboard/employees">
+                <Button>
+                    <Users className="mr-2 h-4 w-4" /> Manage Employees
+                </Button>
+             </Link>
           </header>
           <main className={cn("flex flex-1 flex-col p-4 lg:p-6 overflow-auto", isUIBlocked && "pointer-events-none opacity-50")}>
             {children}
@@ -360,5 +360,3 @@ export default function DashboardLayout({
     </SidebarProvider>
   );
 }
-
-    
