@@ -346,13 +346,17 @@ export default function EmployeesPage() {
                       <TableRow>
                         <TableCell colSpan={columns.length} className="p-0">
                           <div className="p-4 bg-muted/50 space-y-4">
-                            <h4 className="font-bold">Details for {row.original.name}</h4>
-                            <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div className="space-y-1">
+                            <div className="flex justify-between items-center">
+                                <h4 className="font-bold">Details for {row.original.name}</h4>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                <div className="space-y-1 p-3 rounded-md border bg-background">
+                                    <p className="font-semibold text-muted-foreground">Contact & Role</p>
                                     <p><strong>Joining Date:</strong> {format(new Date(row.original.joiningDate), 'dd MMM, yyyy')}</p>
                                     <p><strong>Address:</strong> {row.original.address || 'N/A'}</p>
                                 </div>
-                                 <div className="space-y-1">
+                                <div className="space-y-1 p-3 rounded-md border bg-background">
+                                    <p className="font-semibold text-muted-foreground">Bank Details</p>
                                     <p><strong>Bank:</strong> {row.original.bankDetails?.bankName || 'N/A'}</p>
                                     <p><strong>A/C No:</strong> {row.original.bankDetails?.accountNumber || 'N/A'}</p>
                                     <p><strong>IFSC:</strong> {row.original.bankDetails?.ifscCode || 'N/A'}</p>
@@ -457,12 +461,11 @@ const SalaryPaymentHistory: React.FC<{ employee: Employee, isDemoMode: boolean }
     
     const data = isDemoMode ? employee.salaryPayments : paymentsData;
 
-    if (isLoading && !isDemoMode) return <p>Loading payment history...</p>
-
     return (
         <div className="mt-4">
             <h5 className="font-semibold mb-2">Salary Payment History</h5>
-            {data && data.length > 0 ? (
+            {isLoading && !isDemoMode ? <p>Loading payment history...</p> 
+            : data && data.length > 0 ? (
                  <Table>
                     <TableHeader>
                         <TableRow>
