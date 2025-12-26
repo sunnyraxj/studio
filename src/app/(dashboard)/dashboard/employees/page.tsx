@@ -197,19 +197,17 @@ const EmployeeDetailsDialog: React.FC<{ employee: Employee | null, open: boolean
                         <CardHeader className="pb-2">
                             <CardTitle className="text-base">Contact & Financial Details</CardTitle>
                         </CardHeader>
-                        <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-6">
+                        <CardContent className="flex flex-wrap gap-x-6 gap-y-4">
                             <DetailItem icon={Phone} label="Phone" value={employee.phone} />
                             <DetailItem icon={CalendarIcon} label="Joining Date" value={format(new Date(employee.joiningDate), 'dd MMM, yyyy')} />
-                            <div className="md:col-span-3">
+                             <div className="w-full">
                                 <DetailItem icon={MapPin} label="Address" value={employee.address} />
                             </div>
-                            <Separator className="md:col-span-3" />
+                            <Separator className="w-full" />
                             <DetailItem icon={Landmark} label="Bank" value={employee.bankDetails?.bankName} />
                             <DetailItem icon={Fingerprint} label="Account No" value={employee.bankDetails?.accountNumber} />
                             <DetailItem icon={Hash} label="IFSC Code" value={employee.bankDetails?.ifscCode} />
-                             <div className="md:col-span-3">
-                               <DetailItem icon={Banknote} label="UPI ID" value={employee.bankDetails?.upiId} />
-                            </div>
+                            <DetailItem icon={Banknote} label="UPI ID" value={employee.bankDetails?.upiId} />
                         </CardContent>
                     </Card>
                     
