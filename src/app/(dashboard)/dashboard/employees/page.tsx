@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   ColumnDef,
   flexRender,
@@ -70,7 +70,7 @@ type SalaryPayment = {
 }
 
 const demoEmployeesData: Employee[] = [
-    { id: 'emp1', name: 'Arun Kumar', phone: '9876543210', address: '123 Main St, Delhi', role: 'Sales Manager', joiningDate: '2023-01-15T00:00:00.000Z', monthlySalary: 35000, bankDetails: { bankName: 'HDFC Bank', accountNumber: '...1234', ifscCode: 'HDFC000123' }, salaryPayments: [{id: 'p1', paymentDate: new Date().toISOString(), amount: 35000, notes: 'Salary for last month'}] },
+    { id: 'emp1', name: 'Arun Kumar', phone: '9876543210', address: '123 Main St, Delhi', role: 'Sales Manager', joiningDate: '2023-01-15T00:00:00.000Z', monthlySalary: 35000, bankDetails: { bankName: 'HDFC Bank', accountNumber: '...1234', ifscCode: 'HDFC000123', upiId: 'arun.kumar@okhdfc' }, salaryPayments: [{id: 'p1', paymentDate: new Date().toISOString(), amount: 35000, notes: 'Salary for last month'}] },
     { id: 'emp2', name: 'Sunita Sharma', phone: '9876543211', address: '456 MG Road, Mumbai', role: 'Cashier', joiningDate: '2023-03-20T00:00:00.000Z', monthlySalary: 22000, bankDetails: { upiId: 'sunita@upi' }, salaryPayments: [] },
 ];
 
@@ -106,7 +106,7 @@ export default function EmployeesPage() {
   const [demoEmployees, setDemoEmployees] = useState(demoEmployeesData);
   
   const userDocRef = useMemoFirebase(() => {
-    if (isDemoMode || !firestore) return null;
+    if (isDemoMode || !firestore || !user) return null;
     return doc(firestore, `users/${user.uid}`);
   }, [user, firestore, isDemoMode]);
   const { data: userData } = useDoc(userDocRef);
@@ -442,7 +442,7 @@ const SalaryPaymentHistory: React.FC<{ employee: Employee, isDemoMode: boolean }
     const firestore = useFirestore();
     
     const userDocRef = useMemoFirebase(() => {
-        if (isDemoMode || !firestore) return null;
+        if (!user || !firestore || isDemoMode) return null;
         return doc(firestore, `users/${user.uid}`);
     }, [user, firestore, isDemoMode]);
     const { data: userData } = useDoc(userDocRef);
