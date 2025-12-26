@@ -32,7 +32,7 @@ import { DataTablePagination } from '@/components/data-table-pagination';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { CaretSortIcon, ChevronDownIcon, ChevronRightIcon } from '@radix-ui/react-icons';
-import { Search, PlusCircle, HandCoins, Calendar as CalendarIcon } from 'lucide-react';
+import { Search, PlusCircle, HandCoins, Calendar as CalendarIcon, MessageSquare } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -187,7 +187,7 @@ export default function EmployeesPage() {
       id: 'expander',
       header: () => null,
       cell: ({ row }) => (
-        <Button variant="ghost" size="icon" onClick={row.getToggleExpandedHandler()} className="h-8 w-8">
+        <Button variant="ghost" size="icon" onClick={row.getToggleExpandedHandler()} className="h-10 w-10">
           {row.getIsExpanded() ? <ChevronDownIcon /> : <ChevronRightIcon />}
         </Button>
       ),
@@ -343,6 +343,14 @@ export default function EmployeesPage() {
     setPaymentDate(undefined);
   }
 
+  const handleWhatsApp = (employee: Employee) => {
+    if (employee.phone) {
+        window.open(`https://wa.me/${employee.phone}`, '_blank');
+    } else {
+        toast({ variant: 'destructive', title: 'No Phone Number', description: 'This employee does not have a phone number saved.' });
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-start justify-between">
@@ -398,6 +406,9 @@ export default function EmployeesPage() {
                           <div className="p-4 bg-muted/50 space-y-4">
                             <div className="flex justify-between items-center">
                                 <h4 className="font-bold">Details for {row.original.name}</h4>
+                                <Button variant="outline" size="sm" onClick={() => handleWhatsApp(row.original)} disabled={!row.original.phone}>
+                                  <MessageSquare className="mr-2 h-4 w-4" /> WhatsApp
+                                </Button>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                                 <div className="space-y-1 p-3 rounded-md border bg-background">
