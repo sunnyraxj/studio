@@ -18,13 +18,13 @@ import {
 import { subMonths, startOfMonth, endOfMonth, startOfYear, endOfYear, subYears, startOfWeek, endOfWeek } from 'date-fns';
 import type { Sale } from '../page';
 import { Skeleton } from '@/components/ui/skeleton';
-import { IndianRupee } from 'lucide-react';
+import { Percent } from 'lucide-react';
 
 
 export function MarginOverviewCard({ salesData, isLoading }: { salesData: Sale[] | null, isLoading: boolean }) {
   const [timeRange, setTimeRange] = useState('today');
 
-  const totalMargin = useMemo(() => {
+  const { totalProfit, totalRevenue } = useMemo(() => {
     const now = new Date();
     let startDate: Date;
     let endDate: Date = now;
@@ -69,23 +69,26 @@ export function MarginOverviewCard({ salesData, isLoading }: { salesData: Sale[]
         return saleDate >= startDate && saleDate <= endDate;
     });
 
-    const margin = filteredSales.reduce((acc, sale) => {
-        const saleMargin = sale.items.reduce((itemAcc, item) => {
+    const { profit, revenue } = filteredSales.reduce((acc, sale) => {
+        sale.items.forEach(item => {
             const itemRevenue = item.price * item.quantity;
             const itemProfit = itemRevenue * (item.margin / 100);
-            return itemAcc + itemProfit;
-        }, 0);
-        return acc + saleMargin;
-    }, 0);
+            acc.revenue += itemRevenue;
+            acc.profit += itemProfit;
+        });
+        return acc;
+    }, { profit: 0, revenue: 0 });
 
-    return margin;
+    return { totalProfit: profit, totalRevenue: revenue };
 
   }, [salesData, timeRange]);
+  
+  const marginPercentage = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-base font-medium">Total Margin</CardTitle>
+        <CardTitle className="text-base font-medium">Profit Margin</CardTitle>
         <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger className="w-[140px] h-8 text-xs">
                 <SelectValue placeholder="Select range" />
@@ -102,8 +105,12 @@ export function MarginOverviewCard({ salesData, isLoading }: { salesData: Sale[]
         </Select>
       </CardHeader>
       <CardContent>
-        {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">₹{totalMargin.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>}
+        {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">{marginPercentage.toFixed(2)}%</div>}
+         <p className="text-xs text-muted-foreground">
+            Profit of ₹{totalProfit.toLocaleString('en-IN', { maximumFractionDigits: 0 })} from revenue of ₹{totalRevenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+        </p>
       </CardContent>
     </Card>
   );
 }
+

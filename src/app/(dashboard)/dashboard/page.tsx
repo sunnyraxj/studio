@@ -14,7 +14,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, doc, query, where } from 'firebase/firestore';
-import { IndianRupee, PartyPopper } from 'lucide-react';
+import { IndianRupee, PartyPopper, Percent } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { subDays } from 'date-fns';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
