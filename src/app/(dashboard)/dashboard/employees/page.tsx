@@ -194,7 +194,7 @@ const EmployeeDetailsDialog: React.FC<{ employee: Employee | null, open: boolean
                             </div>
                             <div>
                                 <p className="text-sm text-muted-foreground">{balanceLabel}</p>
-                                <p className={cn("text-lg font-bold", balanceDue > 0 ? 'text-destructive' : 'text-green-600')}>{balanceDue === 0 ? '₹0' : `₹${Math.abs(balanceDue).toLocaleString('en-IN')}`}</p>
+                                <p className={cn("text-lg font-bold", balanceDue > 0 ? 'text-green-600' : 'text-destructive' )}>{balanceDue === 0 ? '₹0' : `₹${Math.abs(balanceDue).toLocaleString('en-IN')}`}</p>
                             </div>
                         </div>
                     </div>
