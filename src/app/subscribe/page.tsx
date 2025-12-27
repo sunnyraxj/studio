@@ -54,13 +54,6 @@ export default function SubscribePage() {
 
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
 
-  // If user is not logged in, redirect them to login page.
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      router.push('/login');
-    }
-  }, [user, isUserLoading, router]);
-
   // Set default selected plan
   useEffect(() => {
     if (plans) {
@@ -69,13 +62,20 @@ export default function SubscribePage() {
   }, [plans]);
 
   const handleSubscribe = async () => {
-    if (!user || !firestore || !selectedPlan) {
+    if (!selectedPlan) {
       toast({
         variant: 'destructive',
-        title: 'Not Authenticated or No Plan Selected',
-        description: 'You must be logged in and select a plan to subscribe.',
+        title: 'No Plan Selected',
+        description: 'Please select a plan to continue.',
       });
       return;
+    }
+    
+    // If user is not logged in, redirect to login page.
+    if (!user) {
+        // We can pass the selected plan ID to the login page to remember the choice after login
+        router.push(`/login?redirect=/subscribe&planId=${selectedPlan.id}`);
+        return;
     }
     
     const hasSubscription = userData?.subscriptionStatus && userData.subscriptionStatus !== 'inactive';
@@ -110,7 +110,7 @@ export default function SubscribePage() {
     }
   };
   
-  if (isUserLoading || isProfileLoading || !user || isPlansLoading) {
+  if (isUserLoading || isProfileLoading || isPlansLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
   
@@ -128,7 +128,7 @@ export default function SubscribePage() {
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 max-w-7xl w-full">
-         {isLoading ? (
+         {isPlansLoading ? (
              Array.from({ length: 5 }).map((_, i) => (
                 <Card key={i}>
                     <CardHeader>
