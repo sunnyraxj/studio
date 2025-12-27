@@ -123,10 +123,10 @@ export default function SubscribePage() {
           Choose the plan that's right for your business.
         </p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 max-w-7xl w-full">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl w-full">
          {isLoading ? (
              Array.from({ length: 4 }).map((_, i) => (
-                <Card key={i} className="lg:col-span-1">
+                <Card key={i}>
                     <CardHeader>
                         <Skeleton className="h-6 w-3/4" />
                         <Skeleton className="h-4 w-1/2" />
@@ -142,8 +142,7 @@ export default function SubscribePage() {
                 </Card>
              ))
          ) : plans?.map(plan => {
-            const perMonthCost = plan.durationMonths > 1 ? plan.price / plan.durationMonths : plan.price;
-            const originalPerMonthCost = plan.originalPrice && plan.durationMonths > 1 ? plan.originalPrice / plan.durationMonths : plan.originalPrice;
+            const perMonthCost = plan.durationMonths > 1 && plan.durationMonths < 100 ? plan.price / plan.durationMonths : plan.price;
 
             return (
                 <Card
@@ -151,7 +150,6 @@ export default function SubscribePage() {
                     onClick={() => setSelectedPlan(plan)}
                     className={cn(
                         'flex flex-col cursor-pointer transition-all duration-200 relative overflow-hidden',
-                        plan.highlight && 'lg:col-span-2',
                         selectedPlan?.id === plan.id ? 'border-primary ring-2 ring-primary' : 'hover:border-primary/50'
                     )}
                 >
@@ -177,7 +175,7 @@ export default function SubscribePage() {
                              <span className="text-lg font-medium text-muted-foreground line-through">₹{plan.originalPrice.toLocaleString('en-IN')}</span>
                         )}
                     </div>
-                     {plan.durationMonths > 1 && (
+                     {plan.durationMonths > 1 && plan.durationMonths < 100 && (
                          <div className="text-sm text-muted-foreground">
                             (Just ₹{Math.round(perMonthCost).toLocaleString('en-IN')}/month)
                          </div>
