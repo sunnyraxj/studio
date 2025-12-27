@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Building, Shield, Gem, Rocket, Eye } from 'lucide-react';
+import { Building, Shield, Gem, Rocket, Eye, LogIn } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -137,6 +137,14 @@ export default function RoleSelectionPage() {
               </Button>
             </Link>
           </div>
+            <div className="text-center">
+                <Link href="/login" passHref>
+                    <Button variant="link">
+                        <LogIn className="h-4 w-4 mr-2" />
+                        Login as an existing Pro User
+                    </Button>
+                </Link>
+            </div>
         </DialogContent>
       </Dialog>
     </div>
