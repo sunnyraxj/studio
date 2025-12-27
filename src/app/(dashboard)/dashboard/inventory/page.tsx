@@ -22,7 +22,7 @@ import {
 import * as React from 'react';
 import Link from 'next/link';
 import { format, differenceInDays, isBefore } from 'date-fns';
-import { collection, doc, query, orderBy, limit, startAfter, getDocs, Query, DocumentData, endBefore, limitToLast } from 'firebase/firestore';
+import { collection, doc, query, orderBy, onSnapshot, Query } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -318,9 +318,6 @@ export default function InventoryPage() {
 
   const [data, setData] = React.useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
-  const [pageCount, setPageCount] = React.useState(0);
-  const [lastVisible, setLastVisible] = React.useState<DocumentData | null>(null);
-  const [firstVisible, setFirstVisible] = React.useState<DocumentData | null>(null);
 
   const [{ pageIndex, pageSize }, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
@@ -343,16 +340,15 @@ export default function InventoryPage() {
   const [searchBy, setSearchBy] = React.useState('name');
   const [filterValue, setFilterValue] = React.useState('');
 
-  const fetchData = React.useCallback(async (pagination: PaginationState, sorting: SortingState) => {
+  React.useEffect(() => {
     if (isDemoMode) {
-        setData(demoData);
-        setPageCount(Math.ceil(demoData.length / pageSize));
-        setIsLoading(false);
-        return;
+      setData(demoData);
+      setIsLoading(false);
+      return;
     }
     if (!firestore || !shopId) {
-        setIsLoading(false);
-        return;
+      setIsLoading(false);
+      return;
     };
 
     setIsLoading(true);
@@ -362,42 +358,24 @@ export default function InventoryPage() {
     const sortField = sorting.length > 0 ? sorting[0].id : 'dateAdded';
     const sortDirection = sorting.length > 0 && sorting[0].desc ? 'desc' : 'asc';
     
-    let q: Query;
-    
-    if (pagination.pageIndex > 0 && lastVisible) {
-        q = query(productsCollectionRef, orderBy(sortField, sortDirection), startAfter(lastVisible), limit(pagination.pageSize));
-    } else {
-        q = query(productsCollectionRef, orderBy(sortField, sortDirection), limit(pagination.pageSize));
-    }
+    const q: Query = query(productsCollectionRef, orderBy(sortField, sortDirection));
 
-    try {
-        const querySnapshot = await getDocs(q);
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
         const products: InventoryItem[] = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InventoryItem));
         setData(products);
-
-        setLastVisible(querySnapshot.docs[querySnapshot.docs.length - 1]);
-        setFirstVisible(querySnapshot.docs[0]);
-        
-        // This is a simplification. For accurate page count, you'd need a separate count query.
-        // For now, we'll just set it high to allow navigation.
-        setPageCount(Math.ceil(1000 / pageSize)); // Placeholder for total count
-
-    } catch (error) {
-        console.error("Error fetching inventory:", error);
-    } finally {
         setIsLoading(false);
-    }
-  }, [firestore, shopId, isDemoMode, lastVisible, pageSize]);
+    }, (error) => {
+        console.error("Error fetching inventory:", error);
+        setIsLoading(false);
+    });
 
-  React.useEffect(() => {
-    fetchData({ pageIndex, pageSize }, sorting);
-  }, [fetchData, pageIndex, pageSize, sorting]);
+    return () => unsubscribe();
+  }, [firestore, shopId, isDemoMode, sorting]);
 
 
   const table = useReactTable({
     data,
     columns,
-    pageCount,
     state: {
       sorting,
       columnFilters,
@@ -413,9 +391,7 @@ export default function InventoryPage() {
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    manualPagination: true,
-    manualSorting: true,
-    manualFiltering: true,
+    getPaginationRowModel: getPaginationRowModel(),
   });
 
   const handleFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
