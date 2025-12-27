@@ -642,29 +642,32 @@ export default function EmployeesPage() {
                         </Popover>
                     </div>
                 </div>
-                 <div className="space-y-2">
-                    <Label>Payment Mode</Label>
-                    <RadioGroup value={paymentMode} onValueChange={(v) => setPaymentMode(v as 'cash' | 'bank' | 'upi')} className="flex items-center gap-4">
-                        <div className="flex items-center space-x-2"><RadioGroupItem value="cash" id="cash" /><Label htmlFor="cash">Cash</Label></div>
-                        <div className="flex items-center space-x-2"><RadioGroupItem value="bank" id="bank" /><Label htmlFor="bank">Bank Transfer</Label></div>
-                        <div className="flex items-center space-x-2"><RadioGroupItem value="upi" id="upi" /><Label htmlFor="upi">UPI</Label></div>
-                    </RadioGroup>
-                </div>
+                
+                <div className={cn("grid gap-4", qrCodeUrl && "grid-cols-2 items-start")}>
+                    <div className="space-y-2">
+                        <Label>Payment Mode</Label>
+                        <RadioGroup value={paymentMode} onValueChange={(v) => setPaymentMode(v as 'cash' | 'bank' | 'upi')} className="flex items-center gap-4">
+                            <div className="flex items-center space-x-2"><RadioGroupItem value="cash" id="cash" /><Label htmlFor="cash">Cash</Label></div>
+                            <div className="flex items-center space-x-2"><RadioGroupItem value="bank" id="bank" /><Label htmlFor="bank">Bank</Label></div>
+                            <div className="flex items-center space-x-2"><RadioGroupItem value="upi" id="upi" /><Label htmlFor="upi">UPI</Label></div>
+                        </RadioGroup>
+                    </div>
 
-                {paymentMode === 'upi' && qrCodeUrl && (
-                  <div className="flex flex-col items-center justify-center p-4 border rounded-md">
-                      <Image 
-                          src={qrCodeUrl}
-                          width={150}
-                          height={150}
-                          alt="Salary Payment QR Code"
-                          unoptimized
-                      />
-                      <p className="text-sm text-muted-foreground mt-2">
-                          Scan to pay ₹{paymentAmount} to {selectedEmployee?.bankDetails?.upiId}
-                      </p>
-                  </div>
-                )}
+                    {paymentMode === 'upi' && qrCodeUrl && (
+                      <div className="flex flex-col items-center justify-center p-2 border rounded-md">
+                          <Image 
+                              src={qrCodeUrl}
+                              width={150}
+                              height={150}
+                              alt="Salary Payment QR Code"
+                              unoptimized
+                          />
+                          <p className="text-xs text-muted-foreground mt-1 text-center">
+                              Scan to pay ₹{paymentAmount} to<br />{selectedEmployee?.bankDetails?.upiId}
+                          </p>
+                      </div>
+                    )}
+                </div>
                 
                 {paymentMode === 'upi' && selectedEmployee && !selectedEmployee?.bankDetails?.upiId && (
                     <p className="text-sm text-destructive">This employee does not have a UPI ID saved.</p>
