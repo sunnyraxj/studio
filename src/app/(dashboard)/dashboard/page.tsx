@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import {
@@ -132,21 +132,27 @@ const LoadingComponent = () => (
 
 const AllSalesTab = dynamic(() => import('./components/all-sales-tab').then(mod => mod.AllSalesTab), {
   loading: () => <LoadingComponent />,
+  ssr: false,
 });
 const ReportsTab = dynamic(() => import('./components/reports-tab').then(mod => mod.ReportsTab), {
   loading: () => <LoadingComponent />,
+  ssr: false,
 });
 const CustomersTab = dynamic(() => import('./components/customers-tab').then(mod => mod.CustomersTab), {
   loading: () => <LoadingComponent />,
+  ssr: false,
 });
 const PaymentsTab = dynamic(() => import('./components/payments-tab').then(mod => mod.PaymentsTab), {
   loading: () => <LoadingComponent />,
+  ssr: false,
 });
 const GstTab = dynamic(() => import('./components/gst-tab').then(mod => mod.GstTab), {
   loading: () => <LoadingComponent />,
+  ssr: false,
 });
 const KhataBookPage = dynamic(() => import('./khata/page'), {
   loading: () => <LoadingComponent />,
+  ssr: false,
 });
 
 
@@ -175,10 +181,7 @@ export default function DashboardPage() {
     return collection(firestore, `shops/${shopId}/sales`);
   }, [shopId, firestore, isDemoMode]);
   
-  // Only fetch data for the overview tab here. Other tabs will fetch their own data.
-  const { data: overviewSalesData, isLoading: isOverviewLoading } = useCollection<Sale>(
-    activeTab === 'overview' ? salesCollectionRef : null
-  );
+  const { data: overviewSalesData, isLoading: isOverviewLoading } = useCollection<Sale>(salesCollectionRef);
 
   const salesData = isDemoMode ? demoSales : overviewSalesData;
   const originalData = salesData || [];
@@ -335,26 +338,40 @@ export default function DashboardPage() {
                     <TopProductsChart salesData={salesData} isLoading={isLoading} />
                 </div>
             </TabsContent>
-            <TabsContent value="sales">
-                <AllSalesTab isDemoMode={isDemoMode} demoSales={demoSales} setDemoSales={setDemoSales} />
+             <TabsContent value="sales">
+                <Suspense fallback={<LoadingComponent />}>
+                    {activeTab === 'sales' && <AllSalesTab isDemoMode={isDemoMode} demoSales={demoSales} setDemoSales={setDemoSales} />}
+                </Suspense>
             </TabsContent>
             <TabsContent value="reports">
-                <ReportsTab isDemoMode={isDemoMode} demoSales={demoSales} />
+                 <Suspense fallback={<LoadingComponent />}>
+                    {activeTab === 'reports' && <ReportsTab isDemoMode={isDemoMode} demoSales={demoSales} />}
+                </Suspense>
             </TabsContent>
             <TabsContent value="payments">
-                <PaymentsTab isDemoMode={isDemoMode} demoSales={demoSales} />
+                 <Suspense fallback={<LoadingComponent />}>
+                    {activeTab === 'payments' && <PaymentsTab isDemoMode={isDemoMode} demoSales={demoSales} />}
+                </Suspense>
             </TabsContent>
             <TabsContent value="customers">
-                <CustomersTab isDemoMode={isDemoMode} demoSales={demoSales} />
+                 <Suspense fallback={<LoadingComponent />}>
+                    {activeTab === 'customers' && <CustomersTab isDemoMode={isDemoMode} demoSales={demoSales} />}
+                </Suspense>
             </TabsContent>
             <TabsContent value="gst">
-                <GstTab isDemoMode={isDemoMode} demoSales={demoSales} />
+                 <Suspense fallback={<LoadingComponent />}>
+                    {activeTab === 'gst' && <GstTab isDemoMode={isDemoMode} demoSales={demoSales} />}
+                </Suspense>
             </TabsContent>
              <TabsContent value="khata">
-                <KhataBookPage isDemoMode={isDemoMode} demoKhataEntries={demoKhataEntries} setDemoKhataEntries={setDemoKhataEntries} />
+                 <Suspense fallback={<LoadingComponent />}>
+                    {activeTab === 'khata' && <KhataBookPage isDemoMode={isDemoMode} demoKhataEntries={demoKhataEntries} setDemoKhataEntries={setDemoKhataEntries} />}
+                </Suspense>
             </TabsContent>
         </Tabs>
     </div>
     </TooltipProvider>
   );
 }
+
+    
