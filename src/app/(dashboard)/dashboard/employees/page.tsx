@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
+import Image from 'next/image';
 import {
   ColumnDef,
   flexRender,
@@ -30,7 +31,7 @@ import { DataTablePagination } from '@/components/data-table-pagination';
 import { format, differenceInMonths, startOfMonth } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { CaretSortIcon } from '@radix-ui/react-icons';
-import { Search, PlusCircle, HandCoins, Calendar as CalendarIcon, MessageSquare, Phone, MapPin, Banknote, Landmark, Hash, Fingerprint, Wallet, University } from 'lucide-react';
+import { Search, PlusCircle, HandCoins, Calendar as CalendarIcon, MessageSquare, Phone, MapPin, Banknote, Landmark, Hash, Fingerprint, Wallet, University, ChevronDown, ChevronRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -207,8 +208,6 @@ const EmployeeDetailsDialog: React.FC<{ employee: Employee | null, open: boolean
         
         const now = new Date();
         const joining = new Date(employee.joiningDate);
-        // Calculate the number of full months passed since the start of the joining month.
-        // We don't include the current month in the calculation.
         const monthsWorked = differenceInMonths(now, startOfMonth(joining));
         
         const totalAccrued = monthsWorked * employee.monthlySalary;
@@ -320,6 +319,9 @@ export default function EmployeesPage() {
   const [paymentNotes, setPaymentNotes] = useState('');
   const [paymentDate, setPaymentDate] = useState<Date>();
   const [paymentMode, setPaymentMode] = useState<'cash' | 'bank' | 'upi'>('bank');
+  
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
+
 
   const { user } = useUser();
   const firestore = useFirestore();
@@ -511,6 +513,15 @@ export default function EmployeesPage() {
     setPaymentDate(undefined);
   }
 
+  useEffect(() => {
+    if (paymentMode === 'upi' && selectedEmployee?.bankDetails?.upiId && paymentAmount) {
+        const upiDeepLink = `upi://pay?pa=${selectedEmployee.bankDetails.upiId}&pn=${encodeURIComponent(selectedEmployee.name)}&am=${paymentAmount}&cu=INR&tn=Salary Payment`;
+        setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiDeepLink)}`);
+    } else {
+        setQrCodeUrl('');
+    }
+  }, [paymentMode, paymentAmount, selectedEmployee]);
+
   return (
     <>
     <Card>
@@ -628,6 +639,26 @@ export default function EmployeesPage() {
                         <div className="flex items-center space-x-2"><RadioGroupItem value="upi" id="upi" /><Label htmlFor="upi">UPI</Label></div>
                     </RadioGroup>
                 </div>
+
+                {paymentMode === 'upi' && qrCodeUrl && (
+                  <div className="flex flex-col items-center justify-center p-4 border rounded-md">
+                      <Image 
+                          src={qrCodeUrl}
+                          width={200}
+                          height={200}
+                          alt="Salary Payment QR Code"
+                          unoptimized
+                      />
+                      <p className="text-sm text-muted-foreground mt-2">
+                          Scan to pay ₹{paymentAmount} to {selectedEmployee?.bankDetails?.upiId}
+                      </p>
+                  </div>
+                )}
+                
+                {paymentMode === 'upi' && !selectedEmployee?.bankDetails?.upiId && (
+                    <p className="text-sm text-destructive">This employee does not have a UPI ID saved.</p>
+                )}
+
                 <div className="space-y-2"><Label htmlFor="pay-notes">Notes (Optional)</Label><Textarea id="pay-notes" value={paymentNotes} onChange={e => setPaymentNotes(e.target.value)} placeholder="e.g., Full salary for Oct" /></div>
             </div>
              <DialogFooter>
@@ -646,5 +677,3 @@ export default function EmployeesPage() {
     </>
   );
 }
-
-    
