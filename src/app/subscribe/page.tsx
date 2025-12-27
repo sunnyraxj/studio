@@ -172,7 +172,7 @@ export default function SubscribePage() {
                     </CardHeader>
                     <CardContent className="flex-grow flex flex-col justify-between">
                         <div>
-                             <div className="flex items-baseline gap-2">
+                             <div className="flex items-baseline flex-wrap gap-x-2">
                                 <span className="text-4xl font-bold">₹{plan.price.toLocaleString('en-IN')}</span>
                                 {plan.originalPrice && plan.originalPrice > plan.price && (
                                      <span className="text-lg font-medium text-muted-foreground line-through">₹{plan.originalPrice.toLocaleString('en-IN')}</span>
