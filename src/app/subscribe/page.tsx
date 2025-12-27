@@ -123,7 +123,7 @@ export default function SubscribePage() {
           Choose the plan that's right for your business.
         </p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl w-full">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl w-full">
          {isLoading ? (
              Array.from({ length: 4 }).map((_, i) => (
                 <Card key={i}>
@@ -143,6 +143,8 @@ export default function SubscribePage() {
              ))
          ) : plans?.map(plan => {
             const perMonthCost = plan.durationMonths > 1 && plan.durationMonths < 100 ? plan.price / plan.durationMonths : plan.price;
+            
+            const isSelected = selectedPlan?.id === plan.id;
 
             return (
                 <Card
@@ -150,7 +152,7 @@ export default function SubscribePage() {
                     onClick={() => setSelectedPlan(plan)}
                     className={cn(
                         'flex flex-col cursor-pointer transition-all duration-200 relative overflow-hidden',
-                        selectedPlan?.id === plan.id ? 'border-primary ring-2 ring-primary' : 'hover:border-primary/50'
+                        isSelected ? 'border-primary ring-2 ring-primary shadow-lg' : 'hover:border-primary/50 hover:shadow-md'
                     )}
                 >
                     {plan.highlight && (
@@ -159,35 +161,40 @@ export default function SubscribePage() {
                         </div>
                     )}
                      {plan.originalPrice && plan.originalPrice > plan.price && (
-                        <div className="absolute top-0 right-0 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-bl-lg flex items-center gap-1">
+                        <div className="absolute top-2 right-2 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 z-10">
                             <BadgePercent className="h-3 w-3"/>
                             Save {Math.round(100 - (plan.price / plan.originalPrice) * 100)}%
                         </div>
                     )}
-                    <CardHeader>
-                    <CardTitle>{plan.name}</CardTitle>
-                    <CardDescription>{plan.description}</CardDescription>
+                    <CardHeader className="pt-8">
+                        <CardTitle className="text-xl">{plan.name}</CardTitle>
+                        <CardDescription className="min-h-[40px]">{plan.description}</CardDescription>
                     </CardHeader>
-                    <CardContent className="flex-grow space-y-4">
-                    <div className="flex items-baseline gap-2">
-                        <span className="text-4xl font-bold">₹{plan.price.toLocaleString('en-IN')}</span>
-                        {plan.originalPrice && plan.originalPrice > plan.price && (
-                             <span className="text-lg font-medium text-muted-foreground line-through">₹{plan.originalPrice.toLocaleString('en-IN')}</span>
-                        )}
-                    </div>
-                     {plan.durationMonths > 1 && plan.durationMonths < 100 && (
-                         <div className="text-sm text-muted-foreground">
-                            (Just ₹{Math.round(perMonthCost).toLocaleString('en-IN')}/month)
-                         </div>
-                     )}
-                    <ul className="space-y-2 pt-4">
-                        {plan.features.map((feature) => (
-                        <li key={feature} className="flex items-center text-sm">
-                            <Check className="h-4 w-4 mr-2 text-green-500 flex-shrink-0" />
-                            <span>{feature}</span>
-                        </li>
-                        ))}
-                    </ul>
+                    <CardContent className="flex-grow flex flex-col justify-between">
+                        <div>
+                             <div className="flex items-baseline gap-2">
+                                <span className="text-4xl font-bold">₹{plan.price.toLocaleString('en-IN')}</span>
+                                {plan.originalPrice && plan.originalPrice > plan.price && (
+                                     <span className="text-lg font-medium text-muted-foreground line-through">₹{plan.originalPrice.toLocaleString('en-IN')}</span>
+                                )}
+                            </div>
+                             {plan.durationMonths > 1 && plan.durationMonths < 100 && (
+                                 <div className="text-sm text-muted-foreground mb-4">
+                                    (Just ₹{Math.round(perMonthCost).toLocaleString('en-IN')}/month)
+                                 </div>
+                             )}
+                            <ul className="space-y-2 pt-4">
+                                {plan.features.map((feature) => (
+                                <li key={feature} className="flex items-start text-sm">
+                                    <Check className="h-4 w-4 mr-2 text-green-500 flex-shrink-0 mt-0.5" />
+                                    <span>{feature}</span>
+                                </li>
+                                ))}
+                            </ul>
+                        </div>
+                         <Button variant={isSelected ? 'default' : 'outline'} className="w-full mt-6">
+                            {isSelected ? 'Selected' : 'Select Plan'}
+                        </Button>
                     </CardContent>
                 </Card>
             )
