@@ -645,8 +645,8 @@ export default function EmployeesPage() {
                   <div className="flex flex-col items-center justify-center p-4 border rounded-md">
                       <Image 
                           src={qrCodeUrl}
-                          width={200}
-                          height={200}
+                          width={150}
+                          height={150}
                           alt="Salary Payment QR Code"
                           unoptimized
                       />
@@ -678,5 +678,3 @@ export default function EmployeesPage() {
     </>
   );
 }
-
-    
