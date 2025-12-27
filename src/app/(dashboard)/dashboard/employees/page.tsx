@@ -517,7 +517,7 @@ export default function EmployeesPage() {
   useEffect(() => {
     if (paymentMode === 'upi' && selectedEmployee?.bankDetails?.upiId && paymentAmount) {
         const upiDeepLink = `upi://pay?pa=${selectedEmployee.bankDetails.upiId}&pn=${encodeURIComponent(selectedEmployee.name)}&am=${paymentAmount}&cu=INR&tn=Salary Payment`;
-        setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiDeepLink)}`);
+        setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upiDeepLink)}`);
     } else {
         setQrCodeUrl('');
     }
@@ -624,13 +624,23 @@ export default function EmployeesPage() {
                 <DialogDescription>Record a new salary payment for this employee.</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-                <div className="space-y-2"><Label htmlFor="pay-amount">Amount (₹)</Label><Input id="pay-amount" type="number" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)} placeholder={`Monthly: ₹${selectedEmployee?.monthlySalary.toLocaleString()}`} /></div>
-                <div className="space-y-2"><Label htmlFor="pay-date">Payment Date</Label>
-                    <Popover><PopoverTrigger asChild>
-                        <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !paymentDate && "text-muted-foreground")}>
-                            <CalendarIcon className="mr-2 h-4 w-4" />{paymentDate ? format(paymentDate, "PPP") : <span>Pick a date</span>}
-                        </Button>
-                    </PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={paymentDate} onSelect={setPaymentDate} initialFocus /></PopoverContent></Popover>
+                <div className="grid grid-cols-2 gap-4 items-end">
+                    <div className="space-y-2">
+                        <Label htmlFor="pay-amount">Amount (₹)</Label>
+                        <Input id="pay-amount" type="number" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)} placeholder={`Monthly: ₹${selectedEmployee?.monthlySalary.toLocaleString()}`} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="pay-date">Payment Date</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !paymentDate && "text-muted-foreground")}>
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {paymentDate ? format(paymentDate, "PPP") : <span>Pick a date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={paymentDate} onSelect={setPaymentDate} initialFocus /></PopoverContent>
+                        </Popover>
+                    </div>
                 </div>
                  <div className="space-y-2">
                     <Label>Payment Mode</Label>
