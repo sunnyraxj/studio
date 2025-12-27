@@ -27,6 +27,45 @@ type Plan = {
   order: number;
 };
 
+const defaultPlans: Omit<Plan, 'id'>[] = [
+    {
+        name: 'Monthly',
+        price: 799,
+        durationMonths: 1,
+        description: 'Perfect for getting started and trying out all features.',
+        features: ['Full POS Access', 'Inventory Management', 'Sales Analytics', 'Email Support'],
+        highlight: false,
+        order: 1,
+    },
+    {
+        name: 'Quarterly',
+        price: 2099,
+        durationMonths: 3,
+        description: 'A great balance of commitment and savings.',
+        features: ['Full POS Access', 'Inventory Management', 'Sales Analytics', 'Priority Email Support'],
+        highlight: false,
+        order: 2,
+    },
+    {
+        name: 'Yearly',
+        price: 7499,
+        durationMonths: 12,
+        description: 'Best value for long-term business management.',
+        features: ['Full POS Access', 'Inventory Management', 'Sales Analytics', '24/7 Priority Support', 'Early access to new features'],
+        highlight: true,
+        order: 3,
+    },
+    {
+        name: 'Permanent',
+        price: 29999,
+        durationMonths: 1200, // 100 years
+        description: 'One-time payment for lifetime access.',
+        features: ['Full POS Access', 'Inventory Management', 'Sales Analytics', 'Lifetime Priority Support', 'All future updates'],
+        highlight: false,
+        order: 5,
+    },
+];
+
 export default function AdminPlansPage() {
   const firestore = useFirestore();
 
@@ -39,6 +78,7 @@ export default function AdminPlansPage() {
   const { data: plansData, isLoading } = useCollection<Plan>(plansQuery);
 
   const [prices, setPrices] = useState<Record<string, number>>({});
+  const [isSeeding, setIsSeeding] = useState(false);
 
   useMemo(() => {
     if (plansData) {
@@ -53,6 +93,31 @@ export default function AdminPlansPage() {
   const handlePriceChange = (planId: string, newPrice: string) => {
     setPrices(prev => ({ ...prev, [planId]: Number(newPrice) }));
   };
+  
+  const handleSeedPlans = async () => {
+    if (!firestore) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Firestore not available.' });
+      return;
+    }
+    setIsSeeding(true);
+    const batch = writeBatch(firestore);
+    const plansCollectionRef = collection(firestore, 'global/plans/all');
+
+    defaultPlans.forEach(plan => {
+      const newPlanRef = doc(plansCollectionRef);
+      batch.set(newPlanRef, { ...plan, id: newPlanRef.id });
+    });
+    
+    try {
+        await batch.commit();
+        toast({ title: 'Success!', description: 'Default plans have been seeded.' });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Seeding Failed', description: error.message });
+    } finally {
+        setIsSeeding(false);
+    }
+  }
+
 
   const handleSave = async () => {
     if (!firestore || !plansData) {
@@ -125,14 +190,18 @@ export default function AdminPlansPage() {
               </div>
             ))
           ) : (
-            <p>No subscription plans found. They may need to be seeded.</p>
+            <div className="text-center py-10">
+                <p className="text-muted-foreground">No subscription plans found in the database.</p>
+                <Button onClick={handleSeedPlans} disabled={isSeeding} className="mt-4">
+                    {isSeeding ? 'Seeding Plans...' : 'Create Default Plans'}
+                </Button>
+            </div>
           )}
         </CardContent>
         <CardFooter className="justify-end">
-            <Button onClick={handleSave} disabled={isLoading}>Save Changes</Button>
+            <Button onClick={handleSave} disabled={isLoading || sortedPlans.length === 0}>Save Changes</Button>
         </CardFooter>
       </Card>
     </div>
   );
 }
-
