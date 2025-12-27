@@ -208,7 +208,8 @@ const EmployeeDetailsDialog: React.FC<{ employee: Employee | null, open: boolean
         
         const now = new Date();
         const joining = new Date(employee.joiningDate);
-        const monthsWorked = differenceInMonths(now, startOfMonth(joining));
+        // Calculate the number of full months worked, excluding the current month.
+        const monthsWorked = differenceInMonths(startOfMonth(now), startOfMonth(joining));
         
         const totalAccrued = monthsWorked * employee.monthlySalary;
         const totalPaid = salaryPayments.reduce((sum, p) => sum + p.amount, 0);
@@ -265,16 +266,16 @@ const EmployeeDetailsDialog: React.FC<{ employee: Employee | null, open: boolean
                             </div>
                             <div>
                                 <p className="text-sm text-muted-foreground">{balanceLabel}</p>
-                                <p className={cn("text-lg font-bold", balanceDue > 0 ? 'text-green-600' : 'text-destructive' )}>{balanceDue === 0 ? '₹0' : `₹${Math.abs(balanceDue).toLocaleString('en-IN')}`}</p>
+                                <p className={cn("text-lg font-bold", balanceDue > 0 ? 'text-green-600' : balanceDue < 0 ? 'text-destructive' : '' )}>{balanceDue === 0 ? '₹0' : `₹${Math.abs(balanceDue).toLocaleString('en-IN')}`}</p>
                             </div>
                         </div>
                     </div>
 
                      <Card>
                         <CardHeader className="pb-2 pt-4">
-                            <CardTitle className="text-sm">Contact & Financial Details</CardTitle>
+                            <CardTitle className="text-base">Contact & Financial Details</CardTitle>
                         </CardHeader>
-                        <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-3">
+                        <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-4">
                             <DetailItem icon={Phone} label="Phone" value={employee.phone} />
                             <DetailItem icon={CalendarIcon} label="Joining Date" value={format(new Date(employee.joiningDate), 'dd MMM, yyyy')} />
                             <DetailItem icon={Wallet} label="UPI ID" value={employee.bankDetails?.upiId} />
@@ -655,7 +656,7 @@ export default function EmployeesPage() {
                   </div>
                 )}
                 
-                {paymentMode === 'upi' && !selectedEmployee?.bankDetails?.upiId && (
+                {paymentMode === 'upi' && selectedEmployee && !selectedEmployee?.bankDetails?.upiId && (
                     <p className="text-sm text-destructive">This employee does not have a UPI ID saved.</p>
                 )}
 
@@ -677,3 +678,5 @@ export default function EmployeesPage() {
     </>
   );
 }
+
+    
