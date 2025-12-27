@@ -166,12 +166,12 @@ export default function SubscribePage() {
                             Save {Math.round(100 - (plan.price / plan.originalPrice) * 100)}%
                         </div>
                     )}
-                    <CardHeader className="pt-8">
-                        <CardTitle className="text-xl">{plan.name}</CardTitle>
+                    <CardHeader className="pt-8 flex-shrink-0">
+                        <CardTitle className="text-xl min-h-[28px]">{plan.name}</CardTitle>
                         <CardDescription className="min-h-[40px]">{plan.description}</CardDescription>
                     </CardHeader>
                     <CardContent className="flex-grow flex flex-col justify-between">
-                        <div>
+                        <div className="flex-grow">
                              <div className="flex items-baseline flex-wrap gap-x-2">
                                 <span className="text-4xl font-bold">₹{plan.price.toLocaleString('en-IN')}</span>
                                 {plan.originalPrice && plan.originalPrice > plan.price && (
