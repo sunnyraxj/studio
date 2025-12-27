@@ -11,6 +11,7 @@ import {
   LifeBuoy,
   Settings,
   LogOut,
+  Tags,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -28,6 +29,11 @@ const adminNavLinks = [
     href: '/admin/shops',
     icon: Store,
     label: 'Shops',
+  },
+  {
+    href: '/admin/plans',
+    icon: Tags,
+    label: 'Plans',
   },
   {
     href: '/admin/settings',

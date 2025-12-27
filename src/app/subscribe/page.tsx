@@ -11,77 +11,23 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Check } from 'lucide-react';
+import { Check, BadgePercent } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { doc, updateDoc, collection, query, orderBy } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast.tsx';
+import { Skeleton } from '@/components/ui/skeleton';
 
-const plans = [
-  {
-    name: 'Monthly',
-    price: 799,
-    durationMonths: 1,
-    description: 'Perfect for getting started.',
-    features: [
-      'Full POS system',
-      'Inventory management',
-      'Customer database',
-    ],
-  },
-  {
-    name: 'Quarterly',
-    price: 2099,
-    durationMonths: 3,
-    description: 'A popular choice for growing businesses.',
-    features: [
-      'Full POS system',
-      'Inventory management',
-      'Customer database',
-      'Sales Analytics',
-    ],
-    highlight: true,
-  },
-  {
-    name: 'Half-Yearly',
-    price: 3999,
-    durationMonths: 6,
-    description: 'Save more with a longer commitment.',
-    features: [
-      'Full POS system',
-      'Inventory management',
-      'Customer database',
-      'Sales Analytics',
-      'Multi-user support',
-    ],
-  },
-  {
-    name: 'Yearly',
-    price: 7499,
-    durationMonths: 12,
-    description: 'Best value for established businesses.',
-    features: [
-      'Full POS system',
-      'Inventory management',
-      'Customer database',
-      'Sales Analytics',
-      'Multi-user support',
-      'Priority support',
-    ],
-  },
-  {
-    name: 'Permanent',
-    price: 29999,
-    durationMonths: 1200, // 100 years to simulate permanence
-    description: 'One-time payment for lifetime access.',
-    features: [
-      'All features included',
-      'Lifetime updates',
-      'Dedicated support',
-      '₹500 yearly service fee applies',
-    ],
-  }
-];
+type Plan = {
+  id: string;
+  name: string;
+  price: number;
+  durationMonths: number;
+  description: string;
+  features: string[];
+  highlight: boolean;
+  order: number;
+};
 
 type UserProfile = {
   subscriptionStatus?: 'active' | 'inactive' | 'pending_verification' | 'rejected';
@@ -92,6 +38,13 @@ export default function SubscribePage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+  
+  const plansQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'global/plans/all'), orderBy('order'));
+  }, [firestore]);
+
+  const { data: plans, isLoading: isPlansLoading } = useCollection<Plan>(plansQuery);
 
   const userDocRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -99,7 +52,7 @@ export default function SubscribePage() {
   }, [user, firestore]);
   const { data: userData, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
-  const [selectedPlan, setSelectedPlan] = useState(plans.find(p => p.highlight));
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
 
   // If user is not logged in, redirect them to login page.
   useEffect(() => {
@@ -107,6 +60,13 @@ export default function SubscribePage() {
       router.push('/login');
     }
   }, [user, isUserLoading, router]);
+
+  // Set default selected plan
+  useEffect(() => {
+    if (plans) {
+      setSelectedPlan(plans.find(p => p.highlight) || plans[0] || null);
+    }
+  }, [plans]);
 
   const handleSubscribe = async () => {
     if (!user || !firestore || !selectedPlan) {
@@ -150,9 +110,12 @@ export default function SubscribePage() {
     }
   };
   
-  if (isUserLoading || isProfileLoading || !user) {
+  if (isUserLoading || isProfileLoading || !user || isPlansLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
+  
+  const monthlyPlan = plans?.find(p => p.durationMonths === 1);
+  const monthlyPrice = monthlyPlan ? monthlyPlan.price : 0;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-6">
@@ -165,47 +128,75 @@ export default function SubscribePage() {
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 max-w-7xl w-full">
-         {plans.map(plan => (
-            <Card
-                key={plan.name}
-                onClick={() => setSelectedPlan(plan)}
-                className={cn(
-                    'flex flex-col cursor-pointer transition-all duration-200',
-                    selectedPlan?.name === plan.name ? 'border-primary ring-2 ring-primary' : 'hover:border-primary/50'
-                )}
-            >
-                {plan.highlight && (
-                    <div className="text-center py-1 bg-primary text-primary-foreground text-sm font-semibold rounded-t-lg">
-                        Most Popular
+         {isLoading ? (
+             Array.from({ length: 5 }).map((_, i) => (
+                <Card key={i}>
+                    <CardHeader>
+                        <Skeleton className="h-6 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <Skeleton className="h-8 w-1/2" />
+                        <div className="space-y-2">
+                            <Skeleton className="h-4 w-full" />
+                            <Skeleton className="h-4 w-full" />
+                            <Skeleton className="h-4 w-3/4" />
+                        </div>
+                    </CardContent>
+                </Card>
+             ))
+         ) : plans?.map(plan => {
+            const equivalentMonthlyCost = plan.durationMonths > 0 ? plan.price / plan.durationMonths : 0;
+            const savings = monthlyPrice > 0 && equivalentMonthlyCost > 0 && plan.durationMonths > 1 ? 100 - (equivalentMonthlyCost / monthlyPrice) * 100 : 0;
+
+            return (
+                <Card
+                    key={plan.id}
+                    onClick={() => setSelectedPlan(plan)}
+                    className={cn(
+                        'flex flex-col cursor-pointer transition-all duration-200 relative overflow-hidden',
+                        selectedPlan?.id === plan.id ? 'border-primary ring-2 ring-primary' : 'hover:border-primary/50'
+                    )}
+                >
+                    {plan.highlight && (
+                        <div className="text-center py-1 bg-primary text-primary-foreground text-sm font-semibold">
+                            Most Popular
+                        </div>
+                    )}
+                     {savings > 0 && (
+                        <div className="absolute top-0 right-0 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-bl-lg flex items-center gap-1">
+                            <BadgePercent className="h-3 w-3"/>
+                            Save {Math.round(savings)}%
+                        </div>
+                    )}
+                    <CardHeader>
+                    <CardTitle>{plan.name}</CardTitle>
+                    <CardDescription>{plan.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex-grow space-y-4">
+                    <div className="flex items-baseline">
+                        <span className="text-4xl font-bold">₹{plan.price.toLocaleString('en-IN')}</span>
+                        {plan.name !== 'Permanent' && <span className="ml-1 text-muted-foreground">/{plan.durationMonths === 1 ? 'month' : `${plan.durationMonths} months`}</span>}
                     </div>
-                )}
-                <CardHeader>
-                <CardTitle>{plan.name}</CardTitle>
-                <CardDescription>{plan.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="flex-grow space-y-4">
-                <div className="flex items-baseline">
-                    <span className="text-4xl font-bold">₹{plan.price.toLocaleString('en-IN')}</span>
-                     {plan.name !== 'Permanent' && <span className="ml-1 text-muted-foreground">/{plan.durationMonths === 1 ? 'month' : `${plan.durationMonths} months`}</span>}
-                </div>
-                <ul className="space-y-2">
-                    {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-center text-sm">
-                        <Check className="h-4 w-4 mr-2 text-green-500 flex-shrink-0" />
-                        <span>{feature}</span>
-                    </li>
-                    ))}
-                </ul>
-                </CardContent>
-            </Card>
-         ))}
+                    <ul className="space-y-2">
+                        {plan.features.map((feature) => (
+                        <li key={feature} className="flex items-center text-sm">
+                            <Check className="h-4 w-4 mr-2 text-green-500 flex-shrink-0" />
+                            <span>{feature}</span>
+                        </li>
+                        ))}
+                    </ul>
+                    </CardContent>
+                </Card>
+            )
+         })}
       </div>
       <div className="mt-12 w-full max-w-xs">
         <Button
           className="w-full shadow-lg shadow-primary/50 sparkle"
           size="lg"
           onClick={handleSubscribe}
-          disabled={!selectedPlan}
+          disabled={!selectedPlan || isPlansLoading}
         >
           {selectedPlan ? `Pay ₹${selectedPlan.price.toLocaleString('en-IN')}` : 'Select a Plan'}
         </Button>

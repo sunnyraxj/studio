@@ -383,6 +383,22 @@
             "notes": { "type": "string" }
         },
         "required": ["id", "employeeId", "paymentDate", "amount"]
+    },
+    "SubscriptionPlan": {
+      "title": "Subscription Plan",
+      "type": "object",
+      "description": "Defines a subscription plan available for purchase.",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "price": { "type": "number" },
+        "durationMonths": { "type": "number" },
+        "description": { "type": "string" },
+        "features": { "type": "array", "items": { "type": "string" } },
+        "highlight": { "type": "boolean" },
+        "order": { "type": "number", "description": "Sort order for displaying plans." }
+      },
+      "required": ["id", "name", "price", "durationMonths", "order"]
     }
   },
   "auth": {
@@ -473,9 +489,16 @@
           },
           "description": "Salary payment history for a specific employee."
         }
+      },
+      {
+        "path": "/global/plans/all/{planId}",
+        "definition": {
+          "schema": {
+            "$ref": "#/backend/entities/SubscriptionPlan"
+          },
+          "description": "Global subscription plans available to all users."
+        }
       }
     ]
   }
 }
-
-    
