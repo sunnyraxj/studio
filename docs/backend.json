@@ -392,6 +392,7 @@
         "id": { "type": "string" },
         "name": { "type": "string" },
         "price": { "type": "number" },
+        "originalPrice": { "type": "number" },
         "durationMonths": { "type": "number" },
         "description": { "type": "string" },
         "features": { "type": "array", "items": { "type": "string" } },

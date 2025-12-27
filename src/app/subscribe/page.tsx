@@ -22,6 +22,7 @@ type Plan = {
   id: string;
   name: string;
   price: number;
+  originalPrice?: number;
   durationMonths: number;
   description: string;
   features: string[];
@@ -110,12 +111,7 @@ export default function SubscribePage() {
     }
   };
   
-  if (isUserLoading || isProfileLoading || isPlansLoading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
-  }
-  
-  const monthlyPlan = plans?.find(p => p.durationMonths === 1);
-  const monthlyPrice = monthlyPlan ? monthlyPlan.price : 0;
+  const isLoading = isUserLoading || isProfileLoading || isPlansLoading;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-6">
@@ -128,9 +124,9 @@ export default function SubscribePage() {
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 max-w-7xl w-full">
-         {isPlansLoading ? (
-             Array.from({ length: 5 }).map((_, i) => (
-                <Card key={i}>
+         {isLoading ? (
+             Array.from({ length: 4 }).map((_, i) => (
+                <Card key={i} className="lg:col-span-1">
                     <CardHeader>
                         <Skeleton className="h-6 w-3/4" />
                         <Skeleton className="h-4 w-1/2" />
@@ -146,8 +142,8 @@ export default function SubscribePage() {
                 </Card>
              ))
          ) : plans?.map(plan => {
-            const equivalentMonthlyCost = plan.durationMonths > 0 ? plan.price / plan.durationMonths : 0;
-            const savings = monthlyPrice > 0 && equivalentMonthlyCost > 0 && plan.durationMonths > 1 ? 100 - (equivalentMonthlyCost / monthlyPrice) * 100 : 0;
+            const perMonthCost = plan.durationMonths > 1 ? plan.price / plan.durationMonths : plan.price;
+            const originalPerMonthCost = plan.originalPrice && plan.durationMonths > 1 ? plan.originalPrice / plan.durationMonths : plan.originalPrice;
 
             return (
                 <Card
@@ -155,6 +151,7 @@ export default function SubscribePage() {
                     onClick={() => setSelectedPlan(plan)}
                     className={cn(
                         'flex flex-col cursor-pointer transition-all duration-200 relative overflow-hidden',
+                        plan.highlight && 'lg:col-span-2',
                         selectedPlan?.id === plan.id ? 'border-primary ring-2 ring-primary' : 'hover:border-primary/50'
                     )}
                 >
@@ -163,10 +160,10 @@ export default function SubscribePage() {
                             Most Popular
                         </div>
                     )}
-                     {savings > 0 && (
+                     {plan.originalPrice && plan.originalPrice > plan.price && (
                         <div className="absolute top-0 right-0 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-bl-lg flex items-center gap-1">
                             <BadgePercent className="h-3 w-3"/>
-                            Save {Math.round(savings)}%
+                            Save {Math.round(100 - (plan.price / plan.originalPrice) * 100)}%
                         </div>
                     )}
                     <CardHeader>
@@ -174,11 +171,18 @@ export default function SubscribePage() {
                     <CardDescription>{plan.description}</CardDescription>
                     </CardHeader>
                     <CardContent className="flex-grow space-y-4">
-                    <div className="flex items-baseline">
+                    <div className="flex items-baseline gap-2">
                         <span className="text-4xl font-bold">₹{plan.price.toLocaleString('en-IN')}</span>
-                        {plan.name !== 'Permanent' && <span className="ml-1 text-muted-foreground">/{plan.durationMonths === 1 ? 'month' : `${plan.durationMonths} months`}</span>}
+                        {plan.originalPrice && plan.originalPrice > plan.price && (
+                             <span className="text-lg font-medium text-muted-foreground line-through">₹{plan.originalPrice.toLocaleString('en-IN')}</span>
+                        )}
                     </div>
-                    <ul className="space-y-2">
+                     {plan.durationMonths > 1 && (
+                         <div className="text-sm text-muted-foreground">
+                            (Just ₹{Math.round(perMonthCost).toLocaleString('en-IN')}/month)
+                         </div>
+                     )}
+                    <ul className="space-y-2 pt-4">
                         {plan.features.map((feature) => (
                         <li key={feature} className="flex items-center text-sm">
                             <Check className="h-4 w-4 mr-2 text-green-500 flex-shrink-0" />
