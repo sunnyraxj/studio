@@ -88,11 +88,6 @@ const navLinks = [
     label: 'Inventory',
   },
   {
-    href: '/dashboard/khata',
-    icon: BookUser,
-    label: 'Khata Book',
-  },
-  {
     href: '/dashboard/subscription',
     icon: CreditCard,
     label: 'Subscription'
