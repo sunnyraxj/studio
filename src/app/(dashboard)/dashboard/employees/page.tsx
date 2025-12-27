@@ -207,11 +207,16 @@ const EmployeeDetailsDialog: React.FC<{ employee: Employee | null, open: boolean
         if (!employee) return { totalAccrued: 0, totalPaid: 0, balanceDue: 0 };
         
         const now = new Date();
-        const joining = new Date(employee.joiningDate);
-        // Calculate the number of full months worked, excluding the current month.
-        const monthsWorked = differenceInMonths(startOfMonth(now), startOfMonth(joining));
+        // Calculate months worked excluding the current month
+        const joiningDate = new Date(employee.joiningDate);
+        const startOfCurrentMonth = startOfMonth(now);
         
-        const totalAccrued = monthsWorked * employee.monthlySalary;
+        let monthsWorked = differenceInMonths(startOfCurrentMonth, joiningDate);
+        if (joiningDate > startOfCurrentMonth) {
+          monthsWorked = -1; // No full month worked if joining is in the current or future month
+        }
+        
+        const totalAccrued = monthsWorked >= 0 ? (monthsWorked + 1) * employee.monthlySalary : 0;
         const totalPaid = salaryPayments.reduce((sum, p) => sum + p.amount, 0);
         const balanceDue = totalAccrued - totalPaid;
         
@@ -644,13 +649,16 @@ export default function EmployeesPage() {
                 </div>
                 
                 <div className={cn("grid gap-4", qrCodeUrl && "grid-cols-2 items-start")}>
-                    <div className="space-y-2">
-                        <Label>Payment Mode</Label>
-                        <RadioGroup value={paymentMode} onValueChange={(v) => setPaymentMode(v as 'cash' | 'bank' | 'upi')} className="flex items-center gap-4">
-                            <div className="flex items-center space-x-2"><RadioGroupItem value="cash" id="cash" /><Label htmlFor="cash">Cash</Label></div>
-                            <div className="flex items-center space-x-2"><RadioGroupItem value="bank" id="bank" /><Label htmlFor="bank">Bank</Label></div>
-                            <div className="flex items-center space-x-2"><RadioGroupItem value="upi" id="upi" /><Label htmlFor="upi">UPI</Label></div>
-                        </RadioGroup>
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Label>Payment Mode</Label>
+                            <RadioGroup value={paymentMode} onValueChange={(v) => setPaymentMode(v as 'cash' | 'bank' | 'upi')} className="flex items-center gap-4">
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="cash" id="cash" /><Label htmlFor="cash">Cash</Label></div>
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="bank" id="bank" /><Label htmlFor="bank">Bank</Label></div>
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="upi" id="upi" /><Label htmlFor="upi">UPI</Label></div>
+                            </RadioGroup>
+                        </div>
+                        <div className="space-y-2"><Label htmlFor="pay-notes">Notes (Optional)</Label><Textarea id="pay-notes" value={paymentNotes} onChange={e => setPaymentNotes(e.target.value)} placeholder="e.g., Full salary for Oct" /></div>
                     </div>
 
                     {paymentMode === 'upi' && qrCodeUrl && (
@@ -673,7 +681,6 @@ export default function EmployeesPage() {
                     <p className="text-sm text-destructive">This employee does not have a UPI ID saved.</p>
                 )}
 
-                <div className="space-y-2"><Label htmlFor="pay-notes">Notes (Optional)</Label><Textarea id="pay-notes" value={paymentNotes} onChange={e => setPaymentNotes(e.target.value)} placeholder="e.g., Full salary for Oct" /></div>
             </div>
              <DialogFooter>
                 <DialogClose asChild><Button variant="outline" onClick={() => setSelectedEmployee(null)}>Cancel</Button></DialogClose>
