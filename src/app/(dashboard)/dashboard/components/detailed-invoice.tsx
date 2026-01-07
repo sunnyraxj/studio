@@ -182,12 +182,6 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
             <footer className="mt-12 pt-6 border-t-2 border-gray-300 text-xs">
                  <div className="grid grid-cols-2 gap-8">
                      <div className="space-y-4">
-                        <h4 className="text-sm font-semibold uppercase text-gray-500 tracking-wider">Terms & Conditions</h4>
-                        <ul className="list-disc list-inside space-y-1 text-gray-600">
-                            <li>Goods once sold will not be taken back.</li>
-                            <li>Interest @18% p.a. will be charged if the bill is not paid in due time.</li>
-                            <li>This is a computer-generated invoice.</li>
-                        </ul>
                         {settings.bankName && (
                             <div className="space-y-1 pt-4">
                                 <h4 className="text-sm font-semibold uppercase text-gray-500 tracking-wider">Payment Information</h4>
