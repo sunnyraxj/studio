@@ -86,7 +86,7 @@ export const Invoice: React.FC<ChallanProps> = ({ sale, settings }) => {
     const hasTax = cgst > 0 || sgst > 0 || igst > 0;
 
     return (
-        <div className="bg-white text-gray-800 text-sm p-10 font-sans" style={{width: '210mm', minHeight: '297mm'}}>
+        <div className="bg-white text-gray-800 text-sm p-10 font-sans w-full min-h-full">
             <header className="flex justify-between items-start pb-6 mb-8">
                  <div className="flex items-center gap-4">
                      {settings.logoUrl && (
@@ -112,7 +112,7 @@ export const Invoice: React.FC<ChallanProps> = ({ sale, settings }) => {
             
             <Separator className="my-8" />
 
-            <main className="min-h-[110mm]">
+            <main>
                 <table className="w-full text-left">
                     <thead>
                         <tr className="text-xs uppercase text-gray-500 border-b border-gray-300">
