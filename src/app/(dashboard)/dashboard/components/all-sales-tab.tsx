@@ -34,14 +34,15 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { CaretSortIcon, ChevronDownIcon, ChevronRightIcon } from '@radix-ui/react-icons';
-import { X, Search, Printer } from 'lucide-react';
+import { X, Search, Printer, Receipt } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { Sale } from '../page';
 import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit, startAfter, getDocs, where, Query, DocumentData, getCountFromServer, doc } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Invoice } from '../pos/components/invoice';
+import { DetailedInvoice } from './detailed-invoice';
+import { CompactReceipt } from './compact-receipt';
 
 
 interface AllSalesTabProps {
@@ -91,17 +92,22 @@ export function AllSalesTab({ isDemoMode, demoSales, setDemoSales }: AllSalesTab
   const [endYear, setEndYear] = useState('');
 
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
+  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const invoiceRef = useRef(null);
+  const receiptRef = useRef(null);
   
-  const handlePrint = () => {
-    const printContent = invoiceRef.current;
+  const handlePrint = (type: 'invoice' | 'receipt') => {
+    const printContentRef = type === 'invoice' ? invoiceRef : receiptRef;
+    const printTitle = type === 'invoice' ? 'Print Invoice' : 'Print Receipt';
+    
+    const printContent = printContentRef.current;
     if (printContent) {
         const newWindow = window.open('', '_blank', 'width=800,height=600');
         if (newWindow) {
             const printableContent = (printContent as HTMLDivElement).innerHTML;
             
-            newWindow.document.write('<html><head><title>Print Invoice</title>');
+            newWindow.document.write(`<html><head><title>${printTitle}</title>`);
             const styles = Array.from(document.styleSheets)
               .map(styleSheet => {
                   try {
@@ -176,9 +182,12 @@ export function AllSalesTab({ isDemoMode, demoSales, setDemoSales }: AllSalesTab
         header: () => <div className="text-right">Actions</div>,
         cell: ({ row }) => {
           return (
-            <div className="text-right">
+            <div className="text-right space-x-2">
+                <Button variant="outline" size="sm" onClick={() => { setSelectedSale(row.original); setIsReceiptOpen(true); }}>
+                    <Receipt className="h-4 w-4 mr-2"/> Print Receipt
+                </Button>
                 <Button variant="outline" size="sm" onClick={() => { setSelectedSale(row.original); setIsInvoiceOpen(true); }}>
-                    <Printer className="h-4 w-4 mr-2"/> View & Print
+                    <Printer className="h-4 w-4 mr-2"/> Print A4
                 </Button>
             </div>
           );
@@ -424,17 +433,36 @@ export function AllSalesTab({ isDemoMode, demoSales, setDemoSales }: AllSalesTab
     <Dialog open={isInvoiceOpen} onOpenChange={(open) => { if (!open) { setIsInvoiceOpen(false); setSelectedSale(null); }}}>
         <DialogContent className="max-w-4xl p-0 border-0">
              <DialogHeader className="p-4 pb-0">
-                <DialogTitle>Invoice #{selectedSale?.invoiceNumber}</DialogTitle>
+                <DialogTitle>A4 Invoice #{selectedSale?.invoiceNumber}</DialogTitle>
                 <DialogDescription>
-                  A preview of the invoice for printing.
-                  <Button size="sm" onClick={handlePrint} className="float-right -mt-2">
-                    <Printer className="mr-2 h-4 w-4" /> Print
+                  A preview of the detailed invoice for printing.
+                  <Button size="sm" onClick={() => handlePrint('invoice')} className="float-right -mt-2">
+                    <Printer className="mr-2 h-4 w-4" /> Print A4
                   </Button>
                 </DialogDescription>
             </DialogHeader>
              <div className="max-h-[80vh] overflow-y-auto">
                 <div ref={invoiceRef}>
-                    <Invoice sale={selectedSale} settings={shopSettings} />
+                    <DetailedInvoice sale={selectedSale} settings={shopSettings} />
+                </div>
+             </div>
+        </DialogContent>
+    </Dialog>
+
+    <Dialog open={isReceiptOpen} onOpenChange={(open) => { if (!open) { setIsReceiptOpen(false); setSelectedSale(null); }}}>
+        <DialogContent className="max-w-sm p-0 border-0">
+             <DialogHeader className="p-4 pb-0">
+                <DialogTitle>Receipt #{selectedSale?.invoiceNumber}</DialogTitle>
+                <DialogDescription>
+                  A preview of the compact receipt for thermal printers.
+                  <Button size="sm" onClick={() => handlePrint('receipt')} className="float-right -mt-2">
+                    <Receipt className="mr-2 h-4 w-4" /> Print Receipt
+                  </Button>
+                </DialogDescription>
+            </DialogHeader>
+             <div className="max-h-[80vh] overflow-y-auto">
+                <div ref={receiptRef}>
+                    <CompactReceipt sale={selectedSale} settings={shopSettings} />
                 </div>
              </div>
         </DialogContent>
