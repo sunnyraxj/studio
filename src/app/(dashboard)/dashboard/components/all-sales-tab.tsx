@@ -432,14 +432,16 @@ export function AllSalesTab({ isDemoMode, demoSales, setDemoSales }: AllSalesTab
 
     <Dialog open={isInvoiceOpen} onOpenChange={(open) => { if (!open) { setIsInvoiceOpen(false); setSelectedSale(null); }}}>
         <DialogContent className="max-w-4xl p-0 border-0">
-             <DialogHeader className="p-4 pb-0">
-                <DialogTitle>A4 Invoice #{selectedSale?.invoiceNumber}</DialogTitle>
-                <DialogDescription>
-                  A preview of the detailed invoice for printing.
-                  <Button size="sm" onClick={() => handlePrint('invoice')} className="float-right -mt-2">
+            <DialogHeader className="p-4 flex flex-row items-center justify-between">
+                <div>
+                    <DialogTitle>A4 Invoice #{selectedSale?.invoiceNumber}</DialogTitle>
+                    <DialogDescription>
+                        A preview of the detailed invoice for printing.
+                    </DialogDescription>
+                </div>
+                <Button size="sm" onClick={() => handlePrint('invoice')}>
                     <Printer className="mr-2 h-4 w-4" /> Print A4
-                  </Button>
-                </DialogDescription>
+                </Button>
             </DialogHeader>
              <div className="max-h-[80vh] overflow-y-auto">
                 <div ref={invoiceRef}>
@@ -451,16 +453,18 @@ export function AllSalesTab({ isDemoMode, demoSales, setDemoSales }: AllSalesTab
 
     <Dialog open={isReceiptOpen} onOpenChange={(open) => { if (!open) { setIsReceiptOpen(false); setSelectedSale(null); }}}>
         <DialogContent className="max-w-sm p-0 border-0">
-             <DialogHeader className="p-4 pb-0">
-                <DialogTitle>Receipt #{selectedSale?.invoiceNumber}</DialogTitle>
-                <DialogDescription>
-                  A preview of the compact receipt for thermal printers.
-                  <Button size="sm" onClick={() => handlePrint('receipt')} className="float-right -mt-2">
+             <DialogHeader className="p-4 flex flex-row items-center justify-between">
+                <div>
+                    <DialogTitle>Receipt #{selectedSale?.invoiceNumber}</DialogTitle>
+                    <DialogDescription>
+                        A preview of the compact receipt.
+                    </DialogDescription>
+                </div>
+                <Button size="sm" onClick={() => handlePrint('receipt')}>
                     <Receipt className="mr-2 h-4 w-4" /> Print Receipt
-                  </Button>
-                </DialogDescription>
+                </Button>
             </DialogHeader>
-             <div className="max-h-[80vh] overflow-y-auto">
+             <div className="max-h-[80vh] overflow-y-auto px-2">
                 <div ref={receiptRef}>
                     <CompactReceipt sale={selectedSale} settings={shopSettings} />
                 </div>
