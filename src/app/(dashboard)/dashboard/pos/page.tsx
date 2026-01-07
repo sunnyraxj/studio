@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -320,9 +319,7 @@ export default function POSPage() {
   };
   
   const { subtotal, cgst, sgst, igst, total } = useMemo(() => {
-    const shopState = (shopSettings?.companyState || 'Assam').toLowerCase().trim();
-    const customerStateClean = (customerState || '').toLowerCase().trim();
-    const isIntraState = customerStateClean === shopState;
+    const isIntraState = customerState.trim().toLowerCase() === 'assam';
 
     let subtotal = 0;
     let cgst = 0;
