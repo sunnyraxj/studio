@@ -209,11 +209,12 @@ export default function POSPage() {
   
 
   const generateNextInvoiceNumber = async () => {
-    if (isDemoMode || !firestore || !shopId) {
-        const currentYear = new Date().getFullYear();
-        setInvoiceNumber(`INV-${currentYear}-0001`);
-        return;
+    if (isDemoMode) {
+      const currentYear = new Date().getFullYear();
+      setInvoiceNumber(`INV-${currentYear}-0001`);
+      return;
     }
+    if (!firestore || !shopId) return;
 
     const currentYear = new Date().getFullYear();
     const salesCollectionRef = collection(firestore, `shops/${shopId}/sales`);
@@ -232,9 +233,10 @@ export default function POSPage() {
         const lastSale = querySnapshot.docs[0].data() as Sale;
         const lastInvoice = lastSale.invoiceNumber;
         
-        const parts = lastInvoice.split('-');
-        if (parts.length === 3 && parts[0] === 'INV') {
-            lastInvoiceNumber = parseInt(parts[2], 10);
+        // Match either INV-YYYY-NNNN or CHLN-YYYY-NNNN
+        const match = lastInvoice.match(/^(?:INV|CHLN)-(\d{4})-(\d+)$/);
+        if (match) {
+            lastInvoiceNumber = parseInt(match[2], 10);
         }
     }
     
@@ -272,7 +274,7 @@ export default function POSPage() {
       id: `quick-${Date.now()}`,
       name: quickItemName,
       price: Number(quickItemPrice),
-      margin: 0,
+      margin: 20,
       sku: 'N/A',
       gst: Number(quickItemGst) || 0,
     };

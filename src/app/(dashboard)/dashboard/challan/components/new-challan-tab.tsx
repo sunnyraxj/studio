@@ -201,11 +201,12 @@ export function NewChallanTab() {
   
 
   const generateNextChallanNumber = async () => {
-    if (isDemoMode || !firestore || !shopId) {
+    if (isDemoMode) {
         const currentYear = new Date().getFullYear();
         setInvoiceNumber(`CHLN-${currentYear}-0001`);
         return;
     }
+    if (!firestore || !shopId) return;
 
     const currentYear = new Date().getFullYear();
     const challansCollectionRef = collection(firestore, `shops/${shopId}/challans`);
@@ -224,9 +225,10 @@ export function NewChallanTab() {
         const lastChallan = querySnapshot.docs[0].data() as Sale;
         const lastInvoice = lastChallan.invoiceNumber;
         
-        const parts = lastInvoice.split('-');
-        if (parts.length === 3 && parts[0] === 'CHLN') {
-            lastChallanNumber = parseInt(parts[2], 10);
+        // Match either INV-YYYY-NNNN or CHLN-YYYY-NNNN
+        const match = lastInvoice.match(/^(?:INV|CHLN)-(\d{4})-(\d+)$/);
+        if (match) {
+            lastChallanNumber = parseInt(match[2], 10);
         }
     }
     
@@ -264,7 +266,7 @@ export function NewChallanTab() {
       id: `quick-${Date.now()}`,
       name: quickItemName,
       price: Number(quickItemPrice),
-      margin: 0,
+      margin: 20,
       sku: 'N/A',
       gst: Number(quickItemGst) || 0,
     };
