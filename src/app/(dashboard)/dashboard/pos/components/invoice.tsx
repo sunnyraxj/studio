@@ -67,7 +67,7 @@ const numberToWords = (num: number): string => {
 
 export const Invoice: React.FC<InvoiceProps> = ({ sale, settings }) => {
     if (!sale || !settings) {
-        return <div className="p-10 text-center">Loading invoice...</div>;
+        return <div className="p-4 text-center">Loading invoice...</div>;
     }
     
     const {
@@ -86,40 +86,40 @@ export const Invoice: React.FC<InvoiceProps> = ({ sale, settings }) => {
     const hasTax = cgst > 0 || sgst > 0 || igst > 0;
 
     return (
-        <div className="bg-white text-gray-800 text-sm p-10 font-sans w-full min-h-full">
-            <header className="flex justify-between items-start pb-6 mb-8">
+        <div className="bg-white text-gray-800 text-xs p-4 font-sans w-full min-h-full">
+            <header className="flex justify-between items-start pb-4 mb-4">
                  <div className="flex items-center gap-4">
                      {settings.logoUrl && (
-                        <div className="relative w-20 h-20">
+                        <div className="relative w-16 h-16">
                             <Image src={settings.logoUrl} alt="Company Logo" layout="fill" objectFit="contain" />
                         </div>
                     )}
                     <div>
-                        <h3 className="text-xs font-semibold uppercase text-gray-500 tracking-wider mb-2">Billed To:</h3>
-                        <p className="font-bold text-base text-gray-800">{customer.name}</p>
+                        <h3 className="text-xs font-semibold uppercase text-gray-500 tracking-wider mb-1">Billed To:</h3>
+                        <p className="font-bold text-sm text-gray-800">{customer.name}</p>
                         {customer.phone && <p className="text-xs text-gray-600">Phone: {customer.phone}</p>}
                         {customer.address && <p className="text-xs text-gray-600 max-w-xs">{customer.address}, {customer.state}, {customer.pin}</p>}
                     </div>
                 </div>
                 <div className="text-right">
-                    <h2 className="text-4xl font-bold uppercase text-gray-900 tracking-wider">Invoice</h2>
-                    <div className="space-y-1 mt-4 text-xs">
+                    <h2 className="text-2xl font-bold uppercase text-gray-900 tracking-wider">Invoice</h2>
+                    <div className="space-y-1 mt-2 text-xs">
                         <p><strong>Invoice No:</strong> {invoiceNumber}</p>
                         <p><strong>Date:</strong> {format(new Date(date), 'dd MMMM, yyyy')}</p>
                     </div>
                 </div>
             </header>
             
-            <Separator className="my-8" />
+            <Separator className="my-4" />
 
             <main>
                 <table className="w-full text-left">
                     <thead>
                         <tr className="text-xs uppercase text-gray-500 border-b border-gray-300">
                             <th className="py-2 font-semibold">Item</th>
-                            <th className="py-2 text-center font-semibold w-24">Qty</th>
-                            <th className="py-2 text-right font-semibold w-32">Rate</th>
-                            <th className="py-2 text-right font-semibold w-32">Total</th>
+                            <th className="py-2 text-center font-semibold w-16">Qty</th>
+                            <th className="py-2 text-right font-semibold w-24">Rate</th>
+                            <th className="py-2 text-right font-semibold w-24">Total</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -129,16 +129,16 @@ export const Invoice: React.FC<InvoiceProps> = ({ sale, settings }) => {
                              const finalPrice = itemTotal - discountAmount;
                              return (
                                 <tr key={index} className="border-b border-gray-200">
-                                    <td className="py-3">
+                                    <td className="py-2">
                                         <p className="font-semibold text-sm">{item.name}</p>
                                         <p className="text-xs text-gray-500">
                                             {item.hsn ? `HSN: ${item.hsn}`: ''}
                                             {item.discount > 0 ? ` (Disc: ${item.discount}%)` : ''}
                                         </p>
                                     </td>
-                                    <td className="py-3 text-center text-sm">{item.quantity}</td>
-                                    <td className="py-3 text-right text-sm">₹{item.price.toFixed(2)}</td>
-                                    <td className="py-3 text-right text-sm font-semibold">₹{finalPrice.toFixed(2)}</td>
+                                    <td className="py-2 text-center text-sm">{item.quantity}</td>
+                                    <td className="py-2 text-right text-sm">₹{item.price.toFixed(2)}</td>
+                                    <td className="py-2 text-right text-sm font-semibold">₹{finalPrice.toFixed(2)}</td>
                                 </tr>
                              )
                         })}
@@ -146,31 +146,31 @@ export const Invoice: React.FC<InvoiceProps> = ({ sale, settings }) => {
                 </table>
             </main>
             
-            <div className="flex justify-end mt-8">
-                <div className="w-full max-w-sm space-y-3">
-                     <div className="flex justify-between text-sm"><span className="text-gray-500">Subtotal</span><span className="font-semibold">₹{subtotal.toFixed(2)}</span></div>
+            <div className="flex justify-end mt-4">
+                <div className="w-full max-w-xs space-y-1">
+                     <div className="flex justify-between text-xs"><span className="text-gray-500">Subtotal</span><span className="font-semibold">₹{subtotal.toFixed(2)}</span></div>
                     {hasTax && (
                         <>
-                            {cgst > 0 && <div className="flex justify-between text-sm"><span className="text-gray-500">CGST</span><span>₹{cgst.toFixed(2)}</span></div>}
-                            {sgst > 0 && <div className="flex justify-between text-sm"><span className="text-gray-500">SGST</span><span>₹{sgst.toFixed(2)}</span></div>}
-                            {igst > 0 && <div className="flex justify-between text-sm"><span className="text-gray-500">IGST</span><span>₹{igst.toFixed(2)}</span></div>}
+                            {cgst > 0 && <div className="flex justify-between text-xs"><span className="text-gray-500">CGST</span><span>₹{cgst.toFixed(2)}</span></div>}
+                            {sgst > 0 && <div className="flex justify-between text-xs"><span className="text-gray-500">SGST</span><span>₹{sgst.toFixed(2)}</span></div>}
+                            {igst > 0 && <div className="flex justify-between text-xs"><span className="text-gray-500">IGST</span><span>₹{igst.toFixed(2)}</span></div>}
                         </>
                     )}
-                     <Separator className="my-2" />
-                     <div className="flex justify-between items-center text-xl font-bold text-primary">
+                     <Separator className="my-1" />
+                     <div className="flex justify-between items-center text-lg font-bold text-primary">
                         <span>Total Due</span>
                         <span>₹{total.toFixed(2)}</span>
                     </div>
                 </div>
             </div>
 
-            <footer className="mt-16 pt-8 border-t-2 border-gray-300">
+            <footer className="mt-8 pt-4 border-t-2 border-gray-300">
                  <div className="flex justify-between items-start">
-                     <div className="space-y-4 max-w-md">
-                        <h4 className="text-lg font-semibold text-gray-800">Thank you for your business!</h4>
+                     <div className="space-y-2 max-w-md">
+                        <h4 className="text-base font-semibold text-gray-800">Thank you for your business!</h4>
                         
                         {settings.bankName && (
-                            <div className="space-y-1 pt-2">
+                            <div className="space-y-1 pt-1">
                                 <h4 className="text-xs font-semibold uppercase text-gray-500 tracking-wider">Payment Information</h4>
                                 <div className="text-xs">
                                      <p><strong>Bank:</strong> {settings.bankName}</p>
@@ -181,7 +181,7 @@ export const Invoice: React.FC<InvoiceProps> = ({ sale, settings }) => {
                         )}
                     </div>
                      <div className="text-right">
-                        <p className="font-bold text-base">{settings.companyName}</p>
+                        <p className="font-bold text-sm">{settings.companyName}</p>
                         <p className="text-xs text-gray-600 max-w-xs ml-auto">{settings.companyAddress}</p>
                     </div>
                 </div>
