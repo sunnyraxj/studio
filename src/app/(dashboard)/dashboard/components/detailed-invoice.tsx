@@ -82,9 +82,9 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
 
     const amountInWords = numberToWords(total);
     
-    const shopState = (settings.companyState || 'Assam').toLowerCase().trim();
+    const shopState = (settings.companyState || '').toLowerCase().trim();
     const customerStateClean = (customer.state || '').toLowerCase().trim();
-    const isIntraState = customerStateClean === shopState;
+    const isIntraState = !!shopState && !!customerStateClean && customerStateClean === shopState;
 
     const cgst = isIntraState ? sale.cgst : 0;
     const sgst = isIntraState ? sale.sgst : 0;
@@ -165,6 +165,15 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
                                 <th className="text-left font-semibold p-2">HSN</th>
                                 <th className="text-right font-semibold p-2">Qty</th>
                                 <th className="text-right font-semibold p-2">Rate</th>
+                                <th className="text-right font-semibold p-2">Taxable</th>
+                                {isIntraState ? (
+                                    <>
+                                        <th className="text-right font-semibold p-2">CGST</th>
+                                        <th className="text-right font-semibold p-2">SGST</th>
+                                    </>
+                                ) : (
+                                    <th className="text-right font-semibold p-2">IGST</th>
+                                )}
                                 <th className="text-right font-semibold p-2">Total</th>
                             </tr>
                         </thead>
@@ -172,7 +181,9 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
                             {items.map((item, index) => {
                                 const itemTotal = item.price * item.quantity;
                                 const discountAmount = itemTotal * (item.discount / 100);
-                                const finalPrice = itemTotal - discountAmount;
+                                const taxableValue = itemTotal - discountAmount;
+                                const taxAmount = taxableValue * (item.gst / 100);
+                                const finalPrice = taxableValue + taxAmount;
                                 return (
                                     <tr key={index} className="border-b border-gray-100">
                                         <td className="p-2">{index + 1}</td>
@@ -180,6 +191,15 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
                                         <td className="p-2">{item.hsn}</td>
                                         <td className="text-right p-2">{item.quantity}</td>
                                         <td className="text-right p-2">{item.price.toFixed(2)}</td>
+                                        <td className="text-right p-2 font-semibold">{taxableValue.toFixed(2)}</td>
+                                        {isIntraState ? (
+                                            <>
+                                                <td className="text-right p-2">{(taxAmount / 2).toFixed(2)}</td>
+                                                <td className="text-right p-2">{(taxAmount / 2).toFixed(2)}</td>
+                                            </>
+                                        ) : (
+                                            <td className="text-right p-2">{taxAmount.toFixed(2)}</td>
+                                        )}
                                         <td className="text-right p-2 font-semibold">{finalPrice.toFixed(2)}</td>
                                     </tr>
                                 );
@@ -189,9 +209,10 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
                 </section>
                 
                  <section className="my-8 flex justify-between gap-4">
-                     <div className="w-full sm:w-1/2">
-                         {gstBreakdown.length > 0 && (
-                            <>
+                    <div></div>
+                    <div className="w-full sm:w-2/5">
+                        {gstBreakdown.length > 0 && (
+                            <div className='mb-4'>
                                 <h4 className="font-bold text-sm mb-2">Tax Summary</h4>
                                 <table className="w-full text-xs border">
                                     <thead className="bg-muted/50">
@@ -225,11 +246,9 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
                                         ))}
                                     </tbody>
                                 </table>
-                            </>
+                            </div>
                          )}
-                    </div>
 
-                    <div className="w-full sm:w-2/5">
                         <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                             <span className="text-gray-600">Subtotal:</span>
                             <span className="font-medium text-gray-800 text-right">₹{subtotal.toFixed(2)}</span>
