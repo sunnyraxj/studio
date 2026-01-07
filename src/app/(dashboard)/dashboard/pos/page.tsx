@@ -320,7 +320,9 @@ export default function POSPage() {
   };
   
   const { subtotal, cgst, sgst, igst, total } = useMemo(() => {
-    const isIntraState = customerState.toLowerCase().trim() === (shopSettings?.companyState || 'Assam').toLowerCase().trim();
+    const shopState = (shopSettings?.companyState || 'Assam').toLowerCase().trim();
+    const customerStateClean = (customerState || '').toLowerCase().trim();
+    const isIntraState = customerStateClean === shopState;
 
     let subtotal = 0;
     let cgst = 0;

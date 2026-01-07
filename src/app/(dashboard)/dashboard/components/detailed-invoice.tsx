@@ -82,7 +82,10 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
 
     const amountInWords = numberToWords(total);
     
-    const isIntraState = customer.state?.toLowerCase().trim() === settings.companyState?.toLowerCase().trim();
+    const shopState = (settings.companyState || 'Assam').toLowerCase().trim();
+    const customerStateClean = (customer.state || '').toLowerCase().trim();
+    const isIntraState = customerStateClean === shopState;
+
     const cgst = isIntraState ? sale.cgst : 0;
     const sgst = isIntraState ? sale.sgst : 0;
     const igst = !isIntraState ? sale.igst : 0;

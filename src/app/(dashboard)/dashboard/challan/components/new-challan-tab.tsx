@@ -46,7 +46,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Invoice as Challan } from './challan';
+import { Challan as Challan } from './challan';
 
 
 type Product = {
@@ -312,7 +312,9 @@ export function NewChallanTab() {
   };
   
   const { subtotal, cgst, sgst, igst, total } = useMemo(() => {
-    const isIntraState = (customerState || '').toLowerCase().trim() === (shopSettings?.companyState || 'Assam').toLowerCase().trim();
+    const shopState = (shopSettings?.companyState || 'Assam').toLowerCase().trim();
+    const customerStateClean = (customerState || '').toLowerCase().trim();
+    const isIntraState = customerStateClean === shopState;
 
     let subtotal = 0;
     let cgst = 0;
