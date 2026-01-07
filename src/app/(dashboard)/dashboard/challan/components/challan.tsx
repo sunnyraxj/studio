@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -61,13 +60,13 @@ const numberToWords = (num: number): string => {
     str += (n[3] != '00') ? (a[Number(n[3])] || b[n[3][0]] + ' ' + a[n[3][1]]) + 'thousand ' : '';
     str += (n[4] != '0') ? (a[Number(n[4])] || b[n[4][0]] + ' ' + a[n[4][1]]) + 'hundred ' : '';
     str += (n[5] != '00') ? ((str != '') ? 'and ' : '') + (a[Number(n[5])] || b[n[5][0]] + ' ' + a[n[5][1]]) : '';
-    return str.trim();
+    return str.trim().toUpperCase();
 };
 
 
 export const Invoice: React.FC<ChallanProps> = ({ sale, settings }) => {
     if (!sale || !settings) {
-        return <div className="p-10">Loading challan...</div>;
+        return <div className="p-10 text-center">Loading challan...</div>;
     }
     
     const {
@@ -85,59 +84,56 @@ export const Invoice: React.FC<ChallanProps> = ({ sale, settings }) => {
     const totalAmountInWords = numberToWords(total);
 
     return (
-        <div className="bg-white text-black text-[10px] leading-snug p-8 font-sans" style={{width: '210mm', minHeight: '297mm'}}>
-            <div className="flex justify-between items-start pb-4 border-b-2 border-black">
-                <div className="flex items-center gap-4">
+        <div className="bg-white text-gray-800 text-sm p-10 font-sans" style={{width: '210mm', minHeight: '297mm'}}>
+            <header className="flex justify-between items-center pb-6 border-b-2 border-gray-200">
+                <div className="flex items-center gap-6">
                      {settings.logoUrl && (
-                        <div className="relative w-20 h-20">
+                        <div className="relative w-24 h-24">
                             <Image src={settings.logoUrl} alt="Company Logo" layout="fill" objectFit="contain" />
                         </div>
                     )}
                     <div>
-                        <h1 className="text-xl font-bold uppercase">{settings.companyName}</h1>
-                        <p>{settings.companyAddress}</p>
-                        <p>Phone: {settings.companyPhone}</p>
-                        <p>GSTIN: {settings.companyGstin}</p>
+                        <h1 className="text-3xl font-bold text-gray-900 uppercase tracking-wider">{settings.companyName}</h1>
+                        <p className="text-xs text-gray-500 max-w-xs">{settings.companyAddress}</p>
                     </div>
                 </div>
                 <div className="text-right">
-                    <h2 className="text-xl font-bold uppercase">Delivery Challan</h2>
-                    <p><strong>Challan No:</strong> {invoiceNumber}</p>
-                    <p><strong>Date:</strong> {format(new Date(date), 'dd-MMM-yyyy')}</p>
+                    <h2 className="text-3xl font-bold uppercase text-primary">Delivery Challan</h2>
+                    <div className="space-y-1 mt-2">
+                        <p className="text-xs"><strong>Challan No:</strong> {invoiceNumber}</p>
+                        <p className="text-xs"><strong>Date:</strong> {format(new Date(date), 'dd MMMM, yyyy')}</p>
+                        {settings.companyGstin && <p className="text-xs"><strong>GSTIN:</strong> {settings.companyGstin}</p>}
+                        {settings.companyPhone && <p className="text-xs"><strong>Phone:</strong> {settings.companyPhone}</p>}
+                    </div>
                 </div>
-            </div>
+            </header>
 
-            <div className="grid grid-cols-2 gap-4 py-4 border-b-2 border-black">
+            <section className="grid grid-cols-2 gap-8 py-6 border-b-2 border-gray-200">
                 <div>
-                    <h3 className="font-bold mb-1">Billed To:</h3>
-                    <p className="font-semibold">{customer.name}</p>
-                    <p>{customer.address}</p>
-                    <p>{customer.state}, {customer.pin}</p>
-                    <p>Phone: {customer.phone}</p>
-                    {customer.gstin && <p>GSTIN: {customer.gstin}</p>}
+                    <h3 className="text-xs font-semibold uppercase text-gray-500 tracking-wider mb-2">Billed To:</h3>
+                    <p className="font-bold text-base text-gray-800">{customer.name}</p>
+                    {customer.address && <p className="text-xs text-gray-600 max-w-xs">{customer.address}, {customer.state}, {customer.pin}</p>}
+                    {customer.phone && <p className="text-xs text-gray-600">Phone: {customer.phone}</p>}
+                    {customer.gstin && <p className="text-xs text-gray-600">GSTIN: {customer.gstin}</p>}
                 </div>
                  <div className="text-right">
-                    <h3 className="font-bold mb-1">Shipped To:</h3>
-                    <p className="font-semibold">{customer.name}</p>
-                    <p>{customer.address}</p>
-                    <p>{customer.state}, {customer.pin}</p>
-                    <p>Phone: {customer.phone}</p>
-                </div>
-            </div>
+                    <h3 className="text-xs font-semibold uppercase text-gray-500 tracking-wider mb-2">Shipped To:</h3>
+                    <p className="font-bold text-base text-gray-800">{customer.name}</p>
+                    {customer.address && <p className="text-xs text-gray-600 max-w-xs ml-auto">{customer.address}, {customer.state}, {customer.pin}</p>}
+                 </div>
+            </section>
 
-            <div className="min-h-[120mm]">
-                <table className="w-full my-4">
-                    <thead className="bg-gray-200">
-                        <tr className="border border-black">
-                            <th className="p-1 border-r border-black">#</th>
-                            <th className="p-1 border-r border-black text-left">Item Description</th>
-                            <th className="p-1 border-r border-black">HSN/SAC</th>
-                            <th className="p-1 border-r border-black">Qty</th>
-                            <th className="p-1 border-r border-black">Rate</th>
-                            <th className="p-1 border-r border-black">Disc(%)</th>
-                            <th className="p-1 border-r border-black">Taxable</th>
-                            <th className="p-1 border-r border-black">GST(%)</th>
-                            <th className="p-1">Total</th>
+            <main className="min-h-[110mm] py-6">
+                <table className="w-full">
+                    <thead className="border-b border-gray-300">
+                        <tr className="text-xs uppercase text-gray-500">
+                            <th className="py-2 text-left font-semibold w-8">#</th>
+                            <th className="py-2 text-left font-semibold">Item</th>
+                            <th className="py-2 text-center font-semibold w-20">HSN/SAC</th>
+                            <th className="py-2 text-center font-semibold w-16">Qty</th>
+                            <th className="py-2 text-right font-semibold w-24">Rate</th>
+                            <th className="py-2 text-right font-semibold w-24">Taxable</th>
+                            <th className="py-2 text-right font-semibold w-32">Total</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -147,62 +143,70 @@ export const Invoice: React.FC<ChallanProps> = ({ sale, settings }) => {
                              const taxableValue = itemTotal - discountAmount;
                              const gstAmount = taxableValue * (item.gst / 100);
                              return (
-                                <tr key={index} className="border-b border-l border-r border-black">
-                                    <td className="p-1 border-r border-black text-center">{index + 1}</td>
-                                    <td className="p-1 border-r border-black">{item.name}</td>
-                                    <td className="p-1 border-r border-black text-center">{item.hsn || ''}</td>
-                                    <td className="p-1 border-r border-black text-center">{item.quantity}</td>
-                                    <td className="p-1 border-r border-black text-right">{item.price.toFixed(2)}</td>
-                                    <td className="p-1 border-r border-black text-center">{item.discount || 0}%</td>
-                                    <td className="p-1 border-r border-black text-right">{taxableValue.toFixed(2)}</td>
-                                    <td className="p-1 border-r border-black text-center">{item.gst || 0}%</td>
-                                    <td className="p-1 text-right">{(taxableValue + gstAmount).toFixed(2)}</td>
+                                <tr key={index} className="border-b border-gray-100">
+                                    <td className="py-3 text-center text-xs">{index + 1}</td>
+                                    <td className="py-3">
+                                        <p className="font-semibold text-sm">{item.name}</p>
+                                        <p className="text-xs text-gray-500">{item.discount > 0 ? `(Disc: ${item.discount}%)` : ''}</p>
+                                    </td>
+                                    <td className="py-3 text-center text-xs">{item.hsn || ''}</td>
+                                    <td className="py-3 text-center text-sm">{item.quantity}</td>
+                                    <td className="py-3 text-right text-sm">₹{item.price.toFixed(2)}</td>
+                                    <td className="py-3 text-right text-sm">₹{taxableValue.toFixed(2)}</td>
+                                    <td className="py-3 text-right text-sm font-semibold">₹{(taxableValue + gstAmount).toFixed(2)}</td>
                                 </tr>
                              )
                         })}
                     </tbody>
                 </table>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 py-2 border-t-2 border-b-2 border-black">
-                <div>
-                     <p className="capitalize"><strong>Amount in words:</strong> {totalAmountInWords} only</p>
-                    {settings.bankName && (
-                        <div className="mt-2 border-t border-black pt-2">
-                             <h4 className="font-bold">Bank Details:</h4>
-                             <p>Bank: {settings.bankName}</p>
-                             <p>A/C No: {settings.accountNumber}</p>
-                             <p>IFSC: {settings.ifscCode}</p>
+            </main>
+            
+            <footer className="pt-6">
+                 <div className="grid grid-cols-2 gap-8">
+                     <div className="space-y-4">
+                        <div className="space-y-1">
+                             <h4 className="text-xs font-semibold uppercase text-gray-500 tracking-wider">Amount in Words</h4>
+                             <p className="font-semibold text-xs">{totalAmountInWords} RUPEES ONLY</p>
                         </div>
-                    )}
-                </div>
-                 <div className="text-right">
-                    <div className="grid grid-cols-2">
-                        <span className="font-semibold">Subtotal:</span>
-                        <span>₹{subtotal.toFixed(2)}</span>
+                        
+                        {settings.bankName && (
+                            <div className="space-y-1 pt-4 border-t border-gray-200">
+                                <h4 className="text-xs font-semibold uppercase text-gray-500 tracking-wider">Bank Details</h4>
+                                <div className="text-xs">
+                                     <p><strong>Bank:</strong> {settings.bankName}</p>
+                                     <p><strong>A/C No:</strong> {settings.accountNumber}</p>
+                                     <p><strong>IFSC:</strong> {settings.ifscCode}</p>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                    {cgst > 0 && <div className="grid grid-cols-2"><span className="font-semibold">CGST:</span><span>₹{cgst.toFixed(2)}</span></div>}
-                    {sgst > 0 && <div className="grid grid-cols-2"><span className="font-semibold">SGST:</span><span>₹{sgst.toFixed(2)}</span></div>}
-                    {igst > 0 && <div className="grid grid-cols-2"><span className="font-semibold">IGST:</span><span>₹{igst.toFixed(2)}</span></div>}
-                     <div className="grid grid-cols-2 mt-1 pt-1 border-t border-black font-bold text-base">
-                        <span>Total:</span>
-                        <span>₹{total.toFixed(2)}</span>
+                     <div className="text-right">
+                        <div className="space-y-2">
+                             <div className="flex justify-between text-sm"><span className="text-gray-500">Subtotal:</span><span className="font-semibold">₹{subtotal.toFixed(2)}</span></div>
+                            {cgst > 0 && <div className="flex justify-between text-sm"><span className="text-gray-500">CGST:</span><span>₹{cgst.toFixed(2)}</span></div>}
+                            {sgst > 0 && <div className="flex justify-between text-sm"><span className="text-gray-500">SGST:</span><span>₹{sgst.toFixed(2)}</span></div>}
+                            {igst > 0 && <div className="flex justify-between text-sm"><span className="text-gray-500">IGST:</span><span>₹{igst.toFixed(2)}</span></div>}
+                        </div>
+                         <Separator className="my-3" />
+                         <div className="flex justify-between items-center text-xl font-bold text-primary">
+                            <span>Total:</span>
+                            <span>₹{total.toFixed(2)}</span>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div className="flex justify-between items-end pt-4">
-                <div>
-                    <p className="font-bold mb-1">Terms & Conditions:</p>
-                    <p className="text-gray-600">1. Goods once sold will not be taken back.</p>
-                    <p className="text-gray-600">2. This is a computer-generated challan.</p>
+                <div className="mt-12 pt-6 border-t-2 border-gray-200 flex justify-between items-end">
+                    <div className="text-xs text-gray-500">
+                        <p className="font-semibold mb-1">Terms & Conditions:</p>
+                        <p>1. Please verify all goods upon delivery.</p>
+                        <p>2. This is a computer-generated challan and does not require a signature.</p>
+                    </div>
+                    <div className="text-center">
+                        <p className="font-bold text-sm">For {settings.companyName}</p>
+                        <p className="mt-16 text-xs text-gray-500">(Receiver's Signature)</p>
+                    </div>
                 </div>
-                <div className="text-center">
-                    <p className="font-bold border-t border-black pt-2">For {settings.companyName}</p>
-                    <p className="mt-12">(Authorized Signatory)</p>
-                </div>
-            </div>
-
+            </footer>
         </div>
     );
 };
