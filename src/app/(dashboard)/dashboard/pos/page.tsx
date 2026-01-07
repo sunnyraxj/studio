@@ -162,7 +162,6 @@ export default function POSPage() {
   const [quickItemName, setQuickItemName] = useState('');
   const [quickItemQty, setQuickItemQty] = useState<number | string>(1);
   const [quickItemPrice, setQuickItemPrice] = useState<number | string>('');
-  const [quickItemDiscount, setQuickItemDiscount] = useState<number | string>(0);
   
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
   const [lastSaleData, setLastSaleData] = useState<any>(null);
@@ -282,14 +281,13 @@ export default function POSPage() {
 
     setCart((prevCart) => [
       ...prevCart,
-      { product: newProduct, quantity: Number(quickItemQty), discount: Number(quickItemDiscount) },
+      { product: newProduct, quantity: Number(quickItemQty), discount: 0 },
     ]);
 
     // Reset form
     setQuickItemName('');
     setQuickItemQty(1);
     setQuickItemPrice('');
-    setQuickItemDiscount(0);
   };
 
   const updateQuantity = (productId: string, amount: number) => {
@@ -505,7 +503,7 @@ export default function POSPage() {
                     <div className="space-y-4">
                         <div className="p-4 border rounded-lg bg-muted/50 space-y-4">
                             <Label className="text-sm font-medium">Quick Item Entry</Label>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2 items-end">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 items-end">
                                 <div className="space-y-1 md:col-span-2">
                                     <Label htmlFor="quick-name" className="text-xs">Item Name</Label>
                                     <Input
@@ -537,17 +535,6 @@ export default function POSPage() {
                                         onChange={(e) => setQuickItemQty(e.target.value)}
                                         className="h-8"
                                         min="1"
-                                    />
-                                </div>
-                                <div className="space-y-1">
-                                    <Label htmlFor="quick-disc" className="text-xs">Disc %</Label>
-                                    <Input
-                                        id="quick-disc"
-                                        type="number"
-                                        placeholder="Disc %"
-                                        value={quickItemDiscount}
-                                        onChange={(e) => setQuickItemDiscount(e.target.value)}
-                                        className="h-8"
                                     />
                                 </div>
                                 <Button size="sm" onClick={addQuickItemToCart} className="h-8 sm:self-end">
