@@ -92,6 +92,7 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
     
     const gstBreakdown = useMemo(() => {
         const breakdown: { [rate: number]: { taxable: number; cgst: number; sgst: number; igst: number } } = {};
+        let totalGstRate = 0;
 
         items.forEach(item => {
             const gstRate = item.gst || 0;
@@ -102,6 +103,8 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
             const discountAmount = itemTotal * (item.discount / 100);
             const taxableValue = itemTotal - discountAmount;
             const taxAmount = taxableValue * (gstRate / 100);
+            
+            totalGstRate = gstRate; // Assuming single rate for now for display
 
             breakdown[gstRate].taxable += taxableValue;
 
@@ -112,11 +115,20 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
                 breakdown[gstRate].igst += taxAmount;
             }
         });
+        
+        const rates = Object.keys(breakdown).map(Number);
+        const averageGstRate = rates.length > 0 ? rates.reduce((a, b) => a + b, 0) / rates.length : 0;
 
-        return Object.entries(breakdown).map(([rate, values]) => ({
-            rate: Number(rate),
-            ...values,
-        }));
+
+        return {
+            breakdown: Object.entries(breakdown).map(([rate, values]) => ({
+                rate: Number(rate),
+                ...values,
+            })),
+            igstRate: !isIntraState ? averageGstRate : 0,
+            cgstRate: isIntraState ? averageGstRate / 2 : 0,
+            sgstRate: isIntraState ? averageGstRate / 2 : 0,
+        };
     }, [items, isIntraState]);
 
     return (
@@ -208,79 +220,41 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
                     </table>
                 </section>
                 
-                 <section className="my-8 flex justify-between gap-4">
-                    <div></div>
-                    <div className="w-full sm:w-2/5">
-                        {gstBreakdown.length > 0 && (
-                            <div className='mb-4'>
-                                <h4 className="font-bold text-sm mb-2">Tax Summary</h4>
-                                <table className="w-full text-xs border">
-                                    <thead className="bg-muted/50">
-                                        <tr>
-                                            <th className="text-left font-semibold p-1 border">Taxable Value</th>
-                                            {isIntraState ? (
-                                                <>
-                                                    <th className="text-left font-semibold p-1 border">CGST</th>
-                                                    <th className="text-left font-semibold p-1 border">SGST</th>
-                                                </>
-                                            ) : (
-                                                <th className="text-left font-semibold p-1 border">IGST</th>
-                                            )}
-                                            <th className="text-right font-semibold p-1 border">Total Tax</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {gstBreakdown.map(({ rate, taxable, cgst, sgst, igst }) => (
-                                            <tr key={rate}>
-                                                <td className="p-1 border">₹{taxable.toFixed(2)}</td>
-                                                {isIntraState ? (
-                                                    <>
-                                                        <td className="p-1 border">@{rate/2}% ₹{cgst.toFixed(2)}</td>
-                                                        <td className="p-1 border">@{rate/2}% ₹{sgst.toFixed(2)}</td>
-                                                    </>
-                                                ) : (
-                                                    <td className="p-1 border">@{rate}% ₹{igst.toFixed(2)}</td>
-                                                )}
-                                                <td className="text-right p-1 border font-semibold">₹{(cgst + sgst + igst).toFixed(2)}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                         )}
-
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                            <span className="text-gray-600">Subtotal:</span>
+                 <section className="mt-8 flex justify-end">
+                    <div className="w-full sm:w-2/3 md:w-1/2 space-y-4">
+                         <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                            <span className="text-gray-600">Taxable Value:</span>
                             <span className="font-medium text-gray-800 text-right">₹{subtotal.toFixed(2)}</span>
                             
                             {cgst > 0 && (
                                 <>
-                                    <span className="text-gray-600">CGST:</span>
+                                    <span className="text-gray-600">CGST ({gstBreakdown.cgstRate.toFixed(1)}%):</span>
                                     <span className="font-medium text-gray-800 text-right">₹{cgst.toFixed(2)}</span>
                                 </>
                             )}
                             {sgst > 0 && (
                                 <>
-                                    <span className="text-gray-600">SGST:</span>
+                                    <span className="text-gray-600">SGST ({gstBreakdown.sgstRate.toFixed(1)}%):</span>
                                     <span className="font-medium text-gray-800 text-right">₹{sgst.toFixed(2)}</span>
                                 </>
                             )}
                             {igst > 0 && (
                                 <>
-                                    <span className="text-gray-600">IGST:</span>
+                                    <span className="text-gray-600">IGST ({gstBreakdown.igstRate.toFixed(1)}%):</span>
                                     <span className="font-medium text-gray-800 text-right">₹{igst.toFixed(2)}</span>
                                 </>
                             )}
                         </div>
-                        <div className="pt-4 mt-4 border-t-2 border-gray-700">
+                        <div className="pt-2 border-t-2 border-gray-700">
                             <div className="flex justify-between items-center mb-2">
                                 <span className="text-xl font-bold text-gray-900">Total:</span>
                                 <span className="text-xl font-bold text-gray-900">₹{total.toFixed(2)}</span>
                             </div>
-                            <div className="text-right text-xs mt-6">
-                                <p className="font-bold">Amount in words:</p>
-                                <p className="text-gray-600">{amountInWords}</p>
-                            </div>
+                        </div>
+
+                        <div className="text-right text-xs mt-2">
+                            <p className="font-bold">Amount in words:</p>
+                            <p className="text-gray-600">{amountInWords}</p>
                         </div>
                     </div>
                 </section>
