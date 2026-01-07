@@ -54,7 +54,7 @@ export const CompactReceipt: React.FC<CompactReceiptProps> = ({ sale, settings }
     const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
     return (
-        <div className="bg-white text-black font-mono text-[10px] py-2 w-full">
+        <div className="bg-white text-black font-mono text-[10px] p-2 w-full">
             <header className="text-center space-y-1 mb-2">
                 <h1 className="text-base font-bold">{settings.companyName}</h1>
                 <p className="text-[9px] leading-tight">{settings.companyAddress}</p>
@@ -62,7 +62,7 @@ export const CompactReceipt: React.FC<CompactReceiptProps> = ({ sale, settings }
                 {settings.companyGstin && <p className="text-[9px]">GSTIN: {settings.companyGstin}</p>}
             </header>
             
-            <Separator className="my-1 border-dashed" />
+            <Separator className="my-0.5 border-dashed" />
             
             <div className="text-[9px] space-y-0.5 mb-2">
                 <div className="flex justify-between">
@@ -95,7 +95,7 @@ export const CompactReceipt: React.FC<CompactReceiptProps> = ({ sale, settings }
                 </table>
             </main>
             
-            <Separator className="my-1 border-dashed" />
+            <Separator className="my-0.5 border-dashed" />
 
             <div className="text-[9px] space-y-0.5">
                  <div className="flex justify-between"><span>SUBTOTAL</span><span>{subtotal.toFixed(2)}</span></div>
