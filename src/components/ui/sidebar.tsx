@@ -160,12 +160,16 @@ const Sidebar = React.forwardRef<
     ref
   ) => {
     const { setOpen, state } = useSidebar()
+    const openTimer = React.useRef<NodeJS.Timeout | null>(null);
+
 
     const handleMouseEnter = React.useCallback(
       (event: React.MouseEvent<HTMLDivElement>) => {
         onMouseEnter?.(event)
         if (collapsible === "icon" && state === "collapsed") {
-          setOpen(true)
+            openTimer.current = setTimeout(() => {
+                setOpen(true);
+            }, 1000);
         }
       },
       [onMouseEnter, setOpen, state, collapsible]
@@ -174,6 +178,10 @@ const Sidebar = React.forwardRef<
     const handleMouseLeave = React.useCallback(
       (event: React.MouseEvent<HTMLDivElement>) => {
         onMouseLeave?.(event)
+        if (openTimer.current) {
+            clearTimeout(openTimer.current);
+            openTimer.current = null;
+        }
         if (collapsible === "icon" && state === "expanded") {
           setOpen(false)
         }
