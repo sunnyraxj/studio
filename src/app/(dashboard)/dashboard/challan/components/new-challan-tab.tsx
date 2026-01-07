@@ -609,6 +609,7 @@ export function NewChallanTab() {
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
+                                            <TableHead className="w-[40px]">Sr.</TableHead>
                                             <TableHead>Item</TableHead>
                                             <TableHead className="text-center w-[100px]">Qty</TableHead>
                                             <TableHead className="text-center w-[80px]">Disc(%)</TableHead>
@@ -616,8 +617,9 @@ export function NewChallanTab() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {cart.map((item) => (
+                                        {cart.map((item, index) => (
                                             <TableRow key={item.product.id}>
+                                                <TableCell className="py-2">{index + 1}</TableCell>
                                                 <TableCell className='font-medium py-2'>{item.product.name}</TableCell>
                                                 <TableCell className="text-center py-2">
                                                     <div className="flex items-center justify-center gap-1">

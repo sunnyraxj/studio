@@ -647,20 +647,22 @@ export default function POSPage() {
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
+                                            <TableHead className="w-[40px]">Sr.</TableHead>
                                             <TableHead>Item</TableHead>
-                                            <TableHead className="text-center">Qty</TableHead>
-                                            <TableHead className="text-center">Disc(%)</TableHead>
+                                            <TableHead className="text-center w-[100px]">Qty</TableHead>
+                                            <TableHead className="text-center w-[80px]">Disc(%)</TableHead>
                                             <TableHead className="text-right">Amount</TableHead>
                                             <TableHead className="w-[50px]"></TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {cart.map((item) => {
+                                        {cart.map((item, index) => {
                                             const itemTotal = item.product.price * item.quantity;
                                             const discountAmount = itemTotal * (item.discount / 100);
                                             const finalPrice = itemTotal - discountAmount;
                                             return (
                                             <TableRow key={item.product.id}>
+                                                <TableCell className="py-2">{index + 1}</TableCell>
                                                 <TableCell className='font-medium py-2'>{item.product.name}</TableCell>
                                                 <TableCell className="text-center py-2">
                                                     <div className="flex items-center justify-center gap-1">
