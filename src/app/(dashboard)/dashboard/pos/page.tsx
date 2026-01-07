@@ -795,7 +795,7 @@ export default function POSPage() {
             {lastSaleData && <Invoice sale={lastSaleData} settings={shopSettings} />}
         </div>
     </div>
-    <Dialog open={isInvoiceOpen && !!lastSaleData} onOpenChange={(open) => { if (!open) { setIsInvoiceOpen(false); setLastSaleData(null); }}}>
+    <Dialog open={isInvoiceOpen} onOpenChange={(open) => { if (!open) { setIsInvoiceOpen(false); setLastSaleData(null); }}}>
         <DialogContent className="max-w-4xl p-0 border-0">
              <DialogHeader className="sr-only">
                 <DialogTitle>Invoice</DialogTitle>

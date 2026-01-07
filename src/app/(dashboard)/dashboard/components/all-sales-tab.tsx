@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   ColumnDef,
   flexRender,
@@ -34,59 +34,15 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { CaretSortIcon, ChevronDownIcon, ChevronRightIcon } from '@radix-ui/react-icons';
-import { X, Search } from 'lucide-react';
+import { X, Search, Printer } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { Sale } from '../page';
 import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit, startAfter, getDocs, where, Query, DocumentData, getCountFromServer, doc } from 'firebase/firestore';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Invoice } from '../pos/components/invoice';
 
-const salesColumns: ColumnDef<Sale>[] = [
-  {
-    id: 'expander',
-    header: () => null,
-    cell: ({ row }) => {
-      return row.getCanExpand() ? (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={row.getToggleExpandedHandler()}
-          className="h-6 w-6"
-        >
-          {row.getIsExpanded() ? <ChevronDownIcon /> : <ChevronRightIcon />}
-        </Button>
-      ) : null;
-    },
-  },
-  {
-    accessorKey: 'invoiceNumber',
-    header: 'Invoice #',
-    cell: ({ row }) => <Badge variant="outline">{row.getValue('invoiceNumber')}</Badge>,
-  },
-  {
-    accessorKey: 'customer.name',
-    header: 'Customer',
-    cell: ({ row }) => <div className="font-medium">{row.original.customer.name}</div>,
-  },
-  {
-    accessorKey: 'date',
-    header: ({ column }) => (
-      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
-        Date <CaretSortIcon className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => format(new Date(row.getValue('date')), 'dd MMM yyyy'),
-  },
-  {
-    accessorKey: 'total',
-    header: ({ column }) => (
-      <Button variant="ghost" className='w-full justify-end' onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
-        Amount <CaretSortIcon className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => <div className="text-right font-semibold">₹{row.original.total.toLocaleString('en-IN')}</div>,
-  },
-];
 
 interface AllSalesTabProps {
   isDemoMode: boolean;
@@ -104,6 +60,12 @@ export function AllSalesTab({ isDemoMode, demoSales, setDemoSales }: AllSalesTab
   }, [user, firestore, isDemoMode]);
   const { data: userData } = useDoc(userDocRef);
   const shopId = userData?.shopId;
+  
+  const settingsDocRef = useMemoFirebase(() => {
+    if (isDemoMode || !shopId || !firestore) return null;
+    return doc(firestore, `shops/${shopId}/settings`, 'details');
+  }, [firestore, shopId, isDemoMode]);
+  const { data: shopSettings } = useDoc(settingsDocRef);
 
   const [data, setData] = useState<Sale[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -127,6 +89,103 @@ export function AllSalesTab({ isDemoMode, demoSales, setDemoSales }: AllSalesTab
   const [endDay, setEndDay] = useState('');
   const [endMonth, setEndMonth] = useState('');
   const [endYear, setEndYear] = useState('');
+
+  const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
+  const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+  const invoiceRef = useRef(null);
+  
+  const handlePrint = () => {
+    const printContent = invoiceRef.current;
+    if (printContent) {
+        const newWindow = window.open('', '_blank', 'width=800,height=600');
+        if (newWindow) {
+            const printableContent = (printContent as HTMLDivElement).innerHTML;
+            
+            newWindow.document.write('<html><head><title>Print Invoice</title>');
+            const styles = Array.from(document.styleSheets)
+              .map(styleSheet => {
+                  try {
+                      return Array.from(styleSheet.cssRules).map(rule => rule.cssText).join('');
+                  } catch (e) {
+                      console.log('Access to stylesheet %s is denied. Skipping.', styleSheet.href);
+                      return '';
+                  }
+              }).join('');
+            
+            newWindow.document.write(`<style>${styles}</style>`);
+            newWindow.document.write('</head><body>');
+            newWindow.document.write(printableContent);
+            newWindow.document.write('</body></html>');
+            newWindow.document.close();
+            newWindow.focus();
+            setTimeout(() => {
+                newWindow.print();
+                newWindow.close();
+            }, 500);
+        }
+    }
+  };
+  
+  const salesColumns: ColumnDef<Sale>[] = [
+    {
+      id: 'expander',
+      header: () => null,
+      cell: ({ row }) => {
+        return row.getCanExpand() ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={row.getToggleExpandedHandler()}
+            className="h-6 w-6"
+          >
+            {row.getIsExpanded() ? <ChevronDownIcon /> : <ChevronRightIcon />}
+          </Button>
+        ) : null;
+      },
+    },
+    {
+      accessorKey: 'invoiceNumber',
+      header: 'Invoice #',
+      cell: ({ row }) => <Badge variant="outline">{row.getValue('invoiceNumber')}</Badge>,
+    },
+    {
+      accessorKey: 'customer.name',
+      header: 'Customer',
+      cell: ({ row }) => <div className="font-medium">{row.original.customer.name}</div>,
+    },
+    {
+      accessorKey: 'date',
+      header: ({ column }) => (
+        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+          Date <CaretSortIcon className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => format(new Date(row.getValue('date')), 'dd MMM yyyy'),
+    },
+    {
+      accessorKey: 'total',
+      header: ({ column }) => (
+        <Button variant="ghost" className='w-full justify-end' onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+          Amount <CaretSortIcon className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => <div className="text-right font-semibold">₹{row.original.total.toLocaleString('en-IN')}</div>,
+    },
+    {
+        id: 'actions',
+        header: () => <div className="text-right">Actions</div>,
+        cell: ({ row }) => {
+          return (
+            <div className="text-right">
+                <Button variant="outline" size="sm" onClick={() => { setSelectedSale(row.original); setIsInvoiceOpen(true); }}>
+                    <Printer className="h-4 w-4 mr-2"/> View & Print
+                </Button>
+            </div>
+          );
+        },
+    },
+  ];
+
   
   const buildQuery = () => {
     if (isDemoMode) return null;
@@ -265,6 +324,7 @@ export function AllSalesTab({ isDemoMode, demoSales, setDemoSales }: AllSalesTab
   });
 
   return (
+    <>
     <Card>
       <CardHeader>
         <div className="flex justify-between items-start">
@@ -360,5 +420,25 @@ export function AllSalesTab({ isDemoMode, demoSales, setDemoSales }: AllSalesTab
         <div className="py-4"><DataTablePagination table={table} /></div>
       </CardContent>
     </Card>
+
+    <Dialog open={isInvoiceOpen} onOpenChange={(open) => { if (!open) { setIsInvoiceOpen(false); setSelectedSale(null); }}}>
+        <DialogContent className="max-w-4xl p-0 border-0">
+             <DialogHeader className="p-4 pb-0">
+                <DialogTitle>Invoice #{selectedSale?.invoiceNumber}</DialogTitle>
+                <DialogDescription>
+                  A preview of the invoice for printing.
+                  <Button size="sm" onClick={handlePrint} className="float-right -mt-2">
+                    <Printer className="mr-2 h-4 w-4" /> Print
+                  </Button>
+                </DialogDescription>
+            </DialogHeader>
+             <div className="max-h-[80vh] overflow-y-auto">
+                <div ref={invoiceRef}>
+                    <Invoice sale={selectedSale} settings={shopSettings} />
+                </div>
+             </div>
+        </DialogContent>
+    </Dialog>
+    </>
   );
 }
