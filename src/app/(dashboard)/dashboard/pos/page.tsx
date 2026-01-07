@@ -218,6 +218,7 @@ export default function POSPage() {
     const currentYear = new Date().getFullYear();
     const salesCollectionRef = collection(firestore, `shops/${shopId}/sales`);
     
+    // Fetch the most recent invoice to get the last sequence number
     const q = query(
         salesCollectionRef, 
         orderBy('date', 'desc'), 
@@ -232,11 +233,8 @@ export default function POSPage() {
         const lastInvoice = lastSale.invoiceNumber;
         
         const parts = lastInvoice.split('-');
-        if (parts.length === 3) {
-            const yearOfLastInvoice = parseInt(parts[1], 10);
-            if (yearOfLastInvoice === currentYear) {
-                lastInvoiceNumber = parseInt(parts[2], 10);
-            }
+        if (parts.length === 3 && parts[0] === 'INV') {
+            lastInvoiceNumber = parseInt(parts[2], 10);
         }
     }
     

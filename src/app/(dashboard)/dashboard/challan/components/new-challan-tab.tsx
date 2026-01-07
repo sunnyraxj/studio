@@ -210,6 +210,7 @@ export function NewChallanTab() {
     const currentYear = new Date().getFullYear();
     const challansCollectionRef = collection(firestore, `shops/${shopId}/challans`);
     
+    // Fetch the most recent challan to get the last sequence number
     const q = query(
         challansCollectionRef, 
         orderBy('date', 'desc'), 
@@ -225,10 +226,7 @@ export function NewChallanTab() {
         
         const parts = lastInvoice.split('-');
         if (parts.length === 3 && parts[0] === 'CHLN') {
-            const yearOfLastInvoice = parseInt(parts[1], 10);
-            if (yearOfLastInvoice === currentYear) {
-                lastChallanNumber = parseInt(parts[2], 10);
-            }
+            lastChallanNumber = parseInt(parts[2], 10);
         }
     }
     
