@@ -5,7 +5,6 @@ import React from 'react';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
 
 type ShopSettings = {
     companyName?: string;
@@ -17,6 +16,7 @@ type ShopSettings = {
     accountNumber?: string;
     ifscCode?: string;
     upiId?: string;
+    companyState?: string;
 }
 
 type Sale = {
@@ -49,23 +49,6 @@ interface InvoiceProps {
     settings: ShopSettings | null;
 }
 
-const numberToWords = (num: number): string => {
-    const a = ['', 'one ', 'two ', 'three ', 'four ', 'five ', 'six ', 'seven ', 'eight ', 'nine ', 'ten ', 'eleven ', 'twelve ', 'thirteen ', 'fourteen ', 'fifteen ', 'sixteen ', 'seventeen ', 'eighteen ', 'nineteen '];
-    const b = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
-
-    if ((num = Math.round(num)).toString().length > 9) return 'overflow';
-    let n: any = ('000000000' + num).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
-    if (!n) return '';
-    let str = '';
-    str += (n[1] != '00') ? (a[Number(n[1])] || b[n[1][0]] + ' ' + a[n[1][1]]) + 'crore ' : '';
-    str += (n[2] != '00') ? (a[Number(n[2])] || b[n[2][0]] + ' ' + a[n[2][1]]) + 'lakh ' : '';
-    str += (n[3] != '00') ? (a[Number(n[3])] || b[n[3][0]] + ' ' + a[n[3][1]]) + 'thousand ' : '';
-    str += (n[4] != '0') ? (a[Number(n[4])] || b[n[4][0]] + ' ' + a[n[4][1]]) + 'hundred ' : '';
-    str += (n[5] != '00') ? ((str != '') ? 'and ' : '') + (a[Number(n[5])] || b[n[5][0]] + ' ' + a[n[5][1]]) : '';
-    return str.trim().toUpperCase();
-};
-
-
 export const Invoice: React.FC<InvoiceProps> = ({ sale, settings }) => {
     if (!sale || !settings) {
         return <div className="p-4 text-center">Loading invoice...</div>;
@@ -74,51 +57,43 @@ export const Invoice: React.FC<InvoiceProps> = ({ sale, settings }) => {
     const {
         invoiceNumber,
         date,
-        customer,
         items,
         subtotal,
-        cgst,
-        sgst,
-        igst,
         total,
     } = sale;
-
-    const totalAmountInWords = numberToWords(total);
-    const hasTax = cgst > 0 || sgst > 0 || igst > 0;
+    
+    const isIntraState = sale.customer.state?.toLowerCase().trim() === settings.companyState?.toLowerCase().trim();
+    const cgst = isIntraState ? sale.cgst : 0;
+    const sgst = isIntraState ? sale.sgst : 0;
+    const igst = !isIntraState ? sale.igst : 0;
 
     return (
         <div className="bg-white text-black p-2 font-mono text-[10px] w-full min-h-full">
-            <header className="flex justify-between items-start pb-2 mb-2 border-b">
-                 <div className="flex items-center gap-4">
-                     {settings.logoUrl && (
-                        <div className="relative w-12 h-12">
-                            <Image src={settings.logoUrl} alt="Company Logo" layout="fill" objectFit="contain" />
-                        </div>
-                    )}
-                    <div>
-                        <h3 className="text-xs font-semibold uppercase text-gray-500 tracking-wider mb-1">Billed To:</h3>
-                        <p className="font-bold text-[11px] text-gray-800">{customer.name}</p>
-                        {customer.phone && <p className="text-[10px] text-gray-600">Phone: {customer.phone}</p>}
-                        {customer.address && <p className="text-[10px] text-gray-600 max-w-[150px]">{customer.address}, {customer.state}, {customer.pin}</p>}
-                    </div>
-                </div>
-                <div className="text-right">
-                    <h2 className="text-xl font-bold uppercase text-gray-900 tracking-wider">Invoice</h2>
-                    <div className="space-y-0.5 mt-1 text-[10px]">
-                        <p><strong>Invoice No:</strong> {invoiceNumber}</p>
-                        <p><strong>Date:</strong> {format(new Date(date), 'dd MMM, yyyy')}</p>
-                    </div>
-                </div>
+            <header className="text-center space-y-1 mb-2">
+                <h1 className="text-base font-bold">{settings.companyName}</h1>
+                <p className="text-[9px] leading-tight">{settings.companyAddress}</p>
+                {settings.companyPhone && <p className="text-[9px]">Phone: {settings.companyPhone}</p>}
+                {settings.companyGstin && <p className="text-[9px]">GSTIN: {settings.companyGstin}</p>}
             </header>
-
+            
+            <Separator className="my-0.5 border-dashed" />
+            
+            <div className="text-[9px] space-y-0.5 mb-2">
+                <div className="flex justify-between">
+                    <span>BILL NO: {invoiceNumber}</span>
+                    <span>DATE: {format(new Date(date), 'dd/MM/yy HH:mm')}</span>
+                </div>
+                <p>CUSTOMER: {sale.customer.name}</p>
+            </div>
+            
             <main>
-                <table className="w-full text-left text-[10px]">
+                <table className="w-full text-[9px]">
                     <thead>
-                        <tr className="text-[9px] uppercase text-gray-500 border-b border-gray-300">
-                            <th className="py-1 font-semibold">Item</th>
-                            <th className="py-1 text-center font-semibold w-12">Qty</th>
-                            <th className="py-1 text-right font-semibold w-16">Rate</th>
-                            <th className="py-1 text-right font-semibold w-16">Total</th>
+                        <tr className="border-t border-b border-dashed">
+                            <th className="py-1 text-left font-normal">ITEM</th>
+                            <th className="py-1 text-center font-normal">QTY</th>
+                            <th className="py-1 text-right font-normal">RATE</th>
+                            <th className="py-1 text-right font-normal">AMOUNT</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -127,17 +102,11 @@ export const Invoice: React.FC<InvoiceProps> = ({ sale, settings }) => {
                              const discountAmount = itemTotal * (item.discount / 100);
                              const finalPrice = itemTotal - discountAmount;
                              return (
-                                <tr key={index} className="border-b border-gray-200">
-                                    <td className="py-1">
-                                        <p className="font-semibold text-[11px]">{item.name}</p>
-                                        <p className="text-[9px] text-gray-500">
-                                            {item.hsn ? `HSN: ${item.hsn}`: ''}
-                                            {item.discount > 0 ? ` (Disc: ${item.discount}%)` : ''}
-                                        </p>
-                                    </td>
-                                    <td className="py-1 text-center text-[11px]">{item.quantity}</td>
-                                    <td className="py-1 text-right text-[11px]">₹{item.price.toFixed(2)}</td>
-                                    <td className="py-1 text-right text-[11px] font-semibold">₹{finalPrice.toFixed(2)}</td>
+                                <tr key={index}>
+                                    <td className="py-0.5 text-left uppercase">{item.name}</td>
+                                    <td className="py-0.5 text-center">{item.quantity}</td>
+                                    <td className="py-0.5 text-right">{item.price.toFixed(2)}</td>
+                                    <td className="py-0.5 text-right">{finalPrice.toFixed(2)}</td>
                                 </tr>
                              )
                         })}
@@ -145,44 +114,26 @@ export const Invoice: React.FC<InvoiceProps> = ({ sale, settings }) => {
                 </table>
             </main>
             
-            <div className="flex justify-end mt-2">
-                <div className="w-full max-w-[150px] space-y-0.5 text-[10px]">
-                     <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span className="font-semibold">₹{subtotal.toFixed(2)}</span></div>
-                    {hasTax && (
-                        <>
-                            {cgst > 0 && <div className="flex justify-between"><span className="text-gray-500">CGST</span><span>₹{cgst.toFixed(2)}</span></div>}
-                            {sgst > 0 && <div className="flex justify-between"><span className="text-gray-500">SGST</span><span>₹{sgst.toFixed(2)}</span></div>}
-                            {igst > 0 && <div className="flex justify-between"><span className="text-gray-500">IGST</span><span>₹{igst.toFixed(2)}</span></div>}
-                        </>
-                    )}
-                     <Separator className="my-0.5" />
-                     <div className="flex justify-between items-center text-sm font-bold text-primary">
-                        <span>Total Due</span>
-                        <span>₹{total.toFixed(2)}</span>
-                    </div>
+            <Separator className="my-0.5 border-dashed" />
+
+            <div className="text-[9px] space-y-0.5">
+                <div className="flex justify-between"><span>SUBTOTAL</span><span>{subtotal.toFixed(2)}</span></div>
+                {cgst > 0 && <div className="flex justify-between"><span>CGST</span><span>{cgst.toFixed(2)}</span></div>}
+                {sgst > 0 && <div className="flex justify-between"><span>SGST</span><span>{sgst.toFixed(2)}</span></div>}
+                {igst > 0 && <div className="flex justify-between"><span>IGST</span><span>{igst.toFixed(2)}</span></div>}
+
+                 <div className="flex justify-between font-bold text-xs border-t border-dashed pt-1">
+                    <span>GRAND TOTAL</span>
+                    <span>₹{total.toFixed(2)}</span>
                 </div>
             </div>
 
-            <footer className="mt-4 pt-2 border-t-2 border-gray-300 text-[9px]">
-                 <div className="flex justify-between items-start">
-                     <div className="space-y-1 max-w-[200px]">
-                        <h4 className="text-[10px] font-semibold text-gray-800">Thank you for your business!</h4>
-                        
-                        {settings.bankName && (
-                            <div className="space-y-0.5 pt-1">
-                                <h4 className="text-[9px] font-semibold uppercase text-gray-500 tracking-wider">Payment Info</h4>
-                                <div className="text-[9px]">
-                                     <p><strong>Bank:</strong> {settings.bankName}</p>
-                                     <p><strong>A/C:</strong> {settings.companyName}, {settings.accountNumber}</p>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                     <div className="text-right">
-                        <p className="font-bold text-[10px]">{settings.companyName}</p>
-                        <p className="text-[9px] text-gray-600 max-w-[150px] ml-auto">{settings.companyAddress}</p>
-                    </div>
-                </div>
+            <Separator className="my-2 border-dashed" />
+
+            <footer className="text-center text-[9px] space-y-1">
+                <p>TOTAL ITEMS: {items.reduce((sum, item) => sum + item.quantity, 0)}</p>
+                <p>THANK YOU FOR YOUR BUSINESS!</p>
+                <p>*** VISIT AGAIN ***</p>
             </footer>
         </div>
     );
