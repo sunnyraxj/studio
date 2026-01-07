@@ -162,6 +162,7 @@ export default function POSPage() {
   const [quickItemName, setQuickItemName] = useState('');
   const [quickItemQty, setQuickItemQty] = useState<number | string>(1);
   const [quickItemPrice, setQuickItemPrice] = useState<number | string>('');
+  const [quickItemGst, setQuickItemGst] = useState<number | string>('');
   
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
   const [lastSaleData, setLastSaleData] = useState<any>(null);
@@ -275,7 +276,7 @@ export default function POSPage() {
       price: Number(quickItemPrice),
       margin: 0,
       sku: 'N/A',
-      gst: 0,
+      gst: Number(quickItemGst) || 0,
     };
 
     setCart((prevCart) => [
@@ -287,6 +288,7 @@ export default function POSPage() {
     setQuickItemName('');
     setQuickItemQty(1);
     setQuickItemPrice('');
+    setQuickItemGst('');
   };
   
   const handleQuickItemKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -509,7 +511,7 @@ export default function POSPage() {
                     <div className="space-y-4">
                         <div className="p-4 border rounded-lg bg-muted/50 space-y-4">
                             <Label className="text-sm font-medium">Quick Item Entry</Label>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 items-end">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2 items-end">
                                 <div className="space-y-1 md:col-span-2">
                                     <Label htmlFor="quick-name" className="text-xs">Item Name</Label>
                                     <Input
@@ -529,6 +531,18 @@ export default function POSPage() {
                                         placeholder="MRP"
                                         value={quickItemPrice}
                                         onChange={(e) => setQuickItemPrice(e.target.value)}
+                                        onKeyDown={handleQuickItemKeyDown}
+                                        className="h-8"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label htmlFor="quick-gst" className="text-xs">GST (%)</Label>
+                                    <Input
+                                        id="quick-gst"
+                                        type="number"
+                                        placeholder="GST"
+                                        value={quickItemGst}
+                                        onChange={(e) => setQuickItemGst(e.target.value)}
                                         onKeyDown={handleQuickItemKeyDown}
                                         className="h-8"
                                     />
