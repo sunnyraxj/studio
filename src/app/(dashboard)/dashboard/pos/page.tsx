@@ -273,9 +273,8 @@ export default function POSPage() {
       id: `quick-${Date.now()}`,
       name: quickItemName,
       price: Number(quickItemPrice),
-      margin: 0, // No margin info for quick items
+      margin: 0,
       sku: 'N/A',
-      // No GST info from form, assuming 0 or you can add a field
       gst: 0,
     };
 
@@ -288,6 +287,13 @@ export default function POSPage() {
     setQuickItemName('');
     setQuickItemQty(1);
     setQuickItemPrice('');
+  };
+  
+  const handleQuickItemKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      addQuickItemToCart();
+    }
   };
 
   const updateQuantity = (productId: string, amount: number) => {
@@ -511,6 +517,7 @@ export default function POSPage() {
                                         placeholder="Item Name"
                                         value={quickItemName}
                                         onChange={(e) => setQuickItemName(e.target.value)}
+                                        onKeyDown={handleQuickItemKeyDown}
                                         className="h-8"
                                     />
                                 </div>
@@ -522,6 +529,7 @@ export default function POSPage() {
                                         placeholder="MRP"
                                         value={quickItemPrice}
                                         onChange={(e) => setQuickItemPrice(e.target.value)}
+                                        onKeyDown={handleQuickItemKeyDown}
                                         className="h-8"
                                     />
                                 </div>
@@ -533,6 +541,7 @@ export default function POSPage() {
                                         placeholder="Qty"
                                         value={quickItemQty}
                                         onChange={(e) => setQuickItemQty(e.target.value)}
+                                        onKeyDown={handleQuickItemKeyDown}
                                         className="h-8"
                                         min="1"
                                     />

@@ -279,6 +279,13 @@ export function NewChallanTab() {
     setQuickItemQty(1);
     setQuickItemPrice('');
   };
+  
+  const handleQuickItemKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      addQuickItemToCart();
+    }
+  };
 
   const updateQuantity = (productId: string, amount: number) => {
     setCart((prevCart) => {
@@ -489,6 +496,7 @@ export function NewChallanTab() {
                                         placeholder="Item Name"
                                         value={quickItemName}
                                         onChange={(e) => setQuickItemName(e.target.value)}
+                                        onKeyDown={handleQuickItemKeyDown}
                                         className="h-8"
                                     />
                                 </div>
@@ -500,6 +508,7 @@ export function NewChallanTab() {
                                         placeholder="MRP"
                                         value={quickItemPrice}
                                         onChange={(e) => setQuickItemPrice(e.target.value)}
+                                        onKeyDown={handleQuickItemKeyDown}
                                         className="h-8"
                                     />
                                 </div>
@@ -511,6 +520,7 @@ export function NewChallanTab() {
                                         placeholder="Qty"
                                         value={quickItemQty}
                                         onChange={(e) => setQuickItemQty(e.target.value)}
+                                        onKeyDown={handleQuickItemKeyDown}
                                         className="h-8"
                                         min="1"
                                     />
