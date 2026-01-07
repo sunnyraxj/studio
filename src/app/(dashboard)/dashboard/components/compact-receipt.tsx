@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -26,6 +25,12 @@ type Sale = {
     name: string;
   };
   invoiceNumber: string;
+  paymentMode: string;
+  paymentDetails?: {
+    cash?: number;
+    card?: number;
+    upi?: number;
+  }
 };
 
 interface CompactReceiptProps {
@@ -48,6 +53,8 @@ export const CompactReceipt: React.FC<CompactReceiptProps> = ({ sale, settings }
         sgst,
         igst,
         total,
+        paymentMode,
+        paymentDetails
     } = sale;
 
     const hasTax = cgst > 0 || sgst > 0 || igst > 0;
@@ -110,6 +117,22 @@ export const CompactReceipt: React.FC<CompactReceiptProps> = ({ sale, settings }
                     <span>GRAND TOTAL</span>
                     <span>₹{total.toFixed(2)}</span>
                 </div>
+            </div>
+
+            <Separator className="my-0.5 border-dashed" />
+
+            <div className="text-[9px] space-y-0.5">
+                <div className="flex justify-between font-semibold">
+                    <span>PAYMENT MODE:</span>
+                    <span className="uppercase">{paymentMode}</span>
+                </div>
+                {paymentMode === 'both' && paymentDetails && (
+                    <>
+                        {paymentDetails.cash && paymentDetails.cash > 0 && <div className="flex justify-between pl-2"><span>Cash:</span><span>₹{paymentDetails.cash.toFixed(2)}</span></div>}
+                        {paymentDetails.card && paymentDetails.card > 0 && <div className="flex justify-between pl-2"><span>Card:</span><span>₹{paymentDetails.card.toFixed(2)}</span></div>}
+                        {paymentDetails.upi && paymentDetails.upi > 0 && <div className="flex justify-between pl-2"><span>UPI:</span><span>₹{paymentDetails.upi.toFixed(2)}</span></div>}
+                    </>
+                )}
             </div>
 
             <Separator className="my-2 border-dashed" />
