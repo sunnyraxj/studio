@@ -162,7 +162,7 @@ export default function POSPage() {
   const [quickItemName, setQuickItemName] = useState('');
   const [quickItemQty, setQuickItemQty] = useState<number | string>(1);
   const [quickItemPrice, setQuickItemPrice] = useState<number | string>('');
-  const [quickItemGst, setQuickItemGst] = useState<number | string>('');
+  const [quickItemGst, setQuickItemGst] = useState<number | string>(5);
   
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
   const [lastSaleData, setLastSaleData] = useState<any>(null);
@@ -220,11 +220,7 @@ export default function POSPage() {
     const salesCollectionRef = collection(firestore, `shops/${shopId}/sales`);
     
     // Fetch the most recent invoice to get the last sequence number
-    const q = query(
-        salesCollectionRef, 
-        orderBy('date', 'desc'), 
-        limit(1)
-    );
+    const q = query(salesCollectionRef, orderBy('date', 'desc'), limit(1));
 
     const querySnapshot = await getDocs(q);
     let lastInvoiceNumber = 0;
@@ -233,8 +229,7 @@ export default function POSPage() {
         const lastSale = querySnapshot.docs[0].data() as Sale;
         const lastInvoice = lastSale.invoiceNumber;
         
-        // Match either INV-YYYY-NNNN or CHLN-YYYY-NNNN
-        const match = lastInvoice.match(/^(?:INV|CHLN)-(\d{4})-(\d+)$/);
+        const match = lastInvoice.match(/(?:INV|CHLN)-(\d{4})-(\d+)$/);
         if (match) {
             lastInvoiceNumber = parseInt(match[2], 10);
         }
@@ -288,7 +283,7 @@ export default function POSPage() {
     setQuickItemName('');
     setQuickItemQty(1);
     setQuickItemPrice('');
-    setQuickItemGst('');
+    setQuickItemGst(5);
   };
   
   const handleQuickItemKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -536,18 +531,6 @@ export default function POSPage() {
                                     />
                                 </div>
                                 <div className="space-y-1">
-                                    <Label htmlFor="quick-gst" className="text-xs">GST (%)</Label>
-                                    <Input
-                                        id="quick-gst"
-                                        type="number"
-                                        placeholder="GST"
-                                        value={quickItemGst}
-                                        onChange={(e) => setQuickItemGst(e.target.value)}
-                                        onKeyDown={handleQuickItemKeyDown}
-                                        className="h-8"
-                                    />
-                                </div>
-                                <div className="space-y-1">
                                     <Label htmlFor="quick-qty" className="text-xs">Qty</Label>
                                     <Input
                                         id="quick-qty"
@@ -558,6 +541,18 @@ export default function POSPage() {
                                         onKeyDown={handleQuickItemKeyDown}
                                         className="h-8"
                                         min="1"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label htmlFor="quick-gst" className="text-xs">GST (%)</Label>
+                                    <Input
+                                        id="quick-gst"
+                                        type="number"
+                                        placeholder="GST"
+                                        value={quickItemGst}
+                                        onChange={(e) => setQuickItemGst(e.target.value)}
+                                        onKeyDown={handleQuickItemKeyDown}
+                                        className="h-8"
                                     />
                                 </div>
                                 <Button size="sm" onClick={addQuickItemToCart} className="h-8 sm:self-end">

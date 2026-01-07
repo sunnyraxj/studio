@@ -154,7 +154,7 @@ export function NewChallanTab() {
   const [quickItemName, setQuickItemName] = useState('');
   const [quickItemQty, setQuickItemQty] = useState<number | string>(1);
   const [quickItemPrice, setQuickItemPrice] = useState<number | string>('');
-  const [quickItemGst, setQuickItemGst] = useState<number | string>('');
+  const [quickItemGst, setQuickItemGst] = useState<number | string>(5);
 
 
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
@@ -211,12 +211,7 @@ export function NewChallanTab() {
     const currentYear = new Date().getFullYear();
     const challansCollectionRef = collection(firestore, `shops/${shopId}/challans`);
     
-    // Fetch the most recent challan to get the last sequence number
-    const q = query(
-        challansCollectionRef, 
-        orderBy('date', 'desc'), 
-        limit(1)
-    );
+    const q = query(challansCollectionRef, orderBy('date', 'desc'), limit(1));
 
     const querySnapshot = await getDocs(q);
     let lastChallanNumber = 0;
@@ -225,10 +220,9 @@ export function NewChallanTab() {
         const lastChallan = querySnapshot.docs[0].data() as Sale;
         const lastInvoice = lastChallan.invoiceNumber;
         
-        // Match either INV-YYYY-NNNN or CHLN-YYYY-NNNN
-        const match = lastInvoice.match(/^(?:INV|CHLN)-(\d{4})-(\d+)$/);
+        const match = lastInvoice.match(/(?:INV|CHLN)-\d{4}-(\d+)$/);
         if (match) {
-            lastChallanNumber = parseInt(match[2], 10);
+            lastChallanNumber = parseInt(match[1], 10);
         }
     }
     
@@ -280,7 +274,7 @@ export function NewChallanTab() {
     setQuickItemName('');
     setQuickItemQty(1);
     setQuickItemPrice('');
-    setQuickItemGst('');
+    setQuickItemGst(5);
   };
   
   const handleQuickItemKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -515,18 +509,6 @@ export function NewChallanTab() {
                                         className="h-8"
                                     />
                                 </div>
-                                 <div className="space-y-1">
-                                    <Label htmlFor="quick-gst" className="text-xs">GST (%)</Label>
-                                    <Input
-                                        id="quick-gst"
-                                        type="number"
-                                        placeholder="GST"
-                                        value={quickItemGst}
-                                        onChange={(e) => setQuickItemGst(e.target.value)}
-                                        onKeyDown={handleQuickItemKeyDown}
-                                        className="h-8"
-                                    />
-                                </div>
                                 <div className="space-y-1">
                                     <Label htmlFor="quick-qty" className="text-xs">Qty</Label>
                                     <Input
@@ -538,6 +520,18 @@ export function NewChallanTab() {
                                         onKeyDown={handleQuickItemKeyDown}
                                         className="h-8"
                                         min="1"
+                                    />
+                                </div>
+                                 <div className="space-y-1">
+                                    <Label htmlFor="quick-gst" className="text-xs">GST (%)</Label>
+                                    <Input
+                                        id="quick-gst"
+                                        type="number"
+                                        placeholder="GST"
+                                        value={quickItemGst}
+                                        onChange={(e) => setQuickItemGst(e.target.value)}
+                                        onKeyDown={handleQuickItemKeyDown}
+                                        className="h-8"
                                     />
                                 </div>
                                 <Button size="sm" onClick={addQuickItemToCart} className="h-8 sm:self-end">
