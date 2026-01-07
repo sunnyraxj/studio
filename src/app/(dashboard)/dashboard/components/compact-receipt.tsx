@@ -54,7 +54,7 @@ export const CompactReceipt: React.FC<CompactReceiptProps> = ({ sale, settings }
     const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
     return (
-        <div className="bg-white text-black font-mono text-[10px] py-2 max-w-[80mm] mx-auto my-0.5">
+        <div className="bg-white text-black font-mono text-[10px] py-2 w-full">
             <header className="text-center space-y-1 mb-2">
                 <h1 className="text-base font-bold">{settings.companyName}</h1>
                 <p className="text-[9px] leading-tight">{settings.companyAddress}</p>
