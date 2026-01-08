@@ -429,13 +429,13 @@ export default function InventoryPage() {
   return (
     <>
     <div className="w-full">
-      <div className="flex items-center py-4 gap-4">
+      <div className="flex items-center py-2 gap-4">
         <div className="flex gap-4">
             <Input
             placeholder={`Filter by ${searchBy}...`}
             value={filterValue}
             onChange={handleFilterChange}
-            className="max-w-sm"
+            className="max-w-sm h-9"
             />
             <RadioGroup
                 value={searchBy}
@@ -466,23 +466,24 @@ export default function InventoryPage() {
         </div>
         <div className="ml-auto flex items-center gap-2">
            <Link href="/dashboard/inventory/add">
-            <Button>
+            <Button size="sm">
                 <PlusCircle className="mr-2 h-4 w-4" /> Add Product
             </Button>
            </Link>
-           <Button variant="outline" onClick={handleExport}>
+           <Button variant="outline" size="sm" onClick={handleExport}>
               <FileDown className="mr-2 h-4 w-4" /> Export
            </Button>
             <Button 
                 variant="outline"
+                size="sm"
                 onClick={() => setIsBulkBarcodeDialogOpen(true)}
                 disabled={selectedRows.length === 0}
             >
-              <Printer className="mr-2 h-4 w-4" /> Print Selected Barcodes ({selectedRows.length})
+              <Printer className="mr-2 h-4 w-4" /> Print Selected ({selectedRows.length})
            </Button>
             <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="ml-auto">
+                <Button variant="outline" size="sm" className="ml-auto">
                 Columns <ChevronDownIcon className="ml-2 h-4 w-4" />
                 </Button>
             </DropdownMenuTrigger>
@@ -515,7 +516,7 @@ export default function InventoryPage() {
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id}>
+                    <TableHead key={header.id} className="py-2">
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -545,7 +546,7 @@ export default function InventoryPage() {
                   data-state={row.getIsSelected() && 'selected'}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} className="py-2">
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -567,7 +568,7 @@ export default function InventoryPage() {
           </TableBody>
         </Table>
       </div>
-      <div className="py-4">
+      <div className="py-2">
         <DataTablePagination table={table} />
       </div>
     </div>
