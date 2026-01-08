@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -45,7 +46,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Challan as Challan } from './challan';
+import { Challan } from './challan';
 
 
 type Product = {
@@ -219,9 +220,9 @@ export function NewChallanTab() {
         const lastChallan = querySnapshot.docs[0].data() as Sale;
         const lastInvoice = lastChallan.invoiceNumber;
         
-        const match = lastInvoice.match(/(?:INV|CHLN)-\d{4}-(\d+)$/);
+        const match = lastInvoice.match(/(?:INV|CHLN)-(\d{4})-(\d+)$/);
         if (match) {
-            lastChallanNumber = parseInt(match[1], 10);
+            lastChallanNumber = parseInt(match[2], 10);
         }
     }
     
@@ -311,25 +312,21 @@ export function NewChallanTab() {
   };
   
   const { subtotal, cgst, sgst, igst, total } = useMemo(() => {
-    const isIntraState = customerState?.trim().toLowerCase() === 'assam';
+    const isIntraState = customerState?.trim().toLowerCase() === shopSettings?.companyState?.trim().toLowerCase();
 
     let subtotal = 0;
     let cgst = 0;
     let sgst = 0;
     let igst = 0;
-    let total = 0;
 
     cart.forEach(item => {
         const itemTotalMrp = item.product.price * item.quantity;
         const discountAmount = itemTotalMrp * (item.discount / 100);
-        const finalPrice = itemTotalMrp - discountAmount;
-        total += finalPrice;
+        const taxableValue = itemTotalMrp - discountAmount;
+        subtotal += taxableValue;
 
         const gstRate = (item.product.gst || 0) / 100;
-        const taxableValue = finalPrice / (1 + gstRate);
-        const itemGstAmount = finalPrice - taxableValue;
-
-        subtotal += taxableValue;
+        const itemGstAmount = taxableValue * gstRate;
 
         if (isIntraState) {
             cgst += itemGstAmount / 2;
@@ -339,6 +336,7 @@ export function NewChallanTab() {
         }
     });
 
+    const total = subtotal + cgst + sgst + igst;
     return { subtotal, cgst, sgst, igst, total };
 
   }, [cart, customerState, shopSettings]);
@@ -774,3 +772,5 @@ export function NewChallanTab() {
     </>
   );
 }
+
+    

@@ -138,3 +138,5 @@ export const Invoice: React.FC<InvoiceProps> = ({ sale, settings }) => {
         </div>
     );
 };
+
+    

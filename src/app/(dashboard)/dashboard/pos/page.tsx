@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -46,7 +47,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Invoice } from './components/invoice';
+import { CompactReceipt } from '../components/compact-receipt';
 
 
 type Product = {
@@ -319,25 +320,21 @@ export default function POSPage() {
   };
   
   const { subtotal, cgst, sgst, igst, total } = useMemo(() => {
-    const isIntraState = customerState?.trim().toLowerCase() === 'assam';
+    const isIntraState = customerState?.trim().toLowerCase() === shopSettings?.companyState?.trim().toLowerCase();
 
     let subtotal = 0;
     let cgst = 0;
     let sgst = 0;
     let igst = 0;
-    let total = 0;
 
     cart.forEach(item => {
         const itemTotalMrp = item.product.price * item.quantity;
         const discountAmount = itemTotalMrp * (item.discount / 100);
-        const finalPrice = itemTotalMrp - discountAmount;
-        total += finalPrice;
+        const taxableValue = itemTotalMrp - discountAmount;
+        subtotal += taxableValue;
 
         const gstRate = (item.product.gst || 0) / 100;
-        const taxableValue = finalPrice / (1 + gstRate);
-        const itemGstAmount = finalPrice - taxableValue;
-
-        subtotal += taxableValue;
+        const itemGstAmount = taxableValue * gstRate;
 
         if (isIntraState) {
             cgst += itemGstAmount / 2;
@@ -347,9 +344,10 @@ export default function POSPage() {
         }
     });
 
+    const total = subtotal + cgst + sgst + igst;
     return { subtotal, cgst, sgst, igst, total };
 
-  }, [cart, customerState]);
+  }, [cart, customerState, shopSettings]);
 
 
   const totalPaid = (paymentDetails.cash || 0) + (paymentDetails.card || 0) + (paymentDetails.upi || 0);
@@ -802,20 +800,22 @@ export default function POSPage() {
     </div>
     <div className='hidden print:block'>
         <div ref={invoiceRef}>
-            {lastSaleData && <Invoice sale={lastSaleData} settings={shopSettings} />}
+            {lastSaleData && <CompactReceipt sale={lastSaleData} settings={shopSettings} />}
         </div>
     </div>
     <Dialog open={isInvoiceOpen} onOpenChange={(open) => { if (!open) { setIsInvoiceOpen(false); setLastSaleData(null); }}}>
-        <DialogContent className="max-w-4xl p-0 border-0">
+        <DialogContent className="max-w-sm p-0 border-0">
              <DialogHeader className="sr-only">
-                <DialogTitle>Invoice</DialogTitle>
-                <DialogDescription>A preview of the invoice for printing.</DialogDescription>
+                <DialogTitle>Receipt</DialogTitle>
+                <DialogDescription>A preview of the receipt for printing.</DialogDescription>
             </DialogHeader>
              <div ref={invoiceRef}>
-                 <Invoice sale={lastSaleData} settings={shopSettings} />
+                 <CompactReceipt sale={lastSaleData} settings={shopSettings} />
              </div>
         </DialogContent>
     </Dialog>
     </>
   );
 }
+
+    
