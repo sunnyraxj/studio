@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -19,7 +20,7 @@ export const BarcodeLabel: React.FC<BarcodeLabelProps> = ({ item, shopName }) =>
             className="bg-white text-black flex flex-col items-center justify-center font-sans" 
             style={{ width: '2.5in', height: '1.5in', boxSizing: 'border-box', padding: '0.1in' }}
         >
-            <p className="text-xs font-bold truncate max-w-full">{shopName}</p>
+            <p className="text-xs font-bold truncate max-w-full uppercase">{shopName}</p>
             <Barcode 
                 value={item.sku}
                 width={1.4}
@@ -28,8 +29,8 @@ export const BarcodeLabel: React.FC<BarcodeLabelProps> = ({ item, shopName }) =>
                 margin={2}
                 displayValue={false}
             />
-            <p className="text-[10px] font-semibold tracking-widest">{item.sku}</p>
-            <p className="text-base font-bold">
+            <p className="text-[10px] font-bold tracking-widest uppercase">{item.sku}</p>
+            <p className="text-base font-bold uppercase">
                 MRP: {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(item.price)}
             </p>
         </div>
