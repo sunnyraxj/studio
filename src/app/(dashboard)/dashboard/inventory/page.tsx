@@ -51,7 +51,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 import * as XLSX from 'xlsx';
 import { cn } from '@/lib/utils';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast.tsx';
 import { BarcodeDialog } from './components/barcode-dialog';
 import { BulkBarcodeDialog } from './components/bulk-barcode-dialog';
 
@@ -479,7 +479,7 @@ export default function InventoryPage() {
                 onClick={() => setIsBulkBarcodeDialogOpen(true)}
                 disabled={selectedRows.length === 0}
             >
-              <Printer className="mr-2 h-4 w-4" /> Print Selected ({selectedRows.length})
+              <Printer className="mr-2 h-4 w-4" /> Barcode ({selectedRows.length})
            </Button>
             <DropdownMenu>
             <DropdownMenuTrigger asChild>
