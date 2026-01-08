@@ -47,7 +47,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { CompactReceipt } from '../components/compact-receipt';
+import { CompactReceipt } from '../dashboard/components/compact-receipt';
 import { CameraScanner } from './components/camera-scanner';
 
 
@@ -214,35 +214,43 @@ export default function POSPage() {
   
 
   const generateNextInvoiceNumber = async () => {
-    if (isDemoMode) {
+      let isMounted = true;
+      if (isDemoMode) {
+        const currentYear = new Date().getFullYear();
+        if (isMounted) setInvoiceNumber(`INV-${currentYear}-0001`);
+        return;
+      }
+      if (!firestore || !shopId) return;
+
       const currentYear = new Date().getFullYear();
-      setInvoiceNumber(`INV-${currentYear}-0001`);
-      return;
-    }
-    if (!firestore || !shopId) return;
+      const salesCollectionRef = collection(firestore, `shops/${shopId}/sales`);
+      
+      const q = query(salesCollectionRef, orderBy('date', 'desc'), limit(1));
 
-    const currentYear = new Date().getFullYear();
-    const salesCollectionRef = collection(firestore, `shops/${shopId}/sales`);
-    
-    // Fetch the most recent invoice to get the last sequence number
-    const q = query(salesCollectionRef, orderBy('date', 'desc'), limit(1));
+      try {
+        const querySnapshot = await getDocs(q);
+        if (!isMounted) return;
 
-    const querySnapshot = await getDocs(q);
-    let lastInvoiceNumber = 0;
-    
-    if (!querySnapshot.empty) {
-        const lastSale = querySnapshot.docs[0].data() as Sale;
-        const lastInvoice = lastSale.invoiceNumber;
-        
-        const match = lastInvoice.match(/(?:INV|CHLN)-(\d{4})-(\d+)$/);
-        if (match) {
-            lastInvoiceNumber = parseInt(match[2], 10);
+        let lastInvoiceNumber = 0;
+        if (!querySnapshot.empty) {
+            const lastSale = querySnapshot.docs[0].data() as Sale;
+            const lastInvoice = lastSale.invoiceNumber;
+            
+            const match = lastInvoice.match(/(?:INV|CHLN)-(\d{4})-(\d+)$/);
+            if (match) {
+                lastInvoiceNumber = parseInt(match[2], 10);
+            }
         }
-    }
-    
-    const nextInvoiceNumber = (lastInvoiceNumber + 1).toString().padStart(4, '0');
-    setInvoiceNumber(`INV-${currentYear}-${nextInvoiceNumber}`);
-};
+        
+        const nextInvoiceNumber = (lastInvoiceNumber + 1).toString().padStart(4, '0');
+        setInvoiceNumber(`INV-${currentYear}-${nextInvoiceNumber}`);
+      } catch (error) {
+        console.error("Error generating invoice number:", error);
+      }
+      return () => {
+        isMounted = false;
+      };
+  };
 
   useEffect(() => {
     generateNextInvoiceNumber();
@@ -885,7 +893,7 @@ export default function POSPage() {
              <DialogHeader className="sr-only">
                 <DialogTitle>Receipt</DialogTitle>
                 <DialogDescription>A preview of the receipt for printing.</DialogDescription>
-            </DialogHeader>
+             </DialogHeader>
              <div ref={invoiceRef}>
                  <CompactReceipt sale={lastSaleData} settings={shopSettings} />
              </div>
@@ -894,4 +902,3 @@ export default function POSPage() {
     </>
   );
 }
-

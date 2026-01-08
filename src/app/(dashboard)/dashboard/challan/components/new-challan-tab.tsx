@@ -202,38 +202,49 @@ export function NewChallanTab() {
   };
   
 
-  const generateNextChallanNumber = async () => {
-    if (isDemoMode) {
-        const currentYear = new Date().getFullYear();
-        setInvoiceNumber(`CHLN-${currentYear}-0001`);
-        return;
-    }
-    if (!firestore || !shopId) return;
-
-    const currentYear = new Date().getFullYear();
-    const challansCollectionRef = collection(firestore, `shops/${shopId}/challans`);
-    
-    const q = query(challansCollectionRef, orderBy('date', 'desc'), limit(1));
-
-    const querySnapshot = await getDocs(q);
-    let lastChallanNumber = 0;
-    
-    if (!querySnapshot.empty) {
-        const lastChallan = querySnapshot.docs[0].data() as Sale;
-        const lastInvoice = lastChallan.invoiceNumber;
-        
-        const match = lastInvoice.match(/(?:INV|CHLN)-(\d{4})-(\d+)$/);
-        if (match) {
-            lastChallanNumber = parseInt(match[2], 10);
-        }
-    }
-    
-    const nextChallanNumber = (lastChallanNumber + 1).toString().padStart(4, '0');
-    setInvoiceNumber(`CHLN-${currentYear}-${nextChallanNumber}`);
-  };
-
   useEffect(() => {
+    let isMounted = true;
+
+    const generateNextChallanNumber = async () => {
+      if (isDemoMode) {
+        const currentYear = new Date().getFullYear();
+        if (isMounted) setInvoiceNumber(`CHLN-${currentYear}-0001`);
+        return;
+      }
+      if (!firestore || !shopId) return;
+
+      const currentYear = new Date().getFullYear();
+      const challansCollectionRef = collection(firestore, `shops/${shopId}/challans`);
+      
+      const q = query(challansCollectionRef, orderBy('date', 'desc'), limit(1));
+
+      try {
+        const querySnapshot = await getDocs(q);
+        if (!isMounted) return;
+
+        let lastChallanNumber = 0;
+        if (!querySnapshot.empty) {
+            const lastChallan = querySnapshot.docs[0].data() as Sale;
+            const lastInvoice = lastChallan.invoiceNumber;
+            
+            const match = lastInvoice.match(/(?:INV|CHLN)-(\d{4})-(\d+)$/);
+            if (match) {
+                lastChallanNumber = parseInt(match[2], 10);
+            }
+        }
+        
+        const nextChallanNumber = (lastChallanNumber + 1).toString().padStart(4, '0');
+        setInvoiceNumber(`CHLN-${currentYear}-${nextChallanNumber}`);
+      } catch (error) {
+        console.error("Error generating challan number:", error);
+      }
+    };
+
     generateNextChallanNumber();
+
+    return () => {
+      isMounted = false;
+    };
   }, [shopId, isDemoMode, firestore]);
 
   const addToCart = (productToAdd: Product) => {
@@ -373,7 +384,7 @@ export function NewChallanTab() {
     setCustomerGstin('');
     setPaymentMode('cash');
     setPaymentDetails({ cash: 0, card: 0, upi: 0 });
-    generateNextChallanNumber();
+    // generateNextChallanNumber();
   };
   
   const showPrintToast = () => {
@@ -823,3 +834,4 @@ export function NewChallanTab() {
     </>
   );
 }
+
