@@ -104,14 +104,19 @@ export const CompactReceipt: React.FC<CompactReceiptProps> = ({ sale, settings }
                         </tr>
                     </thead>
                     <tbody>
-                        {items.map((item, index) => (
-                            <tr key={index}>
-                                <td className="py-0.5 text-left uppercase">{item.name}</td>
-                                <td className="py-0.5 text-center">{item.quantity}</td>
-                                <td className="py-0.5 text-right">{item.price.toFixed(2)}</td>
-                                <td className="py-0.5 text-right">{(item.price * item.quantity).toFixed(2)}</td>
-                            </tr>
-                        ))}
+                        {items.map((item, index) => {
+                             const itemTotal = item.price * item.quantity;
+                             const discountAmount = itemTotal * (item.discount / 100);
+                             const finalPrice = itemTotal - discountAmount;
+                             return (
+                                <tr key={index}>
+                                    <td className="py-0.5 text-left uppercase">{item.name}</td>
+                                    <td className="py-0.5 text-center">{item.quantity}</td>
+                                    <td className="py-0.5 text-right">{item.price.toFixed(2)}</td>
+                                    <td className="py-0.5 text-right">{finalPrice.toFixed(2)}</td>
+                                </tr>
+                             )
+                        })}
                     </tbody>
                 </table>
             </main>
@@ -119,7 +124,7 @@ export const CompactReceipt: React.FC<CompactReceiptProps> = ({ sale, settings }
             <Separator className="my-0.5 border-dashed" />
 
             <div className="text-[9px] space-y-0.5">
-                 <div className="flex justify-between"><span>SUBTOTAL</span><span>{subtotal.toFixed(2)}</span></div>
+                 <div className="flex justify-between"><span>SUBTOTAL (Taxable)</span><span>{subtotal.toFixed(2)}</span></div>
                 {hasTax && (
                     <>
                         {cgst > 0 && <div className="flex justify-between"><span>CGST</span><span>{cgst.toFixed(2)}</span></div>}

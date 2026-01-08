@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo } from 'react';
@@ -85,44 +84,44 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
     } = sale;
 
     const amountInWords = numberToWords(total);
-    const isIntraState = igst === 0 && (cgst > 0 || sgst > 0);
     
-    const gstBreakdown = useMemo(() => {
+    const { totalTaxableValue, taxBreakdown } = useMemo(() => {
         const breakdown: { [rate: number]: { taxable: number; cgst: number; sgst: number; igst: number } } = {};
+        let totalTaxable = 0;
 
         items.forEach(item => {
+            const itemTotalMrp = item.price * item.quantity;
+            const discountAmount = itemTotalMrp * (item.discount / 100);
+            const finalPrice = itemTotalMrp - discountAmount;
+            
             const gstRate = item.gst || 0;
+            const taxableValue = finalPrice / (1 + gstRate / 100);
+            const taxAmount = finalPrice - taxableValue;
+
+            totalTaxable += taxableValue;
+
             if (!breakdown[gstRate]) {
                 breakdown[gstRate] = { taxable: 0, cgst: 0, sgst: 0, igst: 0 };
             }
-            const itemTotal = item.price * item.quantity;
-            const discountAmount = itemTotal * (item.discount / 100);
-            const taxableValue = itemTotal - discountAmount;
-            const taxAmount = taxableValue * (gstRate / 100);
-
+            
             breakdown[gstRate].taxable += taxableValue;
-
-            if (isIntraState) {
-                breakdown[gstRate].cgst += taxAmount / 2;
-                breakdown[gstRate].sgst += taxAmount / 2;
-            } else {
-                breakdown[gstRate].igst += taxAmount;
+            
+            if (igst > 0) { // Inter-state
+                 breakdown[gstRate].igst += taxAmount;
+            } else { // Intra-state
+                 breakdown[gstRate].cgst += taxAmount / 2;
+                 breakdown[gstRate].sgst += taxAmount / 2;
             }
         });
         
-        const rates = Object.keys(breakdown).map(Number);
-        const averageGstRate = rates.length > 0 ? rates.reduce((a, b) => a + b, 0) / rates.length : 0;
-
         return {
-            breakdown: Object.entries(breakdown).map(([rate, values]) => ({
+            totalTaxableValue: totalTaxable,
+            taxBreakdown: Object.entries(breakdown).map(([rate, values]) => ({
                 rate: Number(rate),
                 ...values,
             })),
-            igstRate: !isIntraState ? averageGstRate : 0,
-            cgstRate: isIntraState ? averageGstRate / 2 : 0,
-            sgstRate: isIntraState ? averageGstRate / 2 : 0,
         };
-    }, [items, isIntraState]);
+    }, [items, cgst, sgst, igst]);
 
     return (
         <div className="bg-white text-black p-8 font-sans w-full min-h-full" id="invoice-print">
@@ -171,24 +170,27 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
                                 <th className="text-right font-semibold p-2">Qty</th>
                                 <th className="text-right font-semibold p-2">Rate</th>
                                 <th className="text-right font-semibold p-2">Taxable</th>
-                                {isIntraState ? (
+                                {igst > 0 ? (
+                                    <th className="text-right font-semibold p-2">IGST</th>
+                                ) : (
                                     <>
                                         <th className="text-right font-semibold p-2">CGST</th>
                                         <th className="text-right font-semibold p-2">SGST</th>
                                     </>
-                                ) : (
-                                    <th className="text-right font-semibold p-2">IGST</th>
                                 )}
                                 <th className="text-right font-semibold p-2">Total</th>
                             </tr>
                         </thead>
                         <tbody>
                             {items.map((item, index) => {
-                                const itemTotal = item.price * item.quantity;
-                                const discountAmount = itemTotal * (item.discount / 100);
-                                const taxableValue = itemTotal - discountAmount;
-                                const taxAmount = taxableValue * (item.gst / 100);
-                                const finalPrice = taxableValue + taxAmount;
+                                const itemTotalMrp = item.price * item.quantity;
+                                const discountAmount = itemTotalMrp * (item.discount / 100);
+                                const finalPrice = itemTotalMrp - discountAmount;
+                                
+                                const gstRate = item.gst || 0;
+                                const taxableValue = finalPrice / (1 + gstRate / 100);
+                                const taxAmount = finalPrice - taxableValue;
+
                                 return (
                                     <tr key={index} className="border-b border-gray-100">
                                         <td className="p-2">{index + 1}</td>
@@ -197,13 +199,13 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
                                         <td className="text-right p-2">{item.quantity}</td>
                                         <td className="text-right p-2">{item.price.toFixed(2)}</td>
                                         <td className="text-right p-2 font-semibold">{taxableValue.toFixed(2)}</td>
-                                        {isIntraState ? (
+                                        {igst > 0 ? (
+                                            <td className="text-right p-2">{taxAmount.toFixed(2)}</td>
+                                        ) : (
                                             <>
                                                 <td className="text-right p-2">{(taxAmount / 2).toFixed(2)}</td>
                                                 <td className="text-right p-2">{(taxAmount / 2).toFixed(2)}</td>
                                             </>
-                                        ) : (
-                                            <td className="text-right p-2">{taxAmount.toFixed(2)}</td>
                                         )}
                                         <td className="text-right p-2 font-semibold">{finalPrice.toFixed(2)}</td>
                                     </tr>
@@ -213,27 +215,65 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
                     </table>
                 </section>
                 
-                 <section className="mt-8 flex justify-end">
-                    <div className="w-full sm:w-2/3 md:w-1/2 space-y-4">
+                 <section className="mt-8 flex justify-between items-start">
+                     <div className='w-1/2'>
+                         <p className="font-bold text-sm">Tax Summary:</p>
+                         <table className="w-full text-xs mt-1">
+                             <thead>
+                                 <tr className="bg-muted">
+                                     <th className="p-1 text-left font-semibold">Rate</th>
+                                     <th className="p-1 text-right font-semibold">Taxable</th>
+                                     {igst > 0 ? (
+                                         <th className="p-1 text-right font-semibold">IGST</th>
+                                     ) : (
+                                        <>
+                                         <th className="p-1 text-right font-semibold">CGST</th>
+                                         <th className="p-1 text-right font-semibold">SGST</th>
+                                        </>
+                                     )}
+                                     <th className="p-1 text-right font-semibold">Total Tax</th>
+                                 </tr>
+                             </thead>
+                             <tbody>
+                                 {taxBreakdown.map(({ rate, taxable, cgst, sgst, igst }) => (
+                                     <tr key={rate} className="border-b">
+                                         <td className="p-1 text-left">{rate}%</td>
+                                         <td className="p-1 text-right">₹{taxable.toFixed(2)}</td>
+                                         {igst > 0 ? (
+                                             <td className="p-1 text-right">₹{igst.toFixed(2)}</td>
+                                         ) : (
+                                            <>
+                                             <td className="p-1 text-right">₹{cgst.toFixed(2)}</td>
+                                             <td className="p-1 text-right">₹{sgst.toFixed(2)}</td>
+                                            </>
+                                         )}
+                                         <td className="p-1 text-right">₹{(cgst + sgst + igst).toFixed(2)}</td>
+                                     </tr>
+                                 ))}
+                             </tbody>
+                         </table>
+                     </div>
+
+                    <div className="w-full sm:w-2/3 md:w-1/2 max-w-sm ml-auto space-y-4">
                          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                             <span className="text-gray-600">Taxable Value:</span>
                             <span className="font-medium text-gray-800 text-right">₹{subtotal.toFixed(2)}</span>
                             
                             {cgst > 0 && (
                                 <>
-                                    <span className="text-gray-600">CGST ({gstBreakdown.cgstRate.toFixed(1)}%):</span>
+                                    <span className="text-gray-600">Total CGST:</span>
                                     <span className="font-medium text-gray-800 text-right">₹{cgst.toFixed(2)}</span>
                                 </>
                             )}
                             {sgst > 0 && (
                                 <>
-                                    <span className="text-gray-600">SGST ({gstBreakdown.sgstRate.toFixed(1)}%):</span>
+                                    <span className="text-gray-600">Total SGST:</span>
                                     <span className="font-medium text-gray-800 text-right">₹{sgst.toFixed(2)}</span>
                                 </>
                             )}
                             {igst > 0 && (
                                 <>
-                                    <span className="text-gray-600">IGST ({gstBreakdown.igstRate.toFixed(1)}%):</span>
+                                    <span className="text-gray-600">Total IGST:</span>
                                     <span className="font-medium text-gray-800 text-right">₹{igst.toFixed(2)}</span>
                                 </>
                             )}

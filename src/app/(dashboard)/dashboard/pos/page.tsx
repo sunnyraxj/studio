@@ -319,21 +319,25 @@ export default function POSPage() {
   };
   
   const { subtotal, cgst, sgst, igst, total } = useMemo(() => {
-    const isIntraState = customerState.trim().toLowerCase() === 'assam';
+    const isIntraState = customerState?.trim().toLowerCase() === 'assam';
 
     let subtotal = 0;
     let cgst = 0;
     let sgst = 0;
     let igst = 0;
+    let total = 0;
 
     cart.forEach(item => {
-        const itemTotal = item.product.price * item.quantity;
-        const discountAmount = itemTotal * (item.discount / 100);
-        const taxableValue = itemTotal - discountAmount;
-        subtotal += taxableValue;
+        const itemTotalMrp = item.product.price * item.quantity;
+        const discountAmount = itemTotalMrp * (item.discount / 100);
+        const finalPrice = itemTotalMrp - discountAmount;
+        total += finalPrice;
 
         const gstRate = (item.product.gst || 0) / 100;
-        const itemGstAmount = taxableValue * gstRate;
+        const taxableValue = finalPrice / (1 + gstRate);
+        const itemGstAmount = finalPrice - taxableValue;
+
+        subtotal += taxableValue;
 
         if (isIntraState) {
             cgst += itemGstAmount / 2;
@@ -343,11 +347,9 @@ export default function POSPage() {
         }
     });
 
-    const total = subtotal + cgst + sgst + igst;
-
     return { subtotal, cgst, sgst, igst, total };
 
-  }, [cart, customerState, shopSettings]);
+  }, [cart, customerState]);
 
 
   const totalPaid = (paymentDetails.cash || 0) + (paymentDetails.card || 0) + (paymentDetails.upi || 0);
@@ -782,7 +784,7 @@ export default function POSPage() {
                 <CardFooter className="mt-auto flex-none">
                     <div className='w-full space-y-4'>
                         <div className="space-y-1 text-sm">
-                            <div className="flex justify-between"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span>Subtotal (Taxable)</span><span>₹{subtotal.toFixed(2)}</span></div>
                             {cgst > 0 && <div className="flex justify-between"><span>CGST</span><span>₹{cgst.toFixed(2)}</span></div>}
                             {sgst > 0 && <div className="flex justify-between"><span>SGST</span><span>₹{sgst.toFixed(2)}</span></div>}
                             {igst > 0 && <div className="flex justify-between"><span>IGST</span><span>₹{igst.toFixed(2)}</span></div>}
