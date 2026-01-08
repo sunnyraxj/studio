@@ -618,7 +618,7 @@ export default function POSPage() {
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     placeholder="Search products... or scan barcode"
-                                    className="pl-8 sm:w-auto"
+                                    className="pl-8 w-full sm:w-auto"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
@@ -626,7 +626,7 @@ export default function POSPage() {
                             <div className='flex items-center gap-2 w-full sm:w-auto'>
                                 <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
                                     <SelectTrigger className="w-auto flex-1">
-                                        <SelectValue placeholder="Material Filter" />
+                                        <SelectValue placeholder="Material" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {uniqueMaterials.map(material => (
@@ -635,7 +635,6 @@ export default function POSPage() {
                                     </SelectContent>
                                 </Select>
                                 <div className="flex items-center space-x-2 sm:space-x-4">
-                                    <Label className="text-sm font-medium shrink-0 hidden sm:block">Search By:</Label>
                                     <RadioGroup
                                         value={searchBy}
                                         onValueChange={setSearchBy}
@@ -643,7 +642,7 @@ export default function POSPage() {
                                     >
                                         <div className="flex items-center space-x-1">
                                             <RadioGroupItem value="name" id="name" />
-                                            <Label htmlFor="name" className="text-sm">Name</Label>
+                                            <Label htmlFor="name" className="text-sm">Name/Code</Label>
                                         </div>
                                         <div className="flex items-center space-x-1">
                                             <RadioGroupItem value="mrp" id="mrp" />
@@ -875,5 +874,3 @@ export default function POSPage() {
     </>
   );
 }
-
-    

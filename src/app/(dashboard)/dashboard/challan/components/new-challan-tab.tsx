@@ -142,6 +142,7 @@ export function NewChallanTab() {
   const [customerGstin, setCustomerGstin] = useState('');
   const [paymentMode, setPaymentMode] = useState('cash');
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchBy, setSearchBy] = useState('name');
   const [selectedMaterial, setSelectedMaterial] = useState('All');
   const [invoiceNumber, setInvoiceNumber] = useState('');
   
@@ -353,7 +354,13 @@ export function NewChallanTab() {
   const filteredProducts = products.filter((product) => {
     const materialFilter = selectedMaterial === 'All' || product.material === selectedMaterial;
     if (!materialFilter) return false;
-    return product.name.toLowerCase().includes(searchTerm.toLowerCase()) || product.sku?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    if (searchBy === 'name') {
+      return product.name.toLowerCase().includes(searchTerm.toLowerCase()) || product.sku?.toLowerCase().includes(searchTerm.toLowerCase());
+    } else if (searchBy === 'mrp') {
+      return product.price.toString().includes(searchTerm);
+    }
+    return false;
   });
 
   const clearSale = () => {
@@ -556,26 +563,45 @@ export function NewChallanTab() {
                                 </div>
                             </div>
                         </div>
+                        
                         <div className="flex flex-col sm:flex-row items-center gap-2 pt-2">
-                           <div className="relative flex-grow w-full sm:w-auto">
+                           <div className="relative flex-grow w-full">
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
-                                    placeholder="Search products by name or code..."
-                                    className="pl-8 sm:w-64"
+                                    placeholder="Search products... or scan barcode"
+                                    className="pl-8 w-full sm:w-auto"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
-                            <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
-                                <SelectTrigger className="w-full sm:w-auto">
-                                    <SelectValue placeholder="Filter material" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {uniqueMaterials.map(material => (
-                                        <SelectItem key={material} value={material}>{material}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <div className='flex items-center gap-2 w-full sm:w-auto'>
+                                <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
+                                    <SelectTrigger className="w-auto flex-1">
+                                        <SelectValue placeholder="Material" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {uniqueMaterials.map(material => (
+                                            <SelectItem key={material} value={material}>{material}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <div className="flex items-center space-x-2 sm:space-x-4">
+                                    <RadioGroup
+                                        value={searchBy}
+                                        onValueChange={setSearchBy}
+                                        className="flex items-center space-x-2"
+                                    >
+                                        <div className="flex items-center space-x-1">
+                                            <RadioGroupItem value="name" id="name" />
+                                            <Label htmlFor="name" className="text-sm">Name/Code</Label>
+                                        </div>
+                                        <div className="flex items-center space-x-1">
+                                            <RadioGroupItem value="mrp" id="mrp" />
+                                            <Label htmlFor="mrp" className="text-sm">MRP</Label>
+                                        </div>
+                                    </RadioGroup>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </CardHeader>
