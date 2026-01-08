@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo } from 'react';
@@ -84,44 +85,11 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
     } = sale;
 
     const amountInWords = numberToWords(total);
-    
-    const { totalTaxableValue, taxBreakdown } = useMemo(() => {
-        const breakdown: { [rate: number]: { taxable: number; cgst: number; sgst: number; igst: number } } = {};
-        let totalTaxable = 0;
 
-        items.forEach(item => {
-            const itemTotalMrp = item.price * item.quantity;
-            const discountAmount = itemTotalMrp * (item.discount / 100);
-            const finalPrice = itemTotalMrp - discountAmount;
-            
-            const gstRate = item.gst || 0;
-            const taxableValue = finalPrice / (1 + gstRate / 100);
-            const taxAmount = finalPrice - taxableValue;
-
-            totalTaxable += taxableValue;
-
-            if (!breakdown[gstRate]) {
-                breakdown[gstRate] = { taxable: 0, cgst: 0, sgst: 0, igst: 0 };
-            }
-            
-            breakdown[gstRate].taxable += taxableValue;
-            
-            if (igst > 0) { // Inter-state
-                 breakdown[gstRate].igst += taxAmount;
-            } else { // Intra-state
-                 breakdown[gstRate].cgst += taxAmount / 2;
-                 breakdown[gstRate].sgst += taxAmount / 2;
-            }
-        });
-        
-        return {
-            totalTaxableValue: totalTaxable,
-            taxBreakdown: Object.entries(breakdown).map(([rate, values]) => ({
-                rate: Number(rate),
-                ...values,
-            })),
-        };
-    }, [items, cgst, sgst, igst]);
+    const taxRateForDisplay = items.length > 0 ? (items[0].gst || 0) : 0;
+    const igstRate = taxRateForDisplay;
+    const cgstRate = taxRateForDisplay / 2;
+    const sgstRate = taxRateForDisplay / 2;
 
     return (
         <div className="bg-white text-black p-8 font-sans w-full min-h-full" id="invoice-print">
@@ -155,7 +123,15 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
                             )}
                             {customer.phone && <p className="text-sm text-gray-600">Phone: {customer.phone}</p>}
                             {customer.gstin && <p className="text-sm text-gray-600">GSTIN: {customer.gstin}</p>}
-                            {sale.paymentMode && <p className="text-sm text-gray-600 mt-1"><strong>Payment Mode:</strong> {sale.paymentMode}</p>}
+                             {sale.paymentMode && sale.paymentMode !== 'both' && <p className="text-sm text-gray-600 mt-1"><strong>Payment Mode:</strong> <span className="capitalize">{sale.paymentMode}</span></p>}
+                            {sale.paymentMode === 'both' && sale.paymentDetails && (
+                                <div className="text-sm text-gray-600 mt-1 text-right">
+                                    <p className="font-bold">Payment Details:</p>
+                                    {sale.paymentDetails.cash && sale.paymentDetails.cash > 0 && <p>Cash: ₹{sale.paymentDetails.cash.toFixed(2)}</p>}
+                                    {sale.paymentDetails.card && sale.paymentDetails.card > 0 && <p>Card: ₹{sale.paymentDetails.card.toFixed(2)}</p>}
+                                    {sale.paymentDetails.upi && sale.paymentDetails.upi > 0 && <p>UPI: ₹{sale.paymentDetails.upi.toFixed(2)}</p>}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </header>
@@ -216,43 +192,9 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
                 </section>
                 
                  <section className="mt-8 flex justify-between items-start">
-                     <div className='w-1/2'>
-                         <p className="font-bold text-sm">Tax Summary:</p>
-                         <table className="w-full text-xs mt-1">
-                             <thead>
-                                 <tr className="bg-muted">
-                                     <th className="p-1 text-left font-semibold">Rate</th>
-                                     <th className="p-1 text-right font-semibold">Taxable</th>
-                                     {igst > 0 ? (
-                                         <th className="p-1 text-right font-semibold">IGST</th>
-                                     ) : (
-                                        <>
-                                         <th className="p-1 text-right font-semibold">CGST</th>
-                                         <th className="p-1 text-right font-semibold">SGST</th>
-                                        </>
-                                     )}
-                                     <th className="p-1 text-right font-semibold">Total Tax</th>
-                                 </tr>
-                             </thead>
-                             <tbody>
-                                 {taxBreakdown.map(({ rate, taxable, cgst, sgst, igst }) => (
-                                     <tr key={rate} className="border-b">
-                                         <td className="p-1 text-left">{rate}%</td>
-                                         <td className="p-1 text-right">₹{taxable.toFixed(2)}</td>
-                                         {igst > 0 ? (
-                                             <td className="p-1 text-right">₹{igst.toFixed(2)}</td>
-                                         ) : (
-                                            <>
-                                             <td className="p-1 text-right">₹{cgst.toFixed(2)}</td>
-                                             <td className="p-1 text-right">₹{sgst.toFixed(2)}</td>
-                                            </>
-                                         )}
-                                         <td className="p-1 text-right">₹{(cgst + sgst + igst).toFixed(2)}</td>
-                                     </tr>
-                                 ))}
-                             </tbody>
-                         </table>
-                     </div>
+                    <div className="w-1/2">
+                         {/* Tax summary can go here if needed in future */}
+                    </div>
 
                     <div className="w-full sm:w-2/3 md:w-1/2 max-w-sm ml-auto space-y-4">
                          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
