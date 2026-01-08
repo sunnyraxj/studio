@@ -623,20 +623,20 @@ export default function POSPage() {
                         </div>
                         
                         <div className="flex flex-col sm:flex-row items-center gap-2 pt-2">
-                           <div className="relative flex-grow w-full flex items-center gap-2">
+                           <div className="relative flex-grow w-full">
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     placeholder="Search products... or scan barcode"
-                                    className="pl-8 flex-grow"
+                                    className="pl-8 w-full sm:w-auto"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
-                                <Button variant="outline" size="icon" onClick={() => setIsScannerOpen(true)}>
-                                  <Camera className="h-4 w-4" />
-                                  <span className="sr-only">Scan with camera</span>
-                                </Button>
                             </div>
-                            <div className='flex items-center gap-2 w-full sm:w-auto'>
+                             <div className='flex items-center gap-2 w-full sm:w-auto'>
+                                <Button variant="outline" className="w-full sm:w-auto" onClick={() => setIsScannerOpen(true)}>
+                                  <Camera className="h-4 w-4 sm:mr-2" />
+                                  <span className="hidden sm:inline">Scan from Phone</span>
+                                </Button>
                                 <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
                                     <SelectTrigger className="w-auto flex-1">
                                         <SelectValue placeholder="Material Filter" />
