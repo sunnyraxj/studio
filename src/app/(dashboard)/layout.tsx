@@ -29,7 +29,6 @@ import {
 import {
     Sidebar,
     SidebarProvider,
-    SidebarTrigger,
     SidebarContent,
     SidebarHeader,
     SidebarMenu,
@@ -48,8 +47,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/dialog';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -123,7 +122,7 @@ function AppSidebar({ shopName, isExpired }: { shopName: string, isExpired: bool
   };
 
   return (
-    <Sidebar className="hidden md:flex">
+    <Sidebar onMouseEnter={() => {}} onMouseLeave={() => {}} className="hidden md:flex">
         <SidebarContent>
             <SidebarHeader>
                 <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
