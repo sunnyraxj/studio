@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Building, Shield, Gem, Rocket, Eye, LogIn } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -39,6 +40,7 @@ const roles = [
 export default function RoleSelectionPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const userDocRef = useMemoFirebase(() => {
@@ -46,7 +48,18 @@ export default function RoleSelectionPage() {
     return doc(firestore, `users/${user.uid}`);
   }, [user, firestore]);
 
-  const { data: userData } = useDoc<UserProfile>(userDocRef);
+  const { data: userData, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
+  
+  useEffect(() => {
+    if (!isUserLoading && !isProfileLoading && userData) {
+      if (userData.role === 'admin') {
+        router.push('/admin');
+      } else if (userData.subscriptionStatus === 'active') {
+        router.push('/dashboard');
+      }
+    }
+  }, [user, userData, isUserLoading, isProfileLoading, router]);
+
 
   const getBadge = (roleId: string) => {
     if (isUserLoading) {
@@ -64,6 +77,14 @@ export default function RoleSelectionPage() {
   };
 
   const isSubscribed = userData?.subscriptionStatus === 'active' || userData?.role === 'admin';
+  
+  if (isUserLoading || isProfileLoading || (userData?.role === 'admin') || (userData?.subscriptionStatus === 'active')) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-screen bg-background">
+            <p>Loading...</p>
+        </div>
+      )
+  }
 
 
   return (
