@@ -110,32 +110,28 @@
 }
 
 @media print {
-  body {
-    background-color: white;
+  body * {
+    visibility: hidden;
   }
-  .print-hidden {
-    display: none;
-  }
-  .print-block {
-    display: block;
+  .label-print-container, .label-print-container * {
+    visibility: visible;
   }
   .label-print-container {
-      width: 2.5in;
-      height: 1.5in;
-      position: absolute;
-      top: 0;
-      left: 0;
-      overflow: hidden;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 2.5in;
+    height: 1.5in;
+    box-sizing: border-box;
+    overflow: hidden;
   }
-
+  
   @page {
     size: 2.5in 1.5in;
     margin: 0 !important;
   }
-  
+
   html, body {
-    width: 2.5in;
-    height: 1.5in;
     margin: 0;
     padding: 0;
     -webkit-print-color-adjust: exact;

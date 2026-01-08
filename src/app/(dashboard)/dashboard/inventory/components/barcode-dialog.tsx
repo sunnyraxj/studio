@@ -41,9 +41,8 @@ export const BarcodeDialog: React.FC<BarcodeDialogProps> = ({ isOpen, onOpenChan
 
                 newWindow.document.write(`<style>${styles}</style>`);
                 newWindow.document.write('</head><body>');
-                newWindow.document.write('<div class="label-print-container">');
                 newWindow.document.write(printableContent);
-                newWindow.document.write('</div></body></html>');
+                newWindow.document.write('</body></html>');
                 newWindow.document.close();
                 newWindow.focus();
                 setTimeout(() => {
@@ -67,7 +66,9 @@ export const BarcodeDialog: React.FC<BarcodeDialogProps> = ({ isOpen, onOpenChan
                 </DialogHeader>
                 <div className="py-4 flex justify-center">
                     <div ref={labelRef}>
-                        <BarcodeLabel item={item} shopName={shopName} />
+                        <div className="label-print-container">
+                            <BarcodeLabel item={item} shopName={shopName} />
+                        </div>
                     </div>
                 </div>
                 <DialogFooter>
