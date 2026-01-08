@@ -7,7 +7,6 @@ import {
   Bell,
   CircleUser,
   Menu,
-  Package2,
   Home,
   Users,
   LineChart,
@@ -127,7 +126,6 @@ function AppSidebar({ shopName, isExpired }: { shopName: string, isExpired: bool
             <SidebarHeader>
                 <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
                     <Link href="/" className="flex items-center gap-2 font-semibold">
-                        <Package2 className="h-6 w-6" />
                         <span className="group-data-[collapsible=icon]:hidden">{shopName}</span>
                     </Link>
                 </div>
@@ -239,7 +237,6 @@ const MobileSidebar = ({ shopName, isExpired }: { shopName: string; isExpired: b
                  </SheetHeader>
                 <nav className="grid gap-2 text-lg font-medium">
                     <Link href="#" className="flex items-center gap-2 text-lg font-semibold mb-4">
-                        <Package2 className="h-6 w-6" />
                         <span className="truncate">{shopName}</span>
                     </Link>
                     {navLinks.map((link) => (
