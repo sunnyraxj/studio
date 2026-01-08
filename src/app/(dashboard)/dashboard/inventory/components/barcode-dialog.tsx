@@ -23,11 +23,27 @@ export const BarcodeDialog: React.FC<BarcodeDialogProps> = ({ isOpen, onOpenChan
         if (printContent) {
             const newWindow = window.open('', '_blank', 'width=400,height=300');
             if (newWindow) {
+                const printableContent = printContent.innerHTML;
+                
                 newWindow.document.write('<html><head><title>Print Barcode</title>');
-                newWindow.document.write('<style>body { margin: 0; padding: 0; } @page { size: auto; margin: 5mm; }</style>');
+                const styles = Array.from(document.styleSheets)
+                    .map(styleSheet => {
+                        try {
+                            return Array.from(styleSheet.cssRules)
+                                .map(rule => rule.cssText)
+                                .join('');
+                        } catch (e) {
+                            console.log('Access to stylesheet %s is denied. Skipping.', styleSheet.href);
+                            return '';
+                        }
+                    })
+                    .join('');
+
+                newWindow.document.write(`<style>${styles}</style>`);
                 newWindow.document.write('</head><body>');
-                newWindow.document.write(printContent.innerHTML);
-                newWindow.document.write('</body></html>');
+                newWindow.document.write('<div class="label-print-container">');
+                newWindow.document.write(printableContent);
+                newWindow.document.write('</div></body></html>');
                 newWindow.document.close();
                 newWindow.focus();
                 setTimeout(() => {

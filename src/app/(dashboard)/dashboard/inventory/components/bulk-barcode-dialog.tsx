@@ -24,13 +24,30 @@ export const BulkBarcodeDialog: React.FC<BulkBarcodeDialogProps> = ({ isOpen, on
         if (printContent) {
             const newWindow = window.open('', '_blank', 'width=800,height=600');
             if (newWindow) {
+                
+                const printableContent = printContent.innerHTML;
+
                 newWindow.document.write('<html><head><title>Print Barcodes</title>');
-                newWindow.document.write('<style>body { margin: 0; padding: 0; } @page { size: auto; margin: 0; } .label-container { display: flex; flex-wrap: wrap; gap: 0; } .barcode-label { page-break-inside: avoid; } </style>');
+                const styles = Array.from(document.styleSheets)
+                    .map(styleSheet => {
+                        try {
+                            return Array.from(styleSheet.cssRules)
+                                .map(rule => rule.cssText)
+                                .join('');
+                        } catch (e) {
+                            console.log('Access to stylesheet %s is denied. Skipping.', styleSheet.href);
+                            return '';
+                        }
+                    })
+                    .join('');
+
+                newWindow.document.write(`<style>${styles}</style>`);
                 newWindow.document.write('</head><body>');
-                newWindow.document.write(printContent.innerHTML);
+                newWindow.document.write(printableContent);
                 newWindow.document.write('</body></html>');
                 newWindow.document.close();
                 newWindow.focus();
+                
                 setTimeout(() => {
                     newWindow.print();
                     newWindow.close();
@@ -52,9 +69,9 @@ export const BulkBarcodeDialog: React.FC<BulkBarcodeDialogProps> = ({ isOpen, on
                 </DialogHeader>
                 <ScrollArea className="max-h-[60vh] border rounded-md p-4">
                    <div ref={printRef}>
-                     <div className="flex flex-wrap gap-2 label-container">
+                     <div className="flex flex-wrap gap-2">
                         {items.map(item => (
-                           <div key={item.id} className="barcode-label">
+                           <div key={item.id} className="label-print-container">
                              <BarcodeLabel item={item} shopName={shopName} />
                            </div>
                         ))}

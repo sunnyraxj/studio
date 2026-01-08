@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -118,7 +119,25 @@
   .print-block {
     display: block;
   }
+  .label-print-container {
+      width: 2.5in;
+      height: 1.5in;
+      position: absolute;
+      top: 0;
+      left: 0;
+      overflow: hidden;
+  }
+
   @page {
-    margin: 1rem;
+    size: 2.5in 1.5in;
+    margin: 0 !important;
+  }
+  
+  html, body {
+    width: 2.5in;
+    height: 1.5in;
+    margin: 0;
+    padding: 0;
+    -webkit-print-color-adjust: exact;
   }
 }
