@@ -25,7 +25,7 @@ export const BulkBarcodeDialog: React.FC<BulkBarcodeDialogProps> = ({ isOpen, on
             const newWindow = window.open('', '_blank', 'width=800,height=600');
             if (newWindow) {
                 newWindow.document.write('<html><head><title>Print Barcodes</title>');
-                newWindow.document.write('<style>body { margin: 0; padding: 0; } @page { size: auto; margin: 5mm; } .label-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(2.5in, 1fr)); gap: 4px; } .barcode-label { page-break-inside: avoid; } </style>');
+                newWindow.document.write('<style>body { margin: 0; padding: 0; } @page { size: auto; margin: 0; } .label-container { display: flex; flex-wrap: wrap; gap: 0; } .barcode-label { page-break-inside: avoid; } </style>');
                 newWindow.document.write('</head><body>');
                 newWindow.document.write(printContent.innerHTML);
                 newWindow.document.write('</body></html>');
@@ -52,9 +52,9 @@ export const BulkBarcodeDialog: React.FC<BulkBarcodeDialogProps> = ({ isOpen, on
                 </DialogHeader>
                 <ScrollArea className="max-h-[60vh] border rounded-md p-4">
                    <div ref={printRef}>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 label-grid">
+                     <div className="flex flex-wrap gap-2 label-container">
                         {items.map(item => (
-                           <div key={item.id} className="flex justify-center items-center barcode-label">
+                           <div key={item.id} className="barcode-label">
                              <BarcodeLabel item={item} shopName={shopName} />
                            </div>
                         ))}
