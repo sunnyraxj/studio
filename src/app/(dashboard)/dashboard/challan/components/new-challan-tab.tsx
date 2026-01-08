@@ -22,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { PlusCircle, Search, Trash2, MinusCircle, ChevronDown, IndianRupee } from 'lucide-react';
+import { PlusCircle, Search, Trash2, MinusCircle, ChevronDown, IndianRupee, Loader2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import {
   RadioGroup,
@@ -160,6 +160,7 @@ export function NewChallanTab() {
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
   const [lastSaleData, setLastSaleData] = useState<any>(null);
   const invoiceRef = useRef(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handlePrint = () => {
     const printContent = invoiceRef.current;
@@ -312,7 +313,7 @@ export function NewChallanTab() {
   };
   
   const { subtotal, cgst, sgst, igst, total } = useMemo(() => {
-    const isIntraState = customerState?.trim().toLowerCase() === shopSettings?.companyState?.trim().toLowerCase();
+    const isIntraState = customerState?.trim().toLowerCase() === "assam";
 
     let subtotal = 0;
     let cgst = 0;
@@ -323,10 +324,11 @@ export function NewChallanTab() {
         const itemTotalMrp = item.product.price * item.quantity;
         const discountAmount = itemTotalMrp * (item.discount / 100);
         const taxableValue = itemTotalMrp - discountAmount;
-        subtotal += taxableValue;
-
         const gstRate = (item.product.gst || 0) / 100;
-        const itemGstAmount = taxableValue * gstRate;
+        const basePrice = taxableValue / (1 + gstRate);
+        const itemGstAmount = taxableValue - basePrice;
+        
+        subtotal += basePrice;
 
         if (isIntraState) {
             cgst += itemGstAmount / 2;
@@ -339,7 +341,7 @@ export function NewChallanTab() {
     const total = subtotal + cgst + sgst + igst;
     return { subtotal, cgst, sgst, igst, total };
 
-  }, [cart, customerState, shopSettings]);
+  }, [cart, customerState]);
   
   const totalPaid = (paymentDetails.cash || 0) + (paymentDetails.card || 0) + (paymentDetails.upi || 0);
   const remainingBalance = total - totalPaid;
@@ -404,6 +406,8 @@ export function NewChallanTab() {
         hotToast.error('The total paid amount does not match the total sale amount.');
         return;
     }
+    
+    setIsGenerating(true);
 
     const saleData = {
       date: new Date().toISOString(),
@@ -439,12 +443,16 @@ export function NewChallanTab() {
     setLastSaleData(saleData);
 
     if (isDemoMode) {
-      showPrintToast();
+      setTimeout(() => {
+        showPrintToast();
+        setIsGenerating(false);
+      }, 1000);
       return;
     }
     
     if (!firestore || !shopId) {
       hotToast.error('Cannot find your shop. Please ensure you are subscribed.');
+      setIsGenerating(false);
       return;
     }
 
@@ -454,6 +462,8 @@ export function NewChallanTab() {
       showPrintToast();
     } catch(error: any) {
       hotToast.error(`Error completing sale: ${error.message}`);
+    } finally {
+        setIsGenerating(false);
     }
   };
 
@@ -745,7 +755,14 @@ export function NewChallanTab() {
                             <div className="flex justify-between font-semibold text-lg"><span>Total</span><span>₹{total.toFixed(2)}</span></div>
                         </div>
                         <div className='w-full space-y-2'>
-                            <Button className="w-full" disabled={cart.length === 0 || (paymentMode === 'both' && remainingBalance.toFixed(2) !== '0.00')} onClick={generateChallan}>Generate Challan</Button>
+                            <Button className="w-full" disabled={cart.length === 0 || (paymentMode === 'both' && remainingBalance.toFixed(2) !== '0.00') || isGenerating} onClick={generateChallan}>
+                                {isGenerating ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Generating...
+                                    </>
+                                ) : 'Generate Challan'}
+                            </Button>
                             <Button variant="destructive" className="w-full" onClick={clearSale} disabled={cart.length === 0}><Trash2 className="mr-2 h-4 w-4" /> Clear</Button>
                         </div>
                     </div>
@@ -772,5 +789,3 @@ export function NewChallanTab() {
     </>
   );
 }
-
-    
