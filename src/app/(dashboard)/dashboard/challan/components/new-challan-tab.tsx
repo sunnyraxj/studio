@@ -313,40 +313,33 @@ export function NewChallanTab() {
   };
   
   const { subtotal, cgst, sgst, igst, total } = useMemo(() => {
-    const isIntraState = customerState?.trim().toLowerCase() === "assam";
-
     let subtotal = 0;
     let cgst = 0;
     let sgst = 0;
     let igst = 0;
-
+    const isIntraState = customerState?.trim().toLowerCase() === "assam";
+    
     cart.forEach(item => {
         const itemMrp = item.product.price;
         const discountAmount = itemMrp * (item.discount / 100);
         const priceAfterDiscount = itemMrp - discountAmount;
-        
-        const gstRate = (item.product.gst || 0) / 100;
-        const taxableValue = priceAfterDiscount / (1 + gstRate);
-        const itemGstAmount = priceAfterDiscount - taxableValue;
+        const itemSubtotal = priceAfterDiscount * item.quantity;
 
-        subtotal += taxableValue * item.quantity;
-        
+        subtotal += itemSubtotal;
+        const gstRate = (item.product.gst || 0) / 100;
+        const itemGstAmount = itemSubtotal * gstRate;
+
         if (isIntraState) {
-            cgst += (itemGstAmount / 2) * item.quantity;
-            sgst += (itemGstAmount / 2) * item.quantity;
+            cgst += (itemGstAmount / 2);
+            sgst += (itemGstAmount / 2);
         } else {
-            igst += itemGstAmount * item.quantity;
+            igst += itemGstAmount;
         }
     });
+
+    const total = subtotal + cgst + sgst + igst;
     
-    const total = cart.reduce((acc, item) => {
-        const itemTotal = item.product.price * item.quantity;
-        const discountAmount = itemTotal * (item.discount / 100);
-        return acc + (itemTotal - discountAmount);
-    }, 0);
-
     return { subtotal, cgst, sgst, igst, total };
-
   }, [cart, customerState]);
   
   const totalPaid = (paymentDetails.cash || 0) + (paymentDetails.card || 0) + (paymentDetails.upi || 0);
@@ -558,7 +551,7 @@ export function NewChallanTab() {
                                 </div>
                             </div>
                         </div>
-                        <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                        <div className="flex flex-col sm:flex-row items-center gap-2 pt-2">
                            <div className="relative flex-grow">
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input

@@ -321,40 +321,33 @@ export default function POSPage() {
   };
   
   const { subtotal, cgst, sgst, igst, total } = useMemo(() => {
-    const isIntraState = customerState?.trim().toLowerCase() === "assam";
-
     let subtotal = 0;
     let cgst = 0;
     let sgst = 0;
     let igst = 0;
-
+    const isIntraState = customerState?.trim().toLowerCase() === "assam";
+    
     cart.forEach(item => {
         const itemMrp = item.product.price;
         const discountAmount = itemMrp * (item.discount / 100);
         const priceAfterDiscount = itemMrp - discountAmount;
-        
-        const gstRate = (item.product.gst || 0) / 100;
-        const taxableValue = priceAfterDiscount / (1 + gstRate);
-        const itemGstAmount = priceAfterDiscount - taxableValue;
+        const itemSubtotal = priceAfterDiscount * item.quantity;
 
-        subtotal += taxableValue * item.quantity;
-        
+        subtotal += itemSubtotal;
+        const gstRate = (item.product.gst || 0) / 100;
+        const itemGstAmount = itemSubtotal * gstRate;
+
         if (isIntraState) {
-            cgst += (itemGstAmount / 2) * item.quantity;
-            sgst += (itemGstAmount / 2) * item.quantity;
+            cgst += (itemGstAmount / 2);
+            sgst += (itemGstAmount / 2);
         } else {
-            igst += itemGstAmount * item.quantity;
+            igst += itemGstAmount;
         }
     });
+
+    const total = subtotal + cgst + sgst + igst;
     
-    const total = cart.reduce((acc, item) => {
-        const itemTotal = item.product.price * item.quantity;
-        const discountAmount = itemTotal * (item.discount / 100);
-        return acc + (itemTotal - discountAmount);
-    }, 0);
-
     return { subtotal, cgst, sgst, igst, total };
-
   }, [cart, customerState]);
 
 
@@ -580,8 +573,8 @@ export default function POSPage() {
                             </div>
                         </div>
                         
-                        <div className="flex flex-col md:flex-row md:items-center gap-4 pt-2">
-                            <div className="relative flex-grow">
+                        <div className="flex flex-col sm:flex-row items-center gap-2 pt-2">
+                           <div className="relative flex-grow">
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     placeholder="Search products..."
@@ -590,34 +583,32 @@ export default function POSPage() {
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
-                             <div className="flex items-center gap-4">
-                                <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
-                                    <SelectTrigger className="w-full sm:w-[150px]">
-                                        <SelectValue placeholder="Material Filter" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {uniqueMaterials.map(material => (
-                                            <SelectItem key={material} value={material}>{material}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <div className="flex items-center space-x-4">
-                                    <Label className="text-sm font-medium shrink-0">Search By:</Label>
-                                    <RadioGroup
-                                        value={searchBy}
-                                        onValueChange={setSearchBy}
-                                        className="flex items-center space-x-2"
-                                    >
-                                        <div className="flex items-center space-x-2">
-                                            <RadioGroupItem value="name" id="name" />
-                                            <Label htmlFor="name" className="text-sm">Name/Code</Label>
-                                        </div>
-                                        <div className="flex items-center space-x-2">
-                                            <RadioGroupItem value="mrp" id="mrp" />
-                                            <Label htmlFor="mrp" className="text-sm">MRP</Label>
-                                        </div>
-                                    </RadioGroup>
-                                </div>
+                            <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
+                                <SelectTrigger className="w-full sm:w-[150px]">
+                                    <SelectValue placeholder="Material Filter" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {uniqueMaterials.map(material => (
+                                        <SelectItem key={material} value={material}>{material}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <div className="flex items-center space-x-4">
+                                <Label className="text-sm font-medium shrink-0">Search By:</Label>
+                                <RadioGroup
+                                    value={searchBy}
+                                    onValueChange={setSearchBy}
+                                    className="flex items-center space-x-2"
+                                >
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="name" id="name" />
+                                        <Label htmlFor="name" className="text-sm">Name/Code</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="mrp" id="mrp" />
+                                        <Label htmlFor="mrp" className="text-sm">MRP</Label>
+                                    </div>
+                                </RadioGroup>
                             </div>
                         </div>
                     </div>
