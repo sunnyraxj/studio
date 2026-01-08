@@ -548,7 +548,7 @@ export function NewChallanTab() {
                                 </Button>
                             </div>
                         </div>
-                        <div className="flex gap-2 pt-2">
+                        <div className="flex flex-col sm:flex-row gap-2 pt-2">
                            <div className="relative flex-grow">
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
@@ -559,7 +559,7 @@ export function NewChallanTab() {
                                 />
                             </div>
                             <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
-                                <SelectTrigger className="w-[180px]">
+                                <SelectTrigger className="w-full sm:w-[180px]">
                                     <SelectValue placeholder="Filter material" />
                                 </SelectTrigger>
                                 <SelectContent>

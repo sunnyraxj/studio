@@ -336,45 +336,47 @@ export function AllSalesTab({ isDemoMode, demoSales, setDemoSales }: AllSalesTab
     <>
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-start">
+        <div className="flex flex-col md:flex-row justify-between items-start gap-4">
           <div>
             <CardTitle>All Sales</CardTitle>
             <CardDescription>A complete list of all your transactions.</CardDescription>
           </div>
-           <div className="flex items-center gap-4">
-             <div className="relative">
+           <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
+             <div className="relative w-full sm:w-auto">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                     placeholder="Search by customer or invoice..."
-                    className="pl-8 w-64"
+                    className="pl-8 w-full sm:w-64"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
             </div>
-            <div className="flex items-end gap-2 p-2 border rounded-lg bg-muted/50">
-                <div className="grid gap-1.5">
+            <div className="flex flex-col sm:flex-row items-end gap-2 p-2 border rounded-lg bg-muted/50 w-full sm:w-auto">
+                <div className="grid gap-1.5 w-full sm:w-auto">
                   <Label className="text-xs">Start Date</Label>
                   <div className="flex gap-1">
-                      <Input placeholder="DD" value={startDay} onChange={e => setStartDay(e.target.value)} className="w-12 h-8" />
-                      <Input placeholder="MM" value={startMonth} onChange={e => setStartMonth(e.target.value)} className="w-12 h-8" />
-                      <Input placeholder="YYYY" value={startYear} onChange={e => setStartYear(e.target.value)} className="w-20 h-8" />
+                      <Input placeholder="DD" value={startDay} onChange={e => setStartDay(e.target.value)} className="w-full h-8" />
+                      <Input placeholder="MM" value={startMonth} onChange={e => setStartMonth(e.target.value)} className="w-full h-8" />
+                      <Input placeholder="YYYY" value={startYear} onChange={e => setStartYear(e.target.value)} className="w-full h-8" />
                   </div>
                 </div>
-                <div className="grid gap-1.5">
+                <div className="grid gap-1.5 w-full sm:w-auto">
                   <Label className="text-xs">End Date</Label>
                    <div className="flex gap-1">
-                      <Input placeholder="DD" value={endDay} onChange={e => setEndDay(e.target.value)} className="w-12 h-8" />
-                      <Input placeholder="MM" value={endMonth} onChange={e => setEndMonth(e.target.value)} className="w-12 h-8" />
-                      <Input placeholder="YYYY" value={endYear} onChange={e => setEndYear(e.target.value)} className="w-20 h-8" />
+                      <Input placeholder="DD" value={endDay} onChange={e => setEndDay(e.target.value)} className="w-full h-8" />
+                      <Input placeholder="MM" value={endMonth} onChange={e => setEndMonth(e.target.value)} className="w-full h-8" />
+                      <Input placeholder="YYYY" value={endYear} onChange={e => setEndYear(e.target.value)} className="w-full h-8" />
                   </div>
                 </div>
-                <Button onClick={handleFilter} size="sm">Filter</Button>
-                {isAnyFilterApplied && (
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleClearFilter}>
-                      <X className="h-4 w-4" />
-                      <span className="sr-only">Clear Filter</span>
-                  </Button>
-                )}
+                <div className="flex w-full sm:w-auto gap-2">
+                    <Button onClick={handleFilter} size="sm" className="w-full">Filter</Button>
+                    {isAnyFilterApplied && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleClearFilter}>
+                          <X className="h-4 w-4" />
+                          <span className="sr-only">Clear Filter</span>
+                      </Button>
+                    )}
+                </div>
             </div>
           </div>
         </div>

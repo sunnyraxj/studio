@@ -36,6 +36,9 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   useSidebar,
+  Sheet,
+  SheetContent,
+  SheetTrigger
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import {
@@ -245,6 +248,68 @@ function SubscriptionExpiredModal({ open, onRenew }: { open: boolean, onRenew: (
   )
 }
 
+const MobileSidebar = ({ shopName, isExpired }: { shopName: string; isExpired: boolean }) => {
+    const pathname = usePathname();
+    const [open, setOpen] = useState(false);
+    const auth = useAuth();
+    const router = useRouter();
+
+    const handleLogout = () => {
+        if (auth) {
+            auth.signOut();
+        }
+        router.push('/login');
+    };
+
+    useEffect(() => {
+        setOpen(false);
+    }, [pathname]);
+
+    return (
+        <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="shrink-0 md:hidden">
+                    <Menu className="h-5 w-5" />
+                    <span className="sr-only">Toggle navigation menu</span>
+                </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="flex flex-col">
+                <nav className="grid gap-2 text-lg font-medium">
+                    <Link href="#" className="flex items-center gap-2 text-lg font-semibold mb-4">
+                        <Package2 className="h-6 w-6" />
+                        <span className="truncate">{shopName}</span>
+                    </Link>
+                    {navLinks.map((link) => (
+                        <Link
+                            key={link.label}
+                            href={isExpired && link.href !== '/dashboard/subscription' ? '#' : link.href}
+                            className={cn(
+                                "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                                pathname === link.href && "text-primary bg-muted",
+                                isExpired && link.href !== '/dashboard/subscription' && "pointer-events-none opacity-50"
+                            )}
+                        >
+                            <link.icon className="h-4 w-4" />
+                            {link.label}
+                        </Link>
+                    ))}
+                </nav>
+                <div className="mt-auto space-y-2">
+                    <Separator />
+                     <Link href={isExpired ? '#' : "/dashboard/settings"} passHref aria-disabled={isExpired}>
+                         <Button variant="ghost" className="w-full justify-start gap-2" disabled={isExpired}>
+                            <Settings className="h-4 w-4" /> Settings
+                         </Button>
+                     </Link>
+                     <Button variant="ghost" className="w-full justify-start gap-2" onClick={handleLogout}>
+                        <LogOut className="h-4 w-4" /> Logout
+                     </Button>
+                </div>
+            </SheetContent>
+        </Sheet>
+    );
+};
+
 export default function DashboardLayout({
   children,
 }: {
@@ -332,10 +397,13 @@ export default function DashboardLayout({
 
   return (
     <SidebarProvider>
-      <div className="grid min-h-screen w-full" style={{gridTemplateColumns: 'auto 1fr'}}>
-        <AppSidebar shopName={shopName} isExpired={isUIBlocked} />
+      <div className="grid min-h-screen w-full md:grid-cols-[auto_1fr]">
+        <div className="hidden md:block">
+            <AppSidebar shopName={shopName} isExpired={isUIBlocked} />
+        </div>
         <div className="flex flex-col">
-          <header className="flex h-14 items-center justify-between gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+          <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+            <MobileSidebar shopName={shopName} isExpired={isUIBlocked} />
              <div className="w-full flex-1" />
              <Link href="/dashboard/employees">
                 <Button>
