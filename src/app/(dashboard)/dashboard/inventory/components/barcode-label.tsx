@@ -21,7 +21,7 @@ export const BarcodeLabel: React.FC<BarcodeLabelProps> = ({ item, shopName }) =>
             style={{ width: '2.5in', height: '1.5in', boxSizing: 'border-box' }}
         >
             <p className="text-[10px] font-bold uppercase truncate max-w-full">{shopName}</p>
-            <p className="text-xs font-bold truncate max-w-full mb-0.5">{item.name}</p>
+            <p className="text-sm font-bold truncate max-w-full mb-0.5">{item.name}</p>
             <Barcode 
                 value={item.sku}
                 width={1.2}
@@ -40,4 +40,3 @@ export const BarcodeLabel: React.FC<BarcodeLabelProps> = ({ item, shopName }) =>
         </div>
     );
 };
-
