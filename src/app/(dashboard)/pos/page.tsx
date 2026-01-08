@@ -296,11 +296,11 @@ export default function POSPage() {
       }
     };
 
-    document.addEventListener('keydown', handleScan);
+    window.addEventListener('keydown', handleScan);
     
     // Cleanup
     return () => {
-      document.removeEventListener('keydown', handleScan);
+      window.removeEventListener('keydown', handleScan);
     };
   }, [scanBuffer, products]); // Rerun effect if products list changes
 
