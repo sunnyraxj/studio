@@ -68,6 +68,7 @@ import {
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { isAfter } from 'date-fns';
+import { Separator } from '@/components/ui/separator';
 
 const navLinks = [
   {
