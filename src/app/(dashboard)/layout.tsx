@@ -26,6 +26,19 @@ import {
   FileText,
 } from 'lucide-react';
 
+import {
+    Sidebar,
+    SidebarProvider,
+    SidebarTrigger,
+    SidebarContent,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuItem,
+    SidebarMenuButton,
+    SidebarFooter,
+    useSidebar,
+} from '@/components/ui/sidebar'
+
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -36,7 +49,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -110,65 +123,67 @@ function AppSidebar({ shopName, isExpired }: { shopName: string, isExpired: bool
   };
 
   return (
-    <div className="hidden border-r bg-muted/40 md:block">
-      <div className="flex h-full max-h-screen flex-col gap-2">
-        <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-          <Link href="/" className="flex items-center gap-2 font-semibold">
-            <Package2 className="h-6 w-6" />
-            <span className="">{shopName}</span>
-          </Link>
-        </div>
-        <div className="flex-1">
-          <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-          {navLinks.map((link) => (
-              <Link
-                key={link.label}
-                href={isExpired && link.href !== '/dashboard/subscription' ? '#' : link.href}
-                className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-                  pathname === link.href && 'bg-muted text-primary',
-                  isExpired && link.href !== '/dashboard/subscription' && "pointer-events-none opacity-50"
-                )}
-              >
-                <link.icon className="h-4 w-4" />
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-        <div className="mt-auto p-4">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="secondary" className="w-full justify-start">
-                 <CircleUser className="mr-2 h-5 w-5" />
-                 My Account
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>
-                    {user?.email || 'My Account'}
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild disabled={isExpired}>
-                  <Link href={isExpired ? '#' : "/dashboard/settings"}>
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem disabled={isExpired}>
-                  <LifeBuoy className="mr-2 h-4 w-4" />
-                  <span>Support</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Log out</span>
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-    </div>
+    <Sidebar className="hidden md:flex">
+        <SidebarContent>
+            <SidebarHeader>
+                <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6 -ml-4 -mr-4 -mt-2">
+                    <Link href="/" className="flex items-center gap-2 font-semibold">
+                        <Package2 className="h-6 w-6" />
+                        <span className="">{shopName}</span>
+                    </Link>
+                </div>
+            </SidebarHeader>
+
+            <SidebarMenu>
+                {navLinks.map((link) => (
+                    <SidebarMenuItem key={link.label}>
+                        <Link href={isExpired && link.href !== '/dashboard/subscription' ? '#' : link.href} passHref>
+                            <SidebarMenuButton
+                                isActive={pathname === link.href}
+                                disabled={isExpired && link.href !== '/dashboard/subscription'}
+                                tooltip={link.label}
+                            >
+                                <link.icon className="h-4 w-4" />
+                                <span>{link.label}</span>
+                            </SidebarMenuButton>
+                        </Link>
+                    </SidebarMenuItem>
+                ))}
+            </SidebarMenu>
+        </SidebarContent>
+
+        <SidebarFooter>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" className="w-full justify-start">
+                     <CircleUser className="mr-2 h-5 w-5" />
+                     <span className="group-data-[collapsible=icon]:hidden">My Account</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>
+                        {user?.email || 'My Account'}
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild disabled={isExpired}>
+                      <Link href={isExpired ? '#' : "/dashboard/settings"}>
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>Settings</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem disabled={isExpired}>
+                      <LifeBuoy className="mr-2 h-4 w-4" />
+                      <span>Support</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Log out</span>
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </SidebarFooter>
+    </Sidebar>
   );
 }
 
@@ -220,8 +235,8 @@ const MobileSidebar = ({ shopName, isExpired }: { shopName: string; isExpired: b
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col">
                  <SheetHeader>
-                   <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                   <SheetDescription className="sr-only">Main application navigation links.</SheetDescription>
+                   <SheetTitle>Navigation Menu</SheetTitle>
+                   <SheetDescription>Main application navigation links.</SheetDescription>
                  </SheetHeader>
                 <nav className="grid gap-2 text-lg font-medium">
                     <Link href="#" className="flex items-center gap-2 text-lg font-semibold mb-4">
@@ -288,6 +303,8 @@ export default function DashboardLayout({
     if (userData?.subscriptionStatus === 'active' && userData?.subscriptionEndDate) {
         return !isAfter(new Date(userData.subscriptionEndDate), new Date());
     }
+    // If status is not active, treat as expired UI-wise
+    if(userData?.subscriptionStatus && userData.subscriptionStatus !== 'active') return true;
     return false;
   }, [userData]);
 
@@ -345,9 +362,9 @@ export default function DashboardLayout({
   const isUIBlocked = isSubscriptionExpired && pathname !== '/dashboard/subscription';
 
   return (
-    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+    <SidebarProvider>
       <AppSidebar shopName={shopName} isExpired={isUIBlocked} />
-      <div className="flex flex-col">
+      <div className="flex flex-col flex-1">
         <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
             <MobileSidebar shopName={shopName} isExpired={isUIBlocked} />
             <div className="w-full flex-1" />
@@ -365,6 +382,6 @@ export default function DashboardLayout({
             open={isUIBlocked}
             onRenew={() => router.push('/dashboard/subscription')}
         />
-    </div>
+    </SidebarProvider>
   );
 }

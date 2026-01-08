@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -22,7 +21,7 @@ import {
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 const SIDEBAR_WIDTH = "14rem"
-const SIDEBAR_WIDTH_ICON = "3rem"
+const SIDEBAR_WIDTH_ICON = "3.5rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 
 type SidebarContext = {
@@ -53,7 +52,7 @@ const SidebarProvider = React.forwardRef<
 >(
   (
     {
-      defaultOpen = true,
+      defaultOpen = false,
       open: openProp,
       onOpenChange: setOpenProp,
       className,
@@ -159,7 +158,16 @@ const Sidebar = React.forwardRef<
     },
     ref
   ) => {
-    const { open, state } = useSidebar()
+    const { open, state, setOpen } = useSidebar()
+
+    const handleMouseEnter = (event: React.MouseEvent<HTMLDivElement>) => {
+        setOpen(true);
+        onMouseEnter?.(event);
+    }
+    const handleMouseLeave = (event: React.MouseEvent<HTMLDivElement>) => {
+        setOpen(false);
+        onMouseLeave?.(event);
+    }
 
     if (collapsible === "none") {
       return (
@@ -179,6 +187,8 @@ const Sidebar = React.forwardRef<
     return (
       <div
         ref={ref}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
         className={cn(
           "group peer text-foreground transition-all duration-300",
           state === "collapsed" ? "w-[var(--sidebar-width-icon)]" : "w-[var(--sidebar-width)]"
