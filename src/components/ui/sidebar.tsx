@@ -21,7 +21,7 @@ import {
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
-const SIDEBAR_WIDTH = "16rem"
+const SIDEBAR_WIDTH = "14rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 
@@ -159,41 +159,13 @@ const Sidebar = React.forwardRef<
     },
     ref
   ) => {
-    const { setOpen, state } = useSidebar()
-    const openTimer = React.useRef<NodeJS.Timeout | null>(null);
-
-
-    const handleMouseEnter = React.useCallback(
-      (event: React.MouseEvent<HTMLDivElement>) => {
-        onMouseEnter?.(event)
-        if (collapsible === "icon" && state === "collapsed") {
-            openTimer.current = setTimeout(() => {
-                setOpen(true);
-            }, 1000);
-        }
-      },
-      [onMouseEnter, setOpen, state, collapsible]
-    )
-
-    const handleMouseLeave = React.useCallback(
-      (event: React.MouseEvent<HTMLDivElement>) => {
-        onMouseLeave?.(event)
-        if (openTimer.current) {
-            clearTimeout(openTimer.current);
-            openTimer.current = null;
-        }
-        if (collapsible === "icon" && state === "expanded") {
-          setOpen(false)
-        }
-      },
-      [onMouseLeave, setOpen, state, collapsible]
-    )
+    const { open, state } = useSidebar()
 
     if (collapsible === "none") {
       return (
         <div
           className={cn(
-            "flex h-full w-[--sidebar-width] flex-col bg-muted/40 border-r",
+            "flex h-full w-[var(--sidebar-width)] flex-col bg-muted/40 border-r",
             className
           )}
           ref={ref}
@@ -207,8 +179,6 @@ const Sidebar = React.forwardRef<
     return (
       <div
         ref={ref}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
         className={cn(
           "group peer text-foreground transition-all duration-300",
           state === "collapsed" ? "w-[var(--sidebar-width-icon)]" : "w-[var(--sidebar-width)]"

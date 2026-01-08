@@ -47,7 +47,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -399,8 +399,8 @@ export default function DashboardLayout({
   const isUIBlocked = isSubscriptionExpired && pathname !== '/dashboard/subscription';
 
   return (
-    <SidebarProvider>
-      <div className="grid min-h-screen w-full md:grid-cols-[auto_1fr]">
+    <SidebarProvider defaultOpen={true}>
+      <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr]">
         <div className="hidden md:block">
             <AppSidebar shopName={shopName} isExpired={isUIBlocked} />
         </div>
