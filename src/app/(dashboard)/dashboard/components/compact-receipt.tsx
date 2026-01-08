@@ -61,7 +61,7 @@ export const CompactReceipt: React.FC<CompactReceiptProps> = ({ sale, settings }
     const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
     return (
-        <div className="bg-white text-black font-mono text-[10px] w-full p-2">
+        <div className="bg-white text-black font-mono text-[10px] w-full px-2 py-4">
             <header className="text-center space-y-1 mb-2">
                 <h1 className="text-base font-bold">{settings.companyName}</h1>
                 <p className="text-[9px] leading-tight">{settings.companyAddress}</p>
@@ -76,7 +76,21 @@ export const CompactReceipt: React.FC<CompactReceiptProps> = ({ sale, settings }
                     <span>BILL NO: {invoiceNumber}</span>
                     <span>DATE: {format(new Date(date), 'dd/MM/yy HH:mm')}</span>
                 </div>
-                <p>CUSTOMER: {customer.name}</p>
+                 <div className="flex justify-between">
+                    <span>CUSTOMER: {customer.name}</span>
+                    {paymentMode !== 'both' && (
+                        <span>
+                            <span className="uppercase">{paymentMode}</span>: ₹{total.toFixed(2)}
+                        </span>
+                    )}
+                </div>
+                {paymentMode === 'both' && paymentDetails && (
+                    <div className="pt-1">
+                        {paymentDetails.cash && paymentDetails.cash > 0 && <div className="flex justify-between"><span>Cash Paid:</span><span>₹{paymentDetails.cash.toFixed(2)}</span></div>}
+                        {paymentDetails.card && paymentDetails.card > 0 && <div className="flex justify-between"><span>Card Paid:</span><span>₹{paymentDetails.card.toFixed(2)}</span></div>}
+                        {paymentDetails.upi && paymentDetails.upi > 0 && <div className="flex justify-between"><span>UPI Paid:</span><span>₹{paymentDetails.upi.toFixed(2)}</span></div>}
+                    </div>
+                )}
             </div>
             
             <main>
@@ -117,22 +131,6 @@ export const CompactReceipt: React.FC<CompactReceiptProps> = ({ sale, settings }
                     <span>GRAND TOTAL</span>
                     <span>₹{total.toFixed(2)}</span>
                 </div>
-            </div>
-
-            <Separator className="my-0.5 border-dashed" />
-
-            <div className="text-[9px] space-y-0.5">
-                <div className="flex justify-between font-semibold">
-                    <span>PAYMENT MODE:</span>
-                    <span className="uppercase">{paymentMode}</span>
-                </div>
-                {paymentMode === 'both' && paymentDetails && (
-                    <>
-                        {paymentDetails.cash && paymentDetails.cash > 0 && <div className="flex justify-between pl-2"><span>Cash:</span><span>₹{paymentDetails.cash.toFixed(2)}</span></div>}
-                        {paymentDetails.card && paymentDetails.card > 0 && <div className="flex justify-between pl-2"><span>Card:</span><span>₹{paymentDetails.card.toFixed(2)}</span></div>}
-                        {paymentDetails.upi && paymentDetails.upi > 0 && <div className="flex justify-between pl-2"><span>UPI:</span><span>₹{paymentDetails.upi.toFixed(2)}</span></div>}
-                    </>
-                )}
             </div>
 
             <Separator className="my-2 border-dashed" />
