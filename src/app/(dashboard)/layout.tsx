@@ -48,7 +48,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -127,7 +127,7 @@ function AppSidebar({ shopName, isExpired }: { shopName: string, isExpired: bool
         <SidebarContent>
             <SidebarHeader>
                 <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-                    <Link href="/" className="flex items-center gap-2 font-semibold group-data-[collapsible=icon]:justify-center">
+                    <Link href="/" className="flex items-center gap-2 font-semibold">
                         <Package2 className="h-6 w-6" />
                         <span className="group-data-[collapsible=icon]:hidden">{shopName}</span>
                     </Link>
@@ -363,9 +363,9 @@ export default function DashboardLayout({
 
   return (
     <SidebarProvider>
-      <div className='flex'>
+      <div className='grid min-h-screen w-full md:grid-cols-[auto_1fr]'>
       <AppSidebar shopName={shopName} isExpired={isUIBlocked} />
-      <div className="flex flex-col flex-1 min-h-screen">
+      <div className="flex flex-col min-h-screen">
         <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
             <MobileSidebar shopName={shopName} isExpired={isUIBlocked} />
             <div className="w-full flex-1" />
