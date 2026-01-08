@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -22,7 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { PlusCircle, Search, Trash2, MinusCircle, ChevronDown, IndianRupee, Loader2 } from 'lucide-react';
+import { PlusCircle, Search, Trash2, MinusCircle, IndianRupee, ChevronDown, Loader2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import {
   RadioGroup,
@@ -46,7 +47,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Challan } from './challan';
+import { CompactReceipt } from '../components/compact-receipt';
 
 
 type Product = {
@@ -94,14 +95,21 @@ type PaymentDetails = {
     upi?: number;
 }
 
-
 const sampleProducts: Product[] = [
   { id: "1", name: 'T-Shirt', price: 250, margin: 25, sku: 'TS-01', hsn: '6109', gst: 5, material: 'Cotton' },
   { id: "2", name: 'Jeans', price: 750, margin: 30, sku: 'JN-01', hsn: '6203', gst: 5, material: 'Denim' },
   { id: "3", name: 'Sneakers', price: 1200, margin: 40, sku: 'SH-01', hsn: '6404', gst: 18, material: 'Leather' },
+  { id: "4", name: 'Watch', price: 3500, margin: 50, sku: 'WT-01', hsn: '9102', gst: 18, material: 'Metal' },
+  { id: "5", name: 'Cap', price: 150, margin: 20, sku: 'CP-01', hsn: '6505', gst: 12, material: 'Cotton' },
+  { id: "6", name: 'Socks', price: 80, margin: 15, sku: 'SK-01', hsn: '6115', gst: 5, material: 'Cotton' },
+  { id: "7", name: 'Backpack', price: 900, margin: 35, sku: 'BP-01', hsn: '4202', gst: 18, material: 'Nylon' },
+  { id: "8", name: 'Hoodie', price: 1100, margin: 30, sku: 'HD-01', hsn: '6110', gst: 12, material: 'Fleece' },
+  { id: "9", name: 'Sunglasses', price: 450, margin: 45, sku: 'SG-01', hsn: '9004', gst: 18, material: 'Plastic' },
+  { id: "10", name: 'Belt', price: 300, margin: 28, sku: 'BL-01', hsn: '3926', gst: 18, material: 'Leather' },
 ];
 
-export function NewChallanTab() {
+export default function POSPage() {
+  const router = useRouter();
   const firestore = useFirestore();
   const { user } = useUser();
   const isDemoMode = !user;
@@ -142,9 +150,9 @@ export function NewChallanTab() {
   const [customerGstin, setCustomerGstin] = useState('');
   const [paymentMode, setPaymentMode] = useState('cash');
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchBy, setSearchBy] = useState('name');
   const [selectedMaterial, setSelectedMaterial] = useState('All');
   const [invoiceNumber, setInvoiceNumber] = useState('');
-  
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetails>({
     cash: 0,
     card: 0,
@@ -155,8 +163,7 @@ export function NewChallanTab() {
   const [quickItemQty, setQuickItemQty] = useState<number | string>(1);
   const [quickItemPrice, setQuickItemPrice] = useState<number | string>('');
   const [quickItemGst, setQuickItemGst] = useState<number | string>(5);
-
-
+  
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
   const [lastSaleData, setLastSaleData] = useState<any>(null);
   const invoiceRef = useRef(null);
@@ -165,11 +172,12 @@ export function NewChallanTab() {
   const handlePrint = () => {
     const printContent = invoiceRef.current;
     if (printContent) {
-        const newWindow = window.open('', '_blank', 'width=800,height=600');
+        const newWindow = window.open('', '_blank', 'width=300,height=600');
         if (newWindow) {
             const printableContent = (printContent as HTMLDivElement).innerHTML;
             
-            newWindow.document.write('<html><head><title>Print Challan</title>');
+            newWindow.document.write('<html><head><title>Print Invoice</title>');
+            // Embed styles directly for better print consistency
             const styles = Array.from(document.styleSheets)
               .map(styleSheet => {
                   try {
@@ -189,7 +197,7 @@ export function NewChallanTab() {
             newWindow.document.write('</body></html>');
             newWindow.document.close();
             newWindow.focus();
-            setTimeout(() => {
+            setTimeout(() => { // Timeout to allow content to render
                 newWindow.print();
                 newWindow.close();
                 setIsInvoiceOpen(false);
@@ -201,38 +209,39 @@ export function NewChallanTab() {
   };
   
 
-  const generateNextChallanNumber = async () => {
+  const generateNextInvoiceNumber = async () => {
     if (isDemoMode) {
-        const currentYear = new Date().getFullYear();
-        setInvoiceNumber(`CHLN-${currentYear}-0001`);
-        return;
+      const currentYear = new Date().getFullYear();
+      setInvoiceNumber(`INV-${currentYear}-0001`);
+      return;
     }
     if (!firestore || !shopId) return;
 
     const currentYear = new Date().getFullYear();
-    const challansCollectionRef = collection(firestore, `shops/${shopId}/challans`);
+    const salesCollectionRef = collection(firestore, `shops/${shopId}/sales`);
     
-    const q = query(challansCollectionRef, orderBy('date', 'desc'), limit(1));
+    // Fetch the most recent invoice to get the last sequence number
+    const q = query(salesCollectionRef, orderBy('date', 'desc'), limit(1));
 
     const querySnapshot = await getDocs(q);
-    let lastChallanNumber = 0;
+    let lastInvoiceNumber = 0;
     
     if (!querySnapshot.empty) {
-        const lastChallan = querySnapshot.docs[0].data() as Sale;
-        const lastInvoice = lastChallan.invoiceNumber;
+        const lastSale = querySnapshot.docs[0].data() as Sale;
+        const lastInvoice = lastSale.invoiceNumber;
         
         const match = lastInvoice.match(/(?:INV|CHLN)-(\d{4})-(\d+)$/);
         if (match) {
-            lastChallanNumber = parseInt(match[2], 10);
+            lastInvoiceNumber = parseInt(match[2], 10);
         }
     }
     
-    const nextChallanNumber = (lastChallanNumber + 1).toString().padStart(4, '0');
-    setInvoiceNumber(`CHLN-${currentYear}-${nextChallanNumber}`);
-  };
+    const nextInvoiceNumber = (lastInvoiceNumber + 1).toString().padStart(4, '0');
+    setInvoiceNumber(`INV-${currentYear}-${nextInvoiceNumber}`);
+};
 
   useEffect(() => {
-    generateNextChallanNumber();
+    generateNextInvoiceNumber();
   }, [shopId, isDemoMode, firestore]);
 
   const addToCart = (productToAdd: Product) => {
@@ -307,7 +316,6 @@ export function NewChallanTab() {
     );
   };
 
-
   const removeItem = (productId: string) => {
     setCart((prevCart) => prevCart.filter((item) => item.product.id !== productId));
   };
@@ -342,14 +350,21 @@ export function NewChallanTab() {
     
     return { subtotal, cgst, sgst, igst, total: cart.reduce((sum, item) => sum + (item.product.price * item.quantity * (1 - item.discount / 100)), 0) };
   }, [cart, customerState]);
-  
+
+
   const totalPaid = (paymentDetails.cash || 0) + (paymentDetails.card || 0) + (paymentDetails.upi || 0);
   const remainingBalance = total - totalPaid;
 
   const filteredProducts = products.filter((product) => {
     const materialFilter = selectedMaterial === 'All' || product.material === selectedMaterial;
     if (!materialFilter) return false;
-    return product.name.toLowerCase().includes(searchTerm.toLowerCase()) || product.sku?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    if (searchBy === 'name') {
+      return product.name.toLowerCase().includes(searchTerm.toLowerCase()) || product.sku?.toLowerCase().includes(searchTerm.toLowerCase());
+    } else if (searchBy === 'mrp') {
+      return product.price.toString().includes(searchTerm);
+    }
+    return false;
   });
 
   const clearSale = () => {
@@ -362,7 +377,7 @@ export function NewChallanTab() {
     setCustomerGstin('');
     setPaymentMode('cash');
     setPaymentDetails({ cash: 0, card: 0, upi: 0 });
-    generateNextChallanNumber();
+    generateNextInvoiceNumber();
   };
   
   const showPrintToast = () => {
@@ -376,10 +391,10 @@ export function NewChallanTab() {
             <div className="flex items-start">
               <div className="ml-3 flex-1">
                 <p className="text-sm font-medium text-gray-900">
-                  Challan Generated!
+                  Sale Completed!
                 </p>
                 <p className="mt-1 text-sm text-gray-500">
-                  Challan {invoiceNumber} has been recorded.
+                  Sale {invoiceNumber} has been recorded.
                 </p>
               </div>
             </div>
@@ -401,15 +416,15 @@ export function NewChallanTab() {
   }
 
 
-  const generateChallan = async () => {
+  const completeSale = async () => {
     if (paymentMode === 'both' && remainingBalance.toFixed(2) !== '0.00') {
         hotToast.error('The total paid amount does not match the total sale amount.');
         return;
     }
-    
-    setIsGenerating(true);
 
-    const saleData = {
+    setIsGenerating(true);
+    
+    const saleData: any = {
       date: new Date().toISOString(),
       total: total,
       subtotal: subtotal,
@@ -435,10 +450,17 @@ export function NewChallanTab() {
         state: customerState,
         gstin: customerGstin,
       },
-      invoiceNumber: invoiceNumber,
       paymentMode: paymentMode,
-      paymentDetails: paymentMode === 'both' ? paymentDetails : undefined
+      invoiceNumber: invoiceNumber,
     };
+    
+    if (paymentMode === 'both') {
+        saleData.paymentDetails = {
+            cash: paymentDetails.cash || 0,
+            card: paymentDetails.card || 0,
+            upi: paymentDetails.upi || 0,
+        }
+    }
     
     setLastSaleData(saleData);
 
@@ -449,7 +471,7 @@ export function NewChallanTab() {
       }, 1000);
       return;
     }
-    
+
     if (!firestore || !shopId) {
       hotToast.error('Cannot find your shop. Please ensure you are subscribed.');
       setIsGenerating(false);
@@ -457,13 +479,13 @@ export function NewChallanTab() {
     }
 
     try {
-      const challansCollectionRef = collection(firestore, `shops/${shopId}/challans`);
-      await addDoc(challansCollectionRef, saleData);
+      const salesCollectionRef = collection(firestore, `shops/${shopId}/sales`);
+      await addDoc(salesCollectionRef, saleData);
       showPrintToast();
     } catch(error: any) {
       hotToast.error(`Error completing sale: ${error.message}`);
     } finally {
-        setIsGenerating(false);
+      setIsGenerating(false);
     }
   };
 
@@ -482,7 +504,6 @@ export function NewChallanTab() {
     const amount = parseFloat(value) || 0;
     setPaymentDetails(prev => ({ ...prev, [method]: amount }));
   };
-
 
   return (
     <>
@@ -552,20 +573,21 @@ export function NewChallanTab() {
                                 </div>
                             </div>
                         </div>
+                        
                         <div className="flex flex-col sm:flex-row items-center gap-2 pt-2">
                            <div className="relative flex-grow">
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
-                                    placeholder="Search products by name or code..."
+                                    placeholder="Search products..."
                                     className="pl-8"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
-                             <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <div className='flex items-center gap-2 w-full sm:w-auto'>
                                 <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
                                     <SelectTrigger className="w-full sm:w-auto flex-1">
-                                        <SelectValue placeholder="Filter material" />
+                                        <SelectValue placeholder="Material Filter" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {uniqueMaterials.map(material => (
@@ -573,6 +595,23 @@ export function NewChallanTab() {
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                <div className="flex items-center space-x-2 sm:space-x-4">
+                                    <Label className="text-sm font-medium shrink-0">Search By:</Label>
+                                    <RadioGroup
+                                        value={searchBy}
+                                        onValueChange={setSearchBy}
+                                        className="flex items-center space-x-2"
+                                    >
+                                        <div className="flex items-center space-x-1">
+                                            <RadioGroupItem value="name" id="name" />
+                                            <Label htmlFor="name" className="text-sm">Name</Label>
+                                        </div>
+                                        <div className="flex items-center space-x-1">
+                                            <RadioGroupItem value="mrp" id="mrp" />
+                                            <Label htmlFor="mrp" className="text-sm">MRP</Label>
+                                        </div>
+                                    </RadioGroup>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -585,22 +624,22 @@ export function NewChallanTab() {
                                 return (
                                     <Card
                                         key={product.id}
-                                        className="group relative flex flex-col items-center justify-center p-4 hover:bg-blue-100 cursor-pointer transition-colors shadow-sm"
+                                        className="group relative flex flex-col items-center justify-center p-2 hover:bg-green-100 cursor-pointer transition-colors shadow-sm"
                                         onClick={() => addToCart(product)}
                                     >
                                         {quantityInCart > 0 && (
                                         <Badge 
                                             variant="secondary"
-                                            className="absolute -top-2 -right-2 h-6 w-6 rounded-full flex items-center justify-center bg-secondary text-secondary-foreground"
+                                            className="absolute -top-2 -right-2 h-6 w-6 rounded-full flex items-center justify-center bg-primary text-primary-foreground"
                                         >
                                             {quantityInCart}
                                         </Badge>
                                         )}
-                                        <div className="text-sm font-semibold text-center leading-tight">
+                                        <div className="text-xs font-semibold text-center leading-tight">
                                             {product.name}
                                         </div>
-                                         <div className="text-xs text-foreground font-semibold mt-1">
-                                            MRP: ₹{product.price.toFixed(2)}
+                                        <div className="text-xs text-foreground font-semibold mt-1">
+                                        MRP: ₹{product.price.toFixed(2)}
                                         </div>
                                     </Card>
                                 )
@@ -611,13 +650,13 @@ export function NewChallanTab() {
             </Card>
         </div>
 
-        {/* Right Column: Invoice Details */}
+        {/* Right Column: Billing */}
         <div className="lg:col-span-5 flex flex-col h-full">
             <Card className="h-full flex flex-col rounded-lg">
                 <CardHeader>
-                    <CardTitle>Delivery Challan</CardTitle>
+                    <CardTitle>Current Sale</CardTitle>
                     <CardDescription>
-                        {invoiceNumber ? `Challan #${invoiceNumber}` : '...'}
+                        {invoiceNumber ? `Invoice #${invoiceNumber}` : '...'}
                     </CardDescription>
                 </CardHeader>
                 <div className="flex-grow overflow-hidden">
@@ -627,7 +666,7 @@ export function NewChallanTab() {
                             <div className="py-2">
                                 {cart.length === 0 ? (
                                      <div className="text-center text-muted-foreground py-10">
-                                        No items added
+                                        No items in sale
                                      </div>
                                 ) : (
                                 <Table>
@@ -637,11 +676,16 @@ export function NewChallanTab() {
                                             <TableHead>Item</TableHead>
                                             <TableHead className="text-center w-[100px]">Qty</TableHead>
                                             <TableHead className="text-center w-[80px]">Disc(%)</TableHead>
+                                            <TableHead className="text-right">Amount</TableHead>
                                             <TableHead className="w-[50px]"></TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {cart.map((item, index) => (
+                                        {cart.map((item, index) => {
+                                            const itemTotal = item.product.price * item.quantity;
+                                            const discountAmount = itemTotal * (item.discount / 100);
+                                            const finalPrice = itemTotal - discountAmount;
+                                            return (
                                             <TableRow key={item.product.id}>
                                                 <TableCell className="py-2">{index + 1}</TableCell>
                                                 <TableCell className='font-medium py-2'>{item.product.name}</TableCell>
@@ -656,7 +700,7 @@ export function NewChallanTab() {
                                                         </Button>
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="text-center py-2">
+                                                 <TableCell className="text-center py-2">
                                                     <Input
                                                         type="number"
                                                         className="h-8 w-16 text-center"
@@ -666,20 +710,22 @@ export function NewChallanTab() {
                                                         placeholder="0"
                                                     />
                                                 </TableCell>
+                                                <TableCell className="text-right py-2">₹{finalPrice.toFixed(2)}</TableCell>
                                                 <TableCell className="text-right py-2">
                                                     <Button variant="ghost" size="icon" className='h-6 w-6 text-red-500 hover:text-red-700' onClick={() => removeItem(item.product.id)}>
                                                         <Trash2 className='h-4 w-4' />
                                                     </Button>
                                                 </TableCell>
                                             </TableRow>
-                                        ))}
+                                            )
+                                        })}
                                     </TableBody>
                                 </Table>
                                 )}
                             </div>
                             <Separator />
                             <div className="p-4 space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
+                               <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="customer-name">Customer Name</Label>
                                         <Input id="customer-name" placeholder="Walk-in Customer" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
@@ -689,30 +735,30 @@ export function NewChallanTab() {
                                          <Input id="customer-state" placeholder="e.g. Assam" value={customerState} onChange={(e) => setCustomerState(e.target.value)} />
                                     </div>
                                 </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                     <div className="space-y-2">
+                                        <Label htmlFor="customer-phone">Customer Phone</Label>
+                                        <Input id="customer-phone" placeholder="Enter phone number" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="customer-pin">PIN Code</Label>
+                                        <Input id="customer-pin" placeholder="e.g. 110001" value={customerPin} onChange={(e) => setCustomerPin(e.target.value)} />
+                                    </div>
+                                </div>
                                 <Collapsible>
                                     <CollapsibleTrigger asChild>
                                         <Button variant="outline" size="sm" className="w-full">
-                                            Add Shipping & GST Details
+                                            More Customer Details
                                             <ChevronDown className="h-4 w-4 ml-2" />
                                         </Button>
                                     </CollapsibleTrigger>
                                     <CollapsibleContent className="space-y-4 mt-4">
                                         <div className="space-y-2">
-                                            <Label htmlFor="customer-address">Shipping Address</Label>
-                                            <Textarea id="customer-address" placeholder="Enter full shipping address" value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} />
+                                            <Label htmlFor="customer-address">Address</Label>
+                                            <Textarea id="customer-address" placeholder="Enter full address" value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} />
                                         </div>
-                                         <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="customer-phone">Phone</Label>
-                                                <Input id="customer-phone" placeholder="Enter phone number" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="customer-pin">PIN Code</Label>
-                                                <Input id="customer-pin" placeholder="e.g. 110001" value={customerPin} onChange={(e) => setCustomerPin(e.target.value)} />
-                                            </div>
-                                        </div>
-                                         <div className="space-y-2">
-                                            <Label htmlFor="customer-gstin">Customer GSTIN (Optional)</Label>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="customer-gstin">Customer GSTIN</Label>
                                             <Input id="customer-gstin" placeholder="Enter GSTIN" value={customerGstin} onChange={(e) => setCustomerGstin(e.target.value)} />
                                         </div>
                                     </CollapsibleContent>
@@ -726,7 +772,7 @@ export function NewChallanTab() {
                                         <div className="flex items-center space-x-2"><RadioGroupItem value="both" id="both" /><Label htmlFor="both">Both</Label></div>
                                     </RadioGroup>
                                 </div>
-                                 {paymentMode === 'both' && (
+                                {paymentMode === 'both' && (
                                     <Card className="p-4 bg-muted/50">
                                         <h4 className="text-sm font-medium mb-2">Mixed Payment Details</h4>
                                         <div className="space-y-2">
@@ -753,42 +799,37 @@ export function NewChallanTab() {
                 <CardFooter className="mt-auto flex-none">
                     <div className='w-full space-y-4'>
                         <div className="space-y-1 text-sm">
-                            <div className="flex justify-between"><span>Subtotal (Taxable)</span><span>₹{subtotal.toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>
                             {cgst > 0 && <div className="flex justify-between"><span>CGST</span><span>₹{cgst.toFixed(2)}</span></div>}
                             {sgst > 0 && <div className="flex justify-between"><span>SGST</span><span>₹{sgst.toFixed(2)}</span></div>}
                             {igst > 0 && <div className="flex justify-between"><span>IGST</span><span>₹{igst.toFixed(2)}</span></div>}
                             <Separator />
                             <div className="flex justify-between font-semibold text-lg"><span>Total</span><span>₹{total.toFixed(2)}</span></div>
                         </div>
-                        <div className='w-full space-y-2'>
-                            <Button className="w-full" disabled={cart.length === 0 || (paymentMode === 'both' && remainingBalance.toFixed(2) !== '0.00') || isGenerating} onClick={generateChallan}>
+                        <div className="flex-col items-stretch space-y-2">
+                            <Button className="w-full" disabled={cart.length === 0 || (paymentMode === 'both' && remainingBalance.toFixed(2) !== '0.00') || isGenerating} onClick={completeSale}>
                                 {isGenerating ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                         Generating...
                                     </>
-                                ) : 'Generate Challan'}
+                                ) : 'Generate Invoice'}
                             </Button>
-                            <Button variant="destructive" className="w-full" onClick={clearSale} disabled={cart.length === 0}><Trash2 className="mr-2 h-4 w-4" /> Clear</Button>
+                            <Button variant="destructive" className="w-full" onClick={clearSale} disabled={cart.length === 0}><Trash2 className="mr-2 h-4 w-4" /> Clear Sale</Button>
                         </div>
                     </div>
                 </CardFooter>
             </Card>
         </div>
     </div>
-    <div className='hidden print:block'>
-        <div ref={invoiceRef}>
-            {lastSaleData && <Challan sale={lastSaleData} settings={shopSettings} />}
-        </div>
-    </div>
-    <Dialog open={isInvoiceOpen && !!lastSaleData} onOpenChange={(open) => { if (!open) { setIsInvoiceOpen(false); setLastSaleData(null); }}}>
-        <DialogContent className="max-w-4xl p-0 border-0">
+    <Dialog open={isInvoiceOpen} onOpenChange={(open) => { if (!open) { setIsInvoiceOpen(false); setLastSaleData(null); }}}>
+        <DialogContent className="max-w-sm p-0 border-0">
              <DialogHeader className="sr-only">
-                <DialogTitle>Challan</DialogTitle>
-                <DialogDescription>A preview of the challan for printing.</DialogDescription>
+                <DialogTitle>Receipt</DialogTitle>
+                <DialogDescription>A preview of the receipt for printing.</DialogDescription>
             </DialogHeader>
              <div ref={invoiceRef}>
-                 <Challan sale={lastSaleData} settings={shopSettings} />
+                 <CompactReceipt sale={lastSaleData} settings={shopSettings} />
              </div>
         </DialogContent>
     </Dialog>
