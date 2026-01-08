@@ -25,18 +25,7 @@ import {
   Percent,
   FileText,
 } from 'lucide-react';
-import {
-  SidebarProvider,
-  Sidebar,
-  SidebarHeader,
-  SidebarContent,
-  SidebarTrigger,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarFooter,
-  useSidebar,
-} from '@/components/ui/sidebar';
+
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -109,17 +98,9 @@ type ShopSettings = {
 
 function AppSidebar({ shopName, isExpired }: { shopName: string, isExpired: boolean }) {
   const pathname = usePathname();
-  const { open } = useSidebar();
-  const [isAccountOpen, setIsAccountOpen] = useState(false);
   const auth = useAuth();
   const { user } = useUser();
   const router = useRouter();
-
-  useEffect(() => {
-    if (!open) {
-      setIsAccountOpen(false);
-    }
-  }, [open]);
 
   const handleLogout = () => {
     if (auth) {
@@ -129,100 +110,65 @@ function AppSidebar({ shopName, isExpired }: { shopName: string, isExpired: bool
   };
 
   return (
-    <Sidebar>
-      <SidebarHeader className="h-14 lg:h-[60px]">
-        <div
-          className={cn(
-            'flex items-center',
-            open ? 'gap-2 justify-between' : 'gap-0 justify-center'
-          )}
-        >
-          <Link
-            href="/"
-            className={cn(
-              'flex items-center gap-2 font-semibold',
-              open ? 'ml-2' : ''
-            )}
-          >
+    <div className="hidden border-r bg-muted/40 md:block">
+      <div className="flex h-full max-h-screen flex-col gap-2">
+        <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+          <Link href="/" className="flex items-center gap-2 font-semibold">
             <Package2 className="h-6 w-6" />
-            {open && <span className="truncate">{shopName}</span>}
+            <span className="">{shopName}</span>
           </Link>
         </div>
-      </SidebarHeader>
-
-      <SidebarContent className="flex-1">
-        <SidebarMenu>
+        <div className="flex-1">
+          <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
           {navLinks.map((link) => (
-            <SidebarMenuItem key={link.label}>
-              <Link href={isExpired && link.href !== '/dashboard/subscription' ? '#' : link.href} aria-disabled={isExpired && link.href !== '/dashboard/subscription'}>
-                <SidebarMenuButton
-                  isActive={pathname === link.href}
-                  className={cn(open ? '' : 'justify-center', 'font-bold uppercase font-sans')}
-                  tooltip={open ? undefined : link.label}
-                  disabled={isExpired && link.href !== '/dashboard/subscription'}
-                >
-                  <link.icon className="h-4 w-4" />
-                  {open && <span>{link.label}</span>}
-                </SidebarMenuButton>
+              <Link
+                key={link.label}
+                href={isExpired && link.href !== '/dashboard/subscription' ? '#' : link.href}
+                className={cn(
+                  'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
+                  pathname === link.href && 'bg-muted text-primary',
+                  isExpired && link.href !== '/dashboard/subscription' && "pointer-events-none opacity-50"
+                )}
+              >
+                <link.icon className="h-4 w-4" />
+                {link.label}
               </Link>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-      </SidebarContent>
-
-      <SidebarFooter className="mt-auto p-2">
-        {!user && open && (
-          <Card className="mb-2">
-            <CardHeader className="p-2 pt-0 md:p-4">
-              <CardTitle>Upgrade to Pro</CardTitle>
-              <CardDescription>
-                Unlock all features for production use.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-2 pt-0 md:p-4 md:pt-0">
-              <Link href="/subscribe" passHref>
-                <Button size="sm" className="w-full">
-                  Upgrade
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        )}
-        {user && (
-          <Collapsible open={isAccountOpen} onOpenChange={setIsAccountOpen}>
-            <CollapsibleTrigger asChild>
-               <Button
-                  variant="ghost"
-                  className={cn("w-full flex items-center", open ? "justify-between" : "justify-center")}
-                  size={open ? "default" : "icon"}
-                >
-                <div className="flex items-center gap-2">
-                  <CircleUser className="h-5 w-5" />
-                  {open && <span>My Account</span>}
-                </div>
-                {open && (isAccountOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />)}
+            ))}
+          </nav>
+        </div>
+        <div className="mt-auto p-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="secondary" className="w-full justify-start">
+                 <CircleUser className="mr-2 h-5 w-5" />
+                 My Account
               </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-1 pt-2">
-               <Link href={isExpired ? '#' : "/dashboard/settings"} passHref aria-disabled={isExpired}>
-                  <Button variant="ghost" className="w-full justify-start gap-2" disabled={isExpired}>
-                      <Settings className="h-4 w-4" />
-                      Settings
-                  </Button>
-               </Link>
-               <Button variant="ghost" className="w-full justify-start gap-2" disabled={isExpired}>
-                  <LifeBuoy className="h-4 w-4" />
-                  Support
-               </Button>
-               <Button variant="ghost" className="w-full justify-start gap-2" onClick={handleLogout}>
-                  <LogOut className="h-4 w-4" />
-                  Logout
-               </Button>
-            </CollapsibleContent>
-          </Collapsible>
-        )}
-      </SidebarFooter>
-    </Sidebar>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                    {user?.email || 'My Account'}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild disabled={isExpired}>
+                  <Link href={isExpired ? '#' : "/dashboard/settings"}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled={isExpired}>
+                  <LifeBuoy className="mr-2 h-4 w-4" />
+                  <span>Support</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -273,10 +219,10 @@ const MobileSidebar = ({ shopName, isExpired }: { shopName: string; isExpired: b
                 </Button>
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col">
-                <SheetHeader className="sr-only">
-                  <SheetTitle>Navigation Menu</SheetTitle>
-                  <SheetDescription>Main application navigation links.</SheetDescription>
-                </SheetHeader>
+                 <SheetHeader>
+                   <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                   <SheetDescription className="sr-only">Main application navigation links.</SheetDescription>
+                 </SheetHeader>
                 <nav className="grid gap-2 text-lg font-medium">
                     <Link href="#" className="flex items-center gap-2 text-lg font-semibold mb-4">
                         <Package2 className="h-6 w-6" />
@@ -399,30 +345,26 @@ export default function DashboardLayout({
   const isUIBlocked = isSubscriptionExpired && pathname !== '/dashboard/subscription';
 
   return (
-    <SidebarProvider defaultOpen={true}>
-      <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr]">
-        <div className="hidden md:block">
-            <AppSidebar shopName={shopName} isExpired={isUIBlocked} />
-        </div>
-        <div className="flex flex-col">
-          <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+      <AppSidebar shopName={shopName} isExpired={isUIBlocked} />
+      <div className="flex flex-col">
+        <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
             <MobileSidebar shopName={shopName} isExpired={isUIBlocked} />
-             <div className="w-full flex-1" />
-             <Link href="/dashboard/employees">
+            <div className="w-full flex-1" />
+            <Link href="/dashboard/employees">
                 <Button>
                     <Users className="mr-2 h-4 w-4" /> Manage Employees
                 </Button>
-             </Link>
-          </header>
-          <main className={cn("flex flex-1 flex-col p-4 lg:p-6 overflow-auto", isUIBlocked && "pointer-events-none opacity-50")}>
+            </Link>
+        </header>
+        <main className={cn("flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6", isUIBlocked && "pointer-events-none opacity-50")}>
             {children}
-          </main>
-        </div>
-        <SubscriptionExpiredModal 
+        </main>
+      </div>
+       <SubscriptionExpiredModal 
             open={isUIBlocked}
             onRenew={() => router.push('/dashboard/subscription')}
         />
-      </div>
-    </SidebarProvider>
+    </div>
   );
 }
