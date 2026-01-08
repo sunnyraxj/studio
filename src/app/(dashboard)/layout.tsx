@@ -126,7 +126,7 @@ function AppSidebar({ shopName, isExpired }: { shopName: string, isExpired: bool
             <SidebarHeader>
                 <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
                     <Link href="/" className="flex items-center gap-2 font-semibold">
-                        <span className="group-data-[collapsible=icon]:hidden">{shopName}</span>
+                        <span className="transition-all duration-300 group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:invisible">{shopName}</span>
                     </Link>
                 </div>
             </SidebarHeader>
@@ -232,13 +232,10 @@ const MobileSidebar = ({ shopName, isExpired }: { shopName: string; isExpired: b
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col">
                  <SheetHeader>
-                   <SheetTitle>Navigation Menu</SheetTitle>
+                   <SheetTitle>{shopName}</SheetTitle>
                    <SheetDescription>Main application navigation links.</SheetDescription>
                  </SheetHeader>
                 <nav className="grid gap-2 text-lg font-medium">
-                    <Link href="#" className="flex items-center gap-2 text-lg font-semibold mb-4">
-                        <span className="truncate">{shopName}</span>
-                    </Link>
                     {navLinks.map((link) => (
                         <Link
                             key={link.label}
