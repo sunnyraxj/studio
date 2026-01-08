@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo } from 'react';
@@ -78,21 +79,16 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
         items,
         subtotal,
         total,
+        cgst,
+        sgst,
+        igst
     } = sale;
 
     const amountInWords = numberToWords(total);
-    
-    const shopState = (settings.companyState || '').toLowerCase().trim();
-    const customerStateClean = (customer.state || '').toLowerCase().trim();
-    const isIntraState = !!shopState && !!customerStateClean && customerStateClean === shopState;
-
-    const cgst = isIntraState ? sale.cgst : 0;
-    const sgst = isIntraState ? sale.sgst : 0;
-    const igst = !isIntraState ? sale.igst : 0;
+    const isIntraState = igst === 0 && (cgst > 0 || sgst > 0);
     
     const gstBreakdown = useMemo(() => {
         const breakdown: { [rate: number]: { taxable: number; cgst: number; sgst: number; igst: number } } = {};
-        let totalGstRate = 0;
 
         items.forEach(item => {
             const gstRate = item.gst || 0;
@@ -103,8 +99,6 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
             const discountAmount = itemTotal * (item.discount / 100);
             const taxableValue = itemTotal - discountAmount;
             const taxAmount = taxableValue * (gstRate / 100);
-            
-            totalGstRate = gstRate; // Assuming single rate for now for display
 
             breakdown[gstRate].taxable += taxableValue;
 
@@ -118,7 +112,6 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
         
         const rates = Object.keys(breakdown).map(Number);
         const averageGstRate = rates.length > 0 ? rates.reduce((a, b) => a + b, 0) / rates.length : 0;
-
 
         return {
             breakdown: Object.entries(breakdown).map(([rate, values]) => ({
