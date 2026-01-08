@@ -23,7 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { PlusCircle, Search, Trash2, MinusCircle, IndianRupee, ChevronDown, Loader2 } from 'lucide-react';
+import { PlusCircle, Search, Trash2, MinusCircle, IndianRupee, ChevronDown, Loader2, Camera } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import {
   RadioGroup,
@@ -48,6 +48,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { CompactReceipt } from '../components/compact-receipt';
+import { CameraScanner } from './components/camera-scanner';
 
 
 type Product = {
@@ -165,6 +166,7 @@ export default function POSPage() {
   const [quickItemGst, setQuickItemGst] = useState<number | string>(5);
   
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [lastSaleData, setLastSaleData] = useState<any>(null);
   const invoiceRef = useRef(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -262,6 +264,19 @@ export default function POSPage() {
     });
   };
 
+  const handleBarcodeScanned = (code: string) => {
+    setIsScannerOpen(false);
+    if (code) {
+      const foundProduct = products.find(p => p.sku === code);
+      if (foundProduct) {
+        addToCart(foundProduct);
+        hotToast.success(`Added ${foundProduct.name} to cart.`);
+      } else {
+        hotToast.error(`Product with code "${code}" not found.`);
+      }
+    }
+  };
+
    useEffect(() => {
     const handleScan = (event: KeyboardEvent) => {
       // Ignore keypresses if they are in an input/textarea
@@ -272,13 +287,7 @@ export default function POSPage() {
 
       if (event.key === 'Enter') {
         if (scanBuffer.length > 2) {
-          const foundProduct = products.find(p => p.sku === scanBuffer);
-          if (foundProduct) {
-            addToCart(foundProduct);
-            hotToast.success(`Added ${foundProduct.name} to cart.`);
-          } else {
-            hotToast.error(`Product with code "${scanBuffer}" not found.`);
-          }
+          handleBarcodeScanned(scanBuffer);
         }
         setScanBuffer('');
         event.preventDefault();
@@ -614,14 +623,18 @@ export default function POSPage() {
                         </div>
                         
                         <div className="flex flex-col sm:flex-row items-center gap-2 pt-2">
-                           <div className="relative flex-grow w-full">
+                           <div className="relative flex-grow w-full flex items-center gap-2">
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     placeholder="Search products... or scan barcode"
-                                    className="pl-8 sm:w-auto"
+                                    className="pl-8 flex-grow"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
+                                <Button variant="outline" size="icon" onClick={() => setIsScannerOpen(true)}>
+                                  <Camera className="h-4 w-4" />
+                                  <span className="sr-only">Scan with camera</span>
+                                </Button>
                             </div>
                             <div className='flex items-center gap-2 w-full sm:w-auto'>
                                 <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
@@ -635,7 +648,6 @@ export default function POSPage() {
                                     </SelectContent>
                                 </Select>
                                 <div className="flex items-center space-x-2 sm:space-x-4">
-                                    <Label className="text-sm font-medium shrink-0 hidden sm:block">Search By:</Label>
                                     <RadioGroup
                                         value={searchBy}
                                         onValueChange={setSearchBy}
@@ -643,7 +655,7 @@ export default function POSPage() {
                                     >
                                         <div className="flex items-center space-x-1">
                                             <RadioGroupItem value="name" id="name" />
-                                            <Label htmlFor="name" className="text-sm">Name</Label>
+                                            <Label htmlFor="name" className="text-sm">Name/Code</Label>
                                         </div>
                                         <div className="flex items-center space-x-1">
                                             <RadioGroupItem value="mrp" id="mrp" />
@@ -861,6 +873,13 @@ export default function POSPage() {
             </Card>
         </div>
     </div>
+    
+    <CameraScanner 
+      isOpen={isScannerOpen} 
+      onOpenChange={setIsScannerOpen} 
+      onScan={handleBarcodeScanned}
+    />
+
     <Dialog open={isInvoiceOpen} onOpenChange={(open) => { if (!open) { setIsInvoiceOpen(false); setLastSaleData(null); }}}>
         <DialogContent className="max-w-sm p-0 border-0">
              <DialogHeader className="sr-only">
@@ -876,4 +895,3 @@ export default function POSPage() {
   );
 }
 
-    

@@ -55,7 +55,8 @@
     "@hookform/resolvers": "^3.9.0",
     "react-hot-toast": "^2.4.1",
     "xlsx": "^0.18.5",
-    "react-barcode": "^1.5.3"
+    "react-barcode": "^1.5.3",
+    "@zxing/library": "^0.21.0"
   },
   "devDependencies": {
     "@types/node": "^20",
