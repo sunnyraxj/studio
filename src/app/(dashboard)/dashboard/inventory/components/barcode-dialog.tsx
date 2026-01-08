@@ -16,10 +16,10 @@ interface BarcodeDialogProps {
 }
 
 export const BarcodeDialog: React.FC<BarcodeDialogProps> = ({ isOpen, onOpenChange, item, shopName }) => {
-    const labelRef = useRef<HTMLDivElement>(null);
+    const printRef = useRef<HTMLDivElement>(null);
     
     const handlePrint = () => {
-        const printContent = labelRef.current;
+        const printContent = printRef.current;
         if (printContent) {
             const newWindow = window.open('', '_blank', 'width=400,height=300');
             if (newWindow) {
@@ -41,7 +41,7 @@ export const BarcodeDialog: React.FC<BarcodeDialogProps> = ({ isOpen, onOpenChan
 
                 newWindow.document.write(`<style>${styles}</style>`);
                 newWindow.document.write('</head><body>');
-                newWindow.document.write(printableContent);
+                newWindow.document.write(`<div class="print-container">${printableContent}</div>`);
                 newWindow.document.write('</body></html>');
                 newWindow.document.close();
                 newWindow.focus();
@@ -65,7 +65,7 @@ export const BarcodeDialog: React.FC<BarcodeDialogProps> = ({ isOpen, onOpenChan
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4 flex justify-center">
-                    <div ref={labelRef}>
+                    <div ref={printRef}>
                         <div className="label-print-container">
                             <BarcodeLabel item={item} shopName={shopName} />
                         </div>
