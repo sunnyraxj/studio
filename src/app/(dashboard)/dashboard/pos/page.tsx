@@ -579,8 +579,9 @@ export default function POSPage() {
                                 </div>
                             </div>
                         </div>
-                        <div className="flex flex-col sm:flex-row gap-2 pt-2">
-                           <div className="relative flex-grow">
+                        
+                        <div className="flex flex-col md:flex-row md:items-center gap-4 pt-2">
+                            <div className="relative flex-grow">
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     placeholder="Search products..."
@@ -589,33 +590,35 @@ export default function POSPage() {
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
-                            <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
-                                <SelectTrigger className="w-full sm:w-[180px]">
-                                    <SelectValue placeholder="Material Filter" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {uniqueMaterials.map(material => (
-                                        <SelectItem key={material} value={material}>{material}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="flex items-center space-x-4">
-                            <Label className="text-sm font-medium">Search By:</Label>
-                            <RadioGroup
-                                value={searchBy}
-                                onValueChange={setSearchBy}
-                                className="flex items-center space-x-4"
-                            >
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="name" id="name" />
-                                    <Label htmlFor="name">Name/Code</Label>
+                             <div className="flex items-center gap-4">
+                                <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
+                                    <SelectTrigger className="w-full sm:w-[150px]">
+                                        <SelectValue placeholder="Material Filter" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {uniqueMaterials.map(material => (
+                                            <SelectItem key={material} value={material}>{material}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <div className="flex items-center space-x-4">
+                                    <Label className="text-sm font-medium shrink-0">Search By:</Label>
+                                    <RadioGroup
+                                        value={searchBy}
+                                        onValueChange={setSearchBy}
+                                        className="flex items-center space-x-2"
+                                    >
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="name" id="name" />
+                                            <Label htmlFor="name" className="text-sm">Name/Code</Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="mrp" id="mrp" />
+                                            <Label htmlFor="mrp" className="text-sm">MRP</Label>
+                                        </div>
+                                    </RadioGroup>
                                 </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="mrp" id="mrp" />
-                                    <Label htmlFor="mrp">MRP</Label>
-                                </div>
-                            </RadioGroup>
+                            </div>
                         </div>
                     </div>
                 </CardHeader>
