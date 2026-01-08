@@ -494,7 +494,7 @@ export function NewChallanTab() {
                     <div className="space-y-4">
                         <div className="p-4 border rounded-lg bg-muted/50 space-y-4">
                             <Label className="text-sm font-medium">Quick Item Entry</Label>
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
                                 <div className="space-y-1">
                                     <Label htmlFor="quick-name" className="text-xs">Item Name</Label>
                                     <Input
@@ -545,7 +545,7 @@ export function NewChallanTab() {
                                         />
                                     </div>
                                 </div>
-                                <div className="md:col-span-2">
+                                <div className="sm:col-span-2">
                                     <Button size="sm" onClick={addQuickItemToCart} className="h-8 w-full">
                                         <PlusCircle className="h-4 w-4 mr-2" /> Add Item
                                     </Button>
@@ -553,27 +553,25 @@ export function NewChallanTab() {
                             </div>
                         </div>
                         <div className="flex flex-col sm:flex-row items-center gap-2 pt-2">
-                           <div className="relative flex-grow">
+                           <div className="relative flex-grow w-full sm:w-auto">
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     placeholder="Search products by name or code..."
-                                    className="pl-8"
+                                    className="pl-8 sm:w-64"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
-                             <div className="flex items-center gap-2 w-full sm:w-auto">
-                                <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
-                                    <SelectTrigger className="w-full sm:w-auto flex-1">
-                                        <SelectValue placeholder="Filter material" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {uniqueMaterials.map(material => (
-                                            <SelectItem key={material} value={material}>{material}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                            <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
+                                <SelectTrigger className="w-full sm:w-auto">
+                                    <SelectValue placeholder="Filter material" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {uniqueMaterials.map(material => (
+                                        <SelectItem key={material} value={material}>{material}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
                 </CardHeader>

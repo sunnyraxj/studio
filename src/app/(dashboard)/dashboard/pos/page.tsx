@@ -331,23 +331,24 @@ export default function POSPage() {
         const itemMrp = item.product.price;
         const discountAmount = itemMrp * (item.discount / 100);
         const priceAfterDiscount = itemMrp - discountAmount;
-        const itemSubtotal = priceAfterDiscount * item.quantity;
-
-        subtotal += itemSubtotal;
+        
         const gstRate = (item.product.gst || 0) / 100;
-        const itemGstAmount = itemSubtotal * gstRate;
-
+        const taxableValue = priceAfterDiscount / (1 + gstRate);
+        const gstAmount = priceAfterDiscount - taxableValue;
+        
+        subtotal += (taxableValue * item.quantity);
+        
         if (isIntraState) {
-            cgst += (itemGstAmount / 2);
-            sgst += (itemGstAmount / 2);
+            cgst += (gstAmount / 2) * item.quantity;
+            sgst += (gstAmount / 2) * item.quantity;
         } else {
-            igst += itemGstAmount;
+            igst += gstAmount * item.quantity;
         }
     });
 
     const total = subtotal + cgst + sgst + igst;
     
-    return { subtotal, cgst, sgst, igst, total };
+    return { subtotal, cgst, sgst, igst, total: cart.reduce((sum, item) => sum + (item.product.price * item.quantity * (1 - item.discount / 100)), 0) };
   }, [cart, customerState]);
 
 
@@ -514,7 +515,7 @@ export default function POSPage() {
                     <div className="space-y-4">
                         <div className="p-4 border rounded-lg bg-muted/50 space-y-4">
                             <Label className="text-sm font-medium">Quick Item Entry</Label>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
                                 <div className="space-y-1">
                                     <Label htmlFor="quick-name" className="text-xs">Item Name</Label>
                                     <Input
@@ -565,7 +566,7 @@ export default function POSPage() {
                                         />
                                     </div>
                                 </div>
-                                <div className="md:col-span-2">
+                                <div className="sm:col-span-2">
                                     <Button size="sm" onClick={addQuickItemToCart} className="h-8 w-full">
                                         <PlusCircle className="h-4 w-4 mr-2" /> Add Item
                                     </Button>
@@ -574,17 +575,17 @@ export default function POSPage() {
                         </div>
                         
                         <div className="flex flex-col sm:flex-row items-center gap-2 pt-2">
-                           <div className="relative flex-grow">
+                           <div className="relative flex-grow w-full sm:w-auto">
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     placeholder="Search products..."
-                                    className="pl-8"
+                                    className="pl-8 sm:w-64"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
                             <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
-                                <SelectTrigger className="w-full sm:w-[150px]">
+                                <SelectTrigger className="w-full sm:w-auto">
                                     <SelectValue placeholder="Material Filter" />
                                 </SelectTrigger>
                                 <SelectContent>
