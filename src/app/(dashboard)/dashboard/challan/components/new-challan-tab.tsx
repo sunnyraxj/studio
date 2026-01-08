@@ -338,9 +338,13 @@ export function NewChallanTab() {
         }
     });
 
-    const total = subtotal + cgst + sgst + igst;
+    const total = cart.reduce((sum, item) => {
+        const itemTotal = item.product.price * item.quantity;
+        const discountAmount = itemTotal * (item.discount / 100);
+        return sum + (itemTotal - discountAmount);
+    }, 0);
     
-    return { subtotal, cgst, sgst, igst, total: cart.reduce((sum, item) => sum + (item.product.price * item.quantity * (1 - item.discount / 100)), 0) };
+    return { subtotal, cgst, sgst, igst, total };
   }, [cart, customerState]);
   
   const totalPaid = (paymentDetails.cash || 0) + (paymentDetails.card || 0) + (paymentDetails.upi || 0);
@@ -751,7 +755,7 @@ export function NewChallanTab() {
                 <CardFooter className="mt-auto flex-none">
                     <div className='w-full space-y-4'>
                         <div className="space-y-1 text-sm">
-                            <div className="flex justify-between"><span>Subtotal (Taxable)</span><span>₹{subtotal.toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span>Taxable Value</span><span>₹{subtotal.toFixed(2)}</span></div>
                             {cgst > 0 && <div className="flex justify-between"><span>CGST</span><span>₹{cgst.toFixed(2)}</span></div>}
                             {sgst > 0 && <div className="flex justify-between"><span>SGST</span><span>₹{sgst.toFixed(2)}</span></div>}
                             {igst > 0 && <div className="flex justify-between"><span>IGST</span><span>₹{igst.toFixed(2)}</span></div>}

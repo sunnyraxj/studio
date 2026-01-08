@@ -346,9 +346,13 @@ export default function POSPage() {
         }
     });
 
-    const total = subtotal + cgst + sgst + igst;
+    const total = cart.reduce((sum, item) => {
+        const itemTotal = item.product.price * item.quantity;
+        const discountAmount = itemTotal * (item.discount / 100);
+        return sum + (itemTotal - discountAmount);
+    }, 0);
     
-    return { subtotal, cgst, sgst, igst, total: cart.reduce((sum, item) => sum + (item.product.price * item.quantity * (1 - item.discount / 100)), 0) };
+    return { subtotal, cgst, sgst, igst, total };
   }, [cart, customerState]);
 
 
@@ -579,14 +583,14 @@ export default function POSPage() {
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     placeholder="Search products..."
-                                    className="pl-8"
+                                    className="pl-8 sm:w-auto"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
                             <div className='flex items-center gap-2 w-full sm:w-auto'>
                                 <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
-                                    <SelectTrigger className="w-full sm:w-auto flex-1">
+                                    <SelectTrigger className="w-auto flex-1">
                                         <SelectValue placeholder="Material Filter" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -596,7 +600,7 @@ export default function POSPage() {
                                     </SelectContent>
                                 </Select>
                                 <div className="flex items-center space-x-2 sm:space-x-4">
-                                    <Label className="text-sm font-medium shrink-0">Search By:</Label>
+                                    <Label className="text-sm font-medium shrink-0 hidden sm:block">Search By:</Label>
                                     <RadioGroup
                                         value={searchBy}
                                         onValueChange={setSearchBy}
@@ -799,7 +803,7 @@ export default function POSPage() {
                 <CardFooter className="mt-auto flex-none">
                     <div className='w-full space-y-4'>
                         <div className="space-y-1 text-sm">
-                            <div className="flex justify-between"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span>Taxable Value</span><span>₹{subtotal.toFixed(2)}</span></div>
                             {cgst > 0 && <div className="flex justify-between"><span>CGST</span><span>₹{cgst.toFixed(2)}</span></div>}
                             {sgst > 0 && <div className="flex justify-between"><span>SGST</span><span>₹{sgst.toFixed(2)}</span></div>}
                             {igst > 0 && <div className="flex justify-between"><span>IGST</span><span>₹{igst.toFixed(2)}</span></div>}
