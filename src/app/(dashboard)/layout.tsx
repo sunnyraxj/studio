@@ -126,10 +126,10 @@ function AppSidebar({ shopName, isExpired }: { shopName: string, isExpired: bool
     <Sidebar className="hidden md:flex">
         <SidebarContent>
             <SidebarHeader>
-                <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6 -ml-4 -mr-4 -mt-2">
+                <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
                     <Link href="/" className="flex items-center gap-2 font-semibold">
                         <Package2 className="h-6 w-6" />
-                        <span className="">{shopName}</span>
+                        <span className="group-data-[collapsible=icon]:hidden">{shopName}</span>
                     </Link>
                 </div>
             </SidebarHeader>
@@ -363,8 +363,9 @@ export default function DashboardLayout({
 
   return (
     <SidebarProvider>
+      <div className='flex'>
       <AppSidebar shopName={shopName} isExpired={isUIBlocked} />
-      <div className="flex flex-col flex-1">
+      <div className="flex flex-col flex-1 min-h-screen">
         <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
             <MobileSidebar shopName={shopName} isExpired={isUIBlocked} />
             <div className="w-full flex-1" />
@@ -377,6 +378,7 @@ export default function DashboardLayout({
         <main className={cn("flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6", isUIBlocked && "pointer-events-none opacity-50")}>
             {children}
         </main>
+      </div>
       </div>
        <SubscriptionExpiredModal 
             open={isUIBlocked}
