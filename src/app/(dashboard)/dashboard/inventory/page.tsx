@@ -44,7 +44,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, FileDown } from 'lucide-react';
+import { PlusCircle, FileDown, ScanBarcode } from 'lucide-react';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -52,6 +52,7 @@ import { useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 import * as XLSX from 'xlsx';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast.tsx';
+import { BarcodeDialog } from './components/barcode-dialog';
 
 const demoData: InventoryItem[] = [
     { id: '1', name: 'Cotton T-Shirt', sku: 'DEMO-TS-M', stock: 85, price: 499, margin: 30, status: 'in stock', dateAdded: '2023-10-01T10:00:00Z', expiryDate: null, category: 'Apparel', material: 'Cotton', size: 'M', gst: 5, hsn: '6109' , unit: 'pcs'},
@@ -85,224 +86,10 @@ type UserProfile = {
   shopId?: string;
 }
 
-export const columns: ColumnDef<InventoryItem>[] = [
-  // ... (existing columns definition)
-    {
-    id: 'select',
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && 'indeterminate')
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    accessorKey: 'name',
-    header: 'Name',
-    cell: ({ row }) => <div className="capitalize font-medium">{row.getValue('name')}</div>,
-  },
-  {
-    accessorKey: 'category',
-    header: 'Category',
-    cell: ({ row }) => <div>{row.getValue('category')}</div>,
-  },
-  {
-    accessorKey: 'material',
-    header: 'Material',
-    cell: ({ row }) => <div>{row.getValue('material')}</div>,
-  },
-  {
-    accessorKey: 'size',
-    header: 'Size',
-    cell: ({ row }) => <div>{row.getValue('size')}</div>,
-  },
-  {
-    accessorKey: 'stock',
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-        >
-          Stock
-          <CaretSortIcon className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => <div className="text-center">{`${row.getValue('stock')} ${row.original.unit}`}</div>,
-  },
-    {
-    accessorKey: 'price',
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        className="text-right w-full"
-        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-      >
-        MRP
-        <CaretSortIcon className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => {
-      const price = parseFloat(row.getValue('price'));
+type ShopSettings = {
+    companyName?: string;
+}
 
-      const formatted = new Intl.NumberFormat('en-IN', {
-        style: 'currency',
-        currency: 'INR',
-      }).format(price);
-
-      return <div className="text-right font-medium">{formatted}</div>;
-    },
-    filterFn: (row, columnId, filterValue) => {
-        const rowValue = row.getValue(columnId) as number;
-        return String(rowValue).includes(String(filterValue));
-    }
-  },
-  {
-    accessorKey: 'margin',
-    header: () => <div className="text-center">Margin (%)</div>,
-    cell: ({ row }) => <div className="text-center">{`${row.getValue('margin')}%`}</div>,
-  },
-  {
-    accessorKey: 'gst',
-    header: () => <div className="text-center">GST (%)</div>,
-    cell: ({ row }) => <div className="text-center">{`${row.getValue('gst')}%`}</div>,
-  },
-  {
-    accessorKey: 'hsn',
-    header: 'HSN Code',
-    cell: ({ row }) => <div>{row.getValue('hsn')}</div>,
-  },
-  {
-    accessorKey: 'sku',
-    header: 'SKU',
-    cell: ({ row }) => <div>{row.getValue('sku')}</div>,
-  },
-  {
-    accessorKey: 'status',
-    header: 'Status',
-    cell: ({ row }) => {
-      const status = row.getValue('status') as string;
-      let variant: 'default' | 'secondary' | 'destructive' = 'default';
-      if (status === 'low stock') variant = 'secondary';
-      if (status === 'out of stock') variant = 'destructive';
-
-      return (
-        <Badge variant={variant} className="capitalize">
-          {status}
-        </Badge>
-      );
-    },
-  },
-  {
-    accessorKey: 'dateAdded',
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-      >
-        Date Added
-        <CaretSortIcon className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => {
-      const date = new Date(row.getValue('dateAdded'));
-      return <div>{format(date, 'dd MMM yyyy')}</div>;
-    },
-  },
-  {
-    accessorKey: 'expiryDate',
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-      >
-        Expiry Date
-        <CaretSortIcon className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => {
-      const expiryDate = row.getValue('expiryDate') as string | undefined | null;
-      if (!expiryDate) return <div className="text-center">-</div>;
-
-      const date = new Date(expiryDate);
-      const today = new Date();
-      const isExpired = isBefore(date, today);
-      const daysLeft = differenceInDays(date, today);
-      
-      const isExpiringSoon = !isExpired && daysLeft <= 30;
-
-      return (
-        <div className={cn(
-          "text-left",
-          isExpired ? "text-destructive font-bold" : "",
-          isExpiringSoon ? "text-yellow-600 font-semibold" : ""
-        )}>
-          {format(date, 'dd MMM yyyy')}
-          {isExpired && <Badge variant="destructive" className="ml-2">Expired</Badge>}
-          {isExpiringSoon && <Badge variant="secondary" className="ml-2">{daysLeft} days left</Badge>}
-        </div>
-      );
-    },
-  },
-  {
-    id: 'actions',
-    enableHiding: false,
-    cell: ({ row }) => {
-      const item = row.original;
-      const { user } = useUser();
-      const isDemoMode = !user;
-
-      const handleAction = (action: string) => {
-        if (isDemoMode) {
-          toast({
-            title: `Action: ${action} (Demo)`,
-            description: `This action was simulated for product: ${item.name}`,
-          });
-        } else {
-          // Implement actual logic here for logged-in users
-          toast({
-            title: 'Coming Soon!',
-            description: `${action} functionality is being implemented.`,
-          });
-        }
-      };
-
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <DotsHorizontalIcon className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => handleAction('Edit Product')}>
-              Edit product
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleAction('Print Barcode')}>
-              Print barcode
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
-  },
-];
 
 export default function InventoryPage() {
   const firestore = useFirestore();
@@ -315,9 +102,18 @@ export default function InventoryPage() {
   }, [user, firestore, isDemoMode]);
   const { data: userData } = useDoc<UserProfile>(userDocRef);
   const shopId = userData?.shopId;
+  
+  const settingsDocRef = useMemoFirebase(() => {
+    if (isDemoMode || !shopId || !firestore) return null;
+    return doc(firestore, `shops/${shopId}/settings`, 'details');
+  }, [shopId, firestore, isDemoMode]);
+  const { data: shopSettings } = useDoc<ShopSettings>(settingsDocRef);
+  const shopName = isDemoMode ? 'Demo Shop' : shopSettings?.companyName || 'My Shop';
 
   const [data, setData] = React.useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [isBarcodeDialogOpen, setIsBarcodeDialogOpen] = React.useState(false);
+  const [selectedItemForBarcode, setSelectedItemForBarcode] = React.useState<InventoryItem | null>(null);
 
   const [{ pageIndex, pageSize }, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
@@ -339,6 +135,210 @@ export default function InventoryPage() {
   const [rowSelection, setRowSelection] = React.useState({});
   const [searchBy, setSearchBy] = React.useState('name');
   const [filterValue, setFilterValue] = React.useState('');
+
+  const columns: ColumnDef<InventoryItem>[] = [
+    {
+      id: 'select',
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && 'indeterminate')
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
+      accessorKey: 'name',
+      header: 'Name',
+      cell: ({ row }) => <div className="capitalize font-medium">{row.getValue('name')}</div>,
+    },
+    {
+      accessorKey: 'category',
+      header: 'Category',
+      cell: ({ row }) => <div>{row.getValue('category')}</div>,
+    },
+    {
+      accessorKey: 'material',
+      header: 'Material',
+      cell: ({ row }) => <div>{row.getValue('material')}</div>,
+    },
+    {
+      accessorKey: 'size',
+      header: 'Size',
+      cell: ({ row }) => <div>{row.getValue('size')}</div>,
+    },
+    {
+      accessorKey: 'stock',
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          >
+            Stock
+            <CaretSortIcon className="ml-2 h-4 w-4" />
+          </Button>
+        );
+      },
+      cell: ({ row }) => <div className="text-center">{`${row.getValue('stock')} ${row.original.unit}`}</div>,
+    },
+      {
+      accessorKey: 'price',
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          className="text-right w-full"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          MRP
+          <CaretSortIcon className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const price = parseFloat(row.getValue('price'));
+
+        const formatted = new Intl.NumberFormat('en-IN', {
+          style: 'currency',
+          currency: 'INR',
+        }).format(price);
+
+        return <div className="text-right font-medium">{formatted}</div>;
+      },
+      filterFn: (row, columnId, filterValue) => {
+          const rowValue = row.getValue(columnId) as number;
+          return String(rowValue).includes(String(filterValue));
+      }
+    },
+    {
+      accessorKey: 'margin',
+      header: () => <div className="text-center">Margin (%)</div>,
+      cell: ({ row }) => <div className="text-center">{`${row.getValue('margin')}%`}</div>,
+    },
+    {
+      accessorKey: 'gst',
+      header: () => <div className="text-center">GST (%)</div>,
+      cell: ({ row }) => <div className="text-center">{`${row.getValue('gst')}%`}</div>,
+    },
+    {
+      accessorKey: 'hsn',
+      header: 'HSN Code',
+      cell: ({ row }) => <div>{row.getValue('hsn')}</div>,
+    },
+    {
+      accessorKey: 'sku',
+      header: 'SKU',
+      cell: ({ row }) => <div>{row.getValue('sku')}</div>,
+    },
+    {
+      accessorKey: 'status',
+      header: 'Status',
+      cell: ({ row }) => {
+        const status = row.getValue('status') as string;
+        let variant: 'default' | 'secondary' | 'destructive' = 'default';
+        if (status === 'low stock') variant = 'secondary';
+        if (status === 'out of stock') variant = 'destructive';
+
+        return (
+          <Badge variant={variant} className="capitalize">
+            {status}
+          </Badge>
+        );
+      },
+    },
+    {
+      accessorKey: 'dateAdded',
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Date Added
+          <CaretSortIcon className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const date = new Date(row.getValue('dateAdded'));
+        return <div>{format(date, 'dd MMM yyyy')}</div>;
+      },
+    },
+    {
+      accessorKey: 'expiryDate',
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Expiry Date
+          <CaretSortIcon className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const expiryDate = row.getValue('expiryDate') as string | undefined | null;
+        if (!expiryDate) return <div className="text-center">-</div>;
+
+        const date = new Date(expiryDate);
+        const today = new Date();
+        const isExpired = isBefore(date, today);
+        const daysLeft = differenceInDays(date, today);
+        
+        const isExpiringSoon = !isExpired && daysLeft <= 30;
+
+        return (
+          <div className={cn(
+            "text-left",
+            isExpired ? "text-destructive font-bold" : "",
+            isExpiringSoon ? "text-yellow-600 font-semibold" : ""
+          )}>
+            {format(date, 'dd MMM yyyy')}
+            {isExpired && <Badge variant="destructive" className="ml-2">Expired</Badge>}
+            {isExpiringSoon && <Badge variant="secondary" className="ml-2">{daysLeft} days left</Badge>}
+          </div>
+        );
+      },
+    },
+    {
+      id: 'actions',
+      enableHiding: false,
+      cell: ({ row }) => {
+        const item = row.original;
+        
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <DotsHorizontalIcon className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => {
+                setSelectedItemForBarcode(item);
+                setIsBarcodeDialogOpen(true);
+              }}>
+                <ScanBarcode className="mr-2 h-4 w-4" /> Print Barcode
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => toast({ title: "Coming soon!", description: "Editing functionality is being implemented." })}>
+                Edit product
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+    },
+  ];
 
   React.useEffect(() => {
     if (isDemoMode) {
@@ -409,7 +409,6 @@ export default function InventoryPage() {
   };
 
   const handleExport = () => {
-    // This would need to be adapted to fetch all data for export, or export current view
     const dataToExport = table.getFilteredRowModel().rows.map(row => {
         const { expiryDate, ...rest } = row.original;
         return {
@@ -424,6 +423,7 @@ export default function InventoryPage() {
   }
 
   return (
+    <>
     <div className="w-full">
       <div className="flex items-center py-4 gap-4">
         <div className="flex gap-4">
@@ -560,5 +560,12 @@ export default function InventoryPage() {
         <DataTablePagination table={table} />
       </div>
     </div>
+    <BarcodeDialog 
+        isOpen={isBarcodeDialogOpen}
+        onOpenChange={setIsBarcodeDialogOpen}
+        item={selectedItemForBarcode}
+        shopName={shopName}
+    />
+    </>
   );
 }

@@ -54,7 +54,8 @@
     "zod": "^3.23.8",
     "@hookform/resolvers": "^3.9.0",
     "react-hot-toast": "^2.4.1",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "react-barcode": "^1.5.3"
   },
   "devDependencies": {
     "@types/node": "^20",
@@ -68,4 +69,3 @@
   }
 }
 
-    
