@@ -38,7 +38,10 @@ import {
   useSidebar,
   Sheet,
   SheetContent,
-  SheetTrigger
+  SheetTrigger,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import {
@@ -275,6 +278,10 @@ const MobileSidebar = ({ shopName, isExpired }: { shopName: string; isExpired: b
                 </Button>
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col">
+                <SheetHeader className="sr-only">
+                  <SheetTitle>Navigation Menu</SheetTitle>
+                  <SheetDescription>Main application navigation links.</SheetDescription>
+                </SheetHeader>
                 <nav className="grid gap-2 text-lg font-medium">
                     <Link href="#" className="flex items-center gap-2 text-lg font-semibold mb-4">
                         <Package2 className="h-6 w-6" />
