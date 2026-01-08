@@ -169,6 +169,8 @@ export default function POSPage() {
   const invoiceRef = useRef(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
+  const [scanBuffer, setScanBuffer] = useState('');
+
   const handlePrint = () => {
     const printContent = invoiceRef.current;
     if (printContent) {
@@ -260,6 +262,39 @@ export default function POSPage() {
     });
   };
 
+   useEffect(() => {
+    const handleScan = (event: KeyboardEvent) => {
+      // Ignore keypresses if they are in an input/textarea
+      const target = event.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      if (event.key === 'Enter') {
+        if (scanBuffer.length > 2) {
+          const foundProduct = products.find(p => p.sku === scanBuffer);
+          if (foundProduct) {
+            addToCart(foundProduct);
+            hotToast.success(`Added ${foundProduct.name} to cart.`);
+          } else {
+            hotToast.error(`Product with code "${scanBuffer}" not found.`);
+          }
+        }
+        setScanBuffer('');
+        event.preventDefault();
+      } else if (event.key.length === 1) { // Append character if it's printable
+        setScanBuffer(prev => prev + event.key);
+      }
+    };
+
+    document.addEventListener('keydown', handleScan);
+    
+    // Cleanup
+    return () => {
+      document.removeEventListener('keydown', handleScan);
+    };
+  }, [scanBuffer, products]); // Rerun effect if products list changes
+
   const addQuickItemToCart = () => {
     if (!quickItemName || !quickItemQty || !quickItemPrice) {
       hotToast.error('Please enter item name, quantity, and MRP.');
@@ -346,9 +381,13 @@ export default function POSPage() {
         }
     });
 
-    const total = subtotal + cgst + sgst + igst;
+    const total = cart.reduce((sum, item) => {
+        const itemTotal = item.product.price * item.quantity;
+        const discountAmount = itemTotal * (item.discount / 100);
+        return sum + (itemTotal - discountAmount);
+    }, 0);
     
-    return { subtotal, cgst, sgst, igst, total: cart.reduce((sum, item) => sum + (item.product.price * item.quantity * (1 - item.discount / 100)), 0) };
+    return { subtotal, cgst, sgst, igst, total };
   }, [cart, customerState]);
 
 
@@ -575,41 +614,43 @@ export default function POSPage() {
                         </div>
                         
                         <div className="flex flex-col sm:flex-row items-center gap-2 pt-2">
-                           <div className="relative flex-grow w-full sm:w-auto">
+                           <div className="relative flex-grow w-full">
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
-                                    placeholder="Search products..."
-                                    className="pl-8 sm:w-64"
+                                    placeholder="Search products... or scan barcode"
+                                    className="pl-8 sm:w-auto"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
-                            <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
-                                <SelectTrigger className="w-full sm:w-auto">
-                                    <SelectValue placeholder="Material Filter" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {uniqueMaterials.map(material => (
-                                        <SelectItem key={material} value={material}>{material}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <div className="flex items-center space-x-4">
-                                <Label className="text-sm font-medium shrink-0">Search By:</Label>
-                                <RadioGroup
-                                    value={searchBy}
-                                    onValueChange={setSearchBy}
-                                    className="flex items-center space-x-2"
-                                >
-                                    <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="name" id="name" />
-                                        <Label htmlFor="name" className="text-sm">Name/Code</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="mrp" id="mrp" />
-                                        <Label htmlFor="mrp" className="text-sm">MRP</Label>
-                                    </div>
-                                </RadioGroup>
+                            <div className='flex items-center gap-2 w-full sm:w-auto'>
+                                <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
+                                    <SelectTrigger className="w-auto flex-1">
+                                        <SelectValue placeholder="Material Filter" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {uniqueMaterials.map(material => (
+                                            <SelectItem key={material} value={material}>{material}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <div className="flex items-center space-x-2 sm:space-x-4">
+                                    <Label className="text-sm font-medium shrink-0 hidden sm:block">Search By:</Label>
+                                    <RadioGroup
+                                        value={searchBy}
+                                        onValueChange={setSearchBy}
+                                        className="flex items-center space-x-2"
+                                    >
+                                        <div className="flex items-center space-x-1">
+                                            <RadioGroupItem value="name" id="name" />
+                                            <Label htmlFor="name" className="text-sm">Name</Label>
+                                        </div>
+                                        <div className="flex items-center space-x-1">
+                                            <RadioGroupItem value="mrp" id="mrp" />
+                                            <Label htmlFor="mrp" className="text-sm">MRP</Label>
+                                        </div>
+                                    </RadioGroup>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -797,7 +838,7 @@ export default function POSPage() {
                 <CardFooter className="mt-auto flex-none">
                     <div className='w-full space-y-4'>
                         <div className="space-y-1 text-sm">
-                            <div className="flex justify-between"><span>Subtotal (Taxable)</span><span>₹{subtotal.toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span>Taxable Value</span><span>₹{subtotal.toFixed(2)}</span></div>
                             {cgst > 0 && <div className="flex justify-between"><span>CGST</span><span>₹{cgst.toFixed(2)}</span></div>}
                             {sgst > 0 && <div className="flex justify-between"><span>SGST</span><span>₹{sgst.toFixed(2)}</span></div>}
                             {igst > 0 && <div className="flex justify-between"><span>IGST</span><span>₹{igst.toFixed(2)}</span></div>}
@@ -834,3 +875,5 @@ export default function POSPage() {
     </>
   );
 }
+
+    

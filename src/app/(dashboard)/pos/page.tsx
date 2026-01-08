@@ -169,6 +169,8 @@ export default function POSPage() {
   const invoiceRef = useRef(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
+  const [scanBuffer, setScanBuffer] = useState('');
+
   const handlePrint = () => {
     const printContent = invoiceRef.current;
     if (printContent) {
@@ -259,6 +261,39 @@ export default function POSPage() {
       return [...prevCart, { product: productToAdd, quantity: 1, discount: 0 }];
     });
   };
+
+   useEffect(() => {
+    const handleScan = (event: KeyboardEvent) => {
+      // Ignore keypresses if they are in an input/textarea
+      const target = event.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      if (event.key === 'Enter') {
+        if (scanBuffer.length > 2) {
+          const foundProduct = products.find(p => p.sku === scanBuffer);
+          if (foundProduct) {
+            addToCart(foundProduct);
+            hotToast.success(`Added ${foundProduct.name} to cart.`);
+          } else {
+            hotToast.error(`Product with code "${scanBuffer}" not found.`);
+          }
+        }
+        setScanBuffer('');
+        event.preventDefault();
+      } else if (event.key.length === 1) { // Append character if it's printable
+        setScanBuffer(prev => prev + event.key);
+      }
+    };
+
+    document.addEventListener('keydown', handleScan);
+    
+    // Cleanup
+    return () => {
+      document.removeEventListener('keydown', handleScan);
+    };
+  }, [scanBuffer, products]); // Rerun effect if products list changes
 
   const addQuickItemToCart = () => {
     if (!quickItemName || !quickItemQty || !quickItemPrice) {
@@ -519,7 +554,7 @@ export default function POSPage() {
                     <div className="space-y-4">
                         <div className="p-4 border rounded-lg bg-muted/50 space-y-4">
                             <Label className="text-sm font-medium">Quick Item Entry</Label>
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
                                 <div className="space-y-1">
                                     <Label htmlFor="quick-name" className="text-xs">Item Name</Label>
                                     <Input
@@ -570,7 +605,7 @@ export default function POSPage() {
                                         />
                                     </div>
                                 </div>
-                                <div className="md:col-span-2">
+                                <div className="sm:col-span-2">
                                     <Button size="sm" onClick={addQuickItemToCart} className="h-8 w-full">
                                         <PlusCircle className="h-4 w-4 mr-2" /> Add Item
                                     </Button>
@@ -579,10 +614,10 @@ export default function POSPage() {
                         </div>
                         
                         <div className="flex flex-col sm:flex-row items-center gap-2 pt-2">
-                           <div className="relative flex-grow">
+                           <div className="relative flex-grow w-full">
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
-                                    placeholder="Search products..."
+                                    placeholder="Search products... or scan barcode"
                                     className="pl-8 sm:w-auto"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -840,3 +875,5 @@ export default function POSPage() {
     </>
   );
 }
+
+    
