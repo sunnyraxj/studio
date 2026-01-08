@@ -172,7 +172,7 @@ export default function POSPage() {
   const handlePrint = () => {
     const printContent = invoiceRef.current;
     if (printContent) {
-        const newWindow = window.open('', '_blank', 'width=800,height=600');
+        const newWindow = window.open('', '_blank', 'width=300,height=600');
         if (newWindow) {
             const printableContent = (printContent as HTMLDivElement).innerHTML;
             
@@ -329,24 +329,30 @@ export default function POSPage() {
     let igst = 0;
 
     cart.forEach(item => {
-        const itemTotalMrp = item.product.price * item.quantity;
-        const discountAmount = itemTotalMrp * (item.discount / 100);
-        const taxableValue = itemTotalMrp - discountAmount;
-        const gstRate = (item.product.gst || 0) / 100;
-        const basePrice = taxableValue / (1 + gstRate);
-        const itemGstAmount = taxableValue - basePrice;
+        const itemMrp = item.product.price;
+        const discountAmount = itemMrp * (item.discount / 100);
+        const priceAfterDiscount = itemMrp - discountAmount;
         
-        subtotal += basePrice;
+        const gstRate = (item.product.gst || 0) / 100;
+        const taxableValue = priceAfterDiscount / (1 + gstRate);
+        const itemGstAmount = priceAfterDiscount - taxableValue;
 
+        subtotal += taxableValue * item.quantity;
+        
         if (isIntraState) {
-            cgst += itemGstAmount / 2;
-            sgst += itemGstAmount / 2;
+            cgst += (itemGstAmount / 2) * item.quantity;
+            sgst += (itemGstAmount / 2) * item.quantity;
         } else {
-            igst += itemGstAmount;
+            igst += itemGstAmount * item.quantity;
         }
     });
+    
+    const total = cart.reduce((acc, item) => {
+        const itemTotal = item.product.price * item.quantity;
+        const discountAmount = itemTotal * (item.discount / 100);
+        return acc + (itemTotal - discountAmount);
+    }, 0);
 
-    const total = subtotal + cgst + sgst + igst;
     return { subtotal, cgst, sgst, igst, total };
 
   }, [cart, customerState]);
@@ -515,8 +521,8 @@ export default function POSPage() {
                     <div className="space-y-4">
                         <div className="p-4 border rounded-lg bg-muted/50 space-y-4">
                             <Label className="text-sm font-medium">Quick Item Entry</Label>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2 items-end">
-                                <div className="space-y-1 md:col-span-2">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                                <div className="space-y-1">
                                     <Label htmlFor="quick-name" className="text-xs">Item Name</Label>
                                     <Input
                                         id="quick-name"
@@ -527,46 +533,50 @@ export default function POSPage() {
                                         className="h-8"
                                     />
                                 </div>
-                                <div className="space-y-1">
-                                    <Label htmlFor="quick-mrp" className="text-xs">MRP</Label>
-                                    <Input
-                                        id="quick-mrp"
-                                        type="number"
-                                        placeholder="MRP"
-                                        value={quickItemPrice}
-                                        onChange={(e) => setQuickItemPrice(e.target.value)}
-                                        onKeyDown={handleQuickItemKeyDown}
-                                        className="h-8"
-                                    />
+                                <div className="grid grid-cols-3 gap-2">
+                                     <div className="space-y-1">
+                                        <Label htmlFor="quick-mrp" className="text-xs">MRP</Label>
+                                        <Input
+                                            id="quick-mrp"
+                                            type="number"
+                                            placeholder="MRP"
+                                            value={quickItemPrice}
+                                            onChange={(e) => setQuickItemPrice(e.target.value)}
+                                            onKeyDown={handleQuickItemKeyDown}
+                                            className="h-8"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Label htmlFor="quick-qty" className="text-xs">Qty</Label>
+                                        <Input
+                                            id="quick-qty"
+                                            type="number"
+                                            placeholder="Qty"
+                                            value={quickItemQty}
+                                            onChange={(e) => setQuickItemQty(e.target.value)}
+                                            onKeyDown={handleQuickItemKeyDown}
+                                            className="h-8"
+                                            min="1"
+                                        />
+                                    </div>
+                                     <div className="space-y-1">
+                                        <Label htmlFor="quick-gst" className="text-xs">GST (%)</Label>
+                                        <Input
+                                            id="quick-gst"
+                                            type="number"
+                                            placeholder="GST"
+                                            value={quickItemGst}
+                                            onChange={(e) => setQuickItemGst(e.target.value)}
+                                            onKeyDown={handleQuickItemKeyDown}
+                                            className="h-8"
+                                        />
+                                    </div>
                                 </div>
-                                <div className="space-y-1">
-                                    <Label htmlFor="quick-qty" className="text-xs">Qty</Label>
-                                    <Input
-                                        id="quick-qty"
-                                        type="number"
-                                        placeholder="Qty"
-                                        value={quickItemQty}
-                                        onChange={(e) => setQuickItemQty(e.target.value)}
-                                        onKeyDown={handleQuickItemKeyDown}
-                                        className="h-8"
-                                        min="1"
-                                    />
+                                <div className="md:col-span-2">
+                                    <Button size="sm" onClick={addQuickItemToCart} className="h-8 w-full">
+                                        <PlusCircle className="h-4 w-4 mr-2" /> Add Item
+                                    </Button>
                                 </div>
-                                <div className="space-y-1">
-                                    <Label htmlFor="quick-gst" className="text-xs">GST (%)</Label>
-                                    <Input
-                                        id="quick-gst"
-                                        type="number"
-                                        placeholder="GST"
-                                        value={quickItemGst}
-                                        onChange={(e) => setQuickItemGst(e.target.value)}
-                                        onKeyDown={handleQuickItemKeyDown}
-                                        className="h-8"
-                                    />
-                                </div>
-                                <Button size="sm" onClick={addQuickItemToCart} className="h-8 sm:self-end">
-                                    <PlusCircle className="h-4 w-4" />
-                                </Button>
                             </div>
                         </div>
                         <div className="flex flex-col sm:flex-row gap-2 pt-2">
@@ -813,11 +823,6 @@ export default function POSPage() {
                     </div>
                 </CardFooter>
             </Card>
-        </div>
-    </div>
-    <div className='hidden print:block'>
-        <div ref={invoiceRef}>
-            {lastSaleData && <CompactReceipt sale={lastSaleData} settings={shopSettings} />}
         </div>
     </div>
     <Dialog open={isInvoiceOpen} onOpenChange={(open) => { if (!open) { setIsInvoiceOpen(false); setLastSaleData(null); }}}>
