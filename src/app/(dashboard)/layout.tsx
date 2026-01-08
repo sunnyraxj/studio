@@ -48,8 +48,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -127,7 +127,7 @@ function AppSidebar({ shopName, isExpired }: { shopName: string, isExpired: bool
         <SidebarContent>
             <SidebarHeader>
                 <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-                    <Link href="/" className="flex items-center gap-2 font-semibold">
+                    <Link href="/" className="flex items-center gap-2 font-semibold group-data-[collapsible=icon]:justify-center">
                         <Package2 className="h-6 w-6" />
                         <span className="group-data-[collapsible=icon]:hidden">{shopName}</span>
                     </Link>
