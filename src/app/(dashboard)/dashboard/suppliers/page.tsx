@@ -312,13 +312,13 @@ const SupplierDetails: React.FC<{ supplier: AggregatedSupplier, shopId: string |
                                         <TableRow key={p.id}>
                                             <TableCell className="py-2 text-xs">{format(new Date(p.billDate), 'dd MMM, yy')}</TableCell>
                                             <TableCell className="py-2 text-xs">{p.billNumber || 'N/A'}</TableCell>
-                                            <TableCell className="text-right py-2 font-medium text-xs flex items-center justify-end gap-1"><IndianRupee className="h-3 w-3"/>{p.totalAmount.toLocaleString()}</TableCell>
-                                            <TableCell className="text-right py-2 text-green-600 text-xs flex items-center justify-end gap-1"><IndianRupee className="h-3 w-3"/>{p.paidAmount.toLocaleString()}</TableCell>
-                                            <TableCell className="text-right py-2 text-destructive text-xs flex items-center justify-end gap-1"><IndianRupee className="h-3 w-3"/>{due.toLocaleString()}</TableCell>
+                                            <TableCell className="text-right py-2 font-medium text-xs"><div className='flex items-center justify-end gap-1'><IndianRupee className="h-3 w-3"/>{p.totalAmount.toLocaleString()}</div></TableCell>
+                                            <TableCell className="text-right py-2 text-green-600 text-xs"><div className='flex items-center justify-end gap-1'><IndianRupee className="h-3 w-3"/>{p.paidAmount.toLocaleString()}</div></TableCell>
+                                            <TableCell className="text-right py-2 text-destructive text-xs"><div className='flex items-center justify-end gap-1'><IndianRupee className="h-3 w-3"/>{due.toLocaleString()}</div></TableCell>
                                             <TableCell className="py-2"><Badge variant={p.status === 'Paid' ? 'default' : p.status === 'Unpaid' ? 'destructive' : 'secondary'} className="text-[10px] py-0.5 px-1.5">{p.status}</Badge></TableCell>
                                             <TableCell className="text-right py-2">
-                                                <Button variant="outline" size="sm" onClick={() => { setSelectedPurchase(p); setIsPrintDialogOpen(true); }}>
-                                                    <Printer className="h-3 w-3" />
+                                                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => { setSelectedPurchase(p); setIsPrintDialogOpen(true); }}>
+                                                    <Printer className="h-4 w-4" />
                                                 </Button>
                                             </TableCell>
                                         </TableRow>
