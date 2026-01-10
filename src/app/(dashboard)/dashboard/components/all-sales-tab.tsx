@@ -293,7 +293,7 @@ export function AllSalesTab({ isDemoMode, demoSales, setDemoSales }: AllSalesTab
   }, [shopId, pageIndex, pageSize, sorting, isFilterActive, isDemoMode, demoSales, searchTerm, startDay, startMonth, startYear, endDay, endMonth, endYear]);
 
   const handleFilter = () => {
-    setPageIndex(0);
+    setPagination(prev => ({ ...prev, pageIndex: 0 }));
     setLastVisible(null);
     setIsFilterActive(prev => !prev);
   };
@@ -306,7 +306,7 @@ export function AllSalesTab({ isDemoMode, demoSales, setDemoSales }: AllSalesTab
     setEndMonth('');
     setEndYear('');
     setSearchTerm('');
-    setPageIndex(0);
+    setPagination(prev => ({ ...prev, pageIndex: 0 }));
     setLastVisible(null);
     if(isFilterActive) {
       setIsFilterActive(prev => !prev);

@@ -183,7 +183,7 @@ export function ChallanListTab() {
   }, [shopId, pageIndex, pageSize, sorting, isFilterActive, isDemoMode]);
 
   const handleFilter = () => {
-    setPageIndex(0); // Reset to first page
+    setPagination(prev => ({ ...prev, pageIndex: 0 })); // Reset to first page
     setLastVisible(null);
     setIsFilterActive(prev => !prev); // Trigger re-fetch
   };
@@ -196,7 +196,7 @@ export function ChallanListTab() {
     setEndMonth('');
     setEndYear('');
     setSearchTerm('');
-    setPageIndex(0);
+    setPagination(prev => ({ ...prev, pageIndex: 0 }));
     setLastVisible(null);
     if(isFilterActive) {
       setIsFilterActive(prev => !prev);
