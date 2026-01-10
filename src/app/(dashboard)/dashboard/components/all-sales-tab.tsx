@@ -34,7 +34,7 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { CaretSortIcon, ChevronDownIcon, ChevronRightIcon } from '@radix-ui/react-icons';
-import { X, Search, Printer, Receipt } from 'lucide-react';
+import { X, Search, Printer, Receipt, IndianRupee } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { Sale } from '../page';
@@ -175,7 +175,7 @@ export function AllSalesTab({ isDemoMode, demoSales, setDemoSales }: AllSalesTab
           Amount <CaretSortIcon className="ml-2 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => <div className="text-right font-semibold">₹{row.original.total.toLocaleString('en-IN')}</div>,
+      cell: ({ row }) => <div className="text-right font-semibold flex items-center justify-end gap-1"><IndianRupee className="h-4 w-4" />{row.original.total.toLocaleString('en-IN')}</div>,
     },
     {
         id: 'actions',
@@ -414,7 +414,7 @@ export function AllSalesTab({ isDemoMode, demoSales, setDemoSales }: AllSalesTab
                                   <TableRow key={index}>
                                     <TableCell>{item.name}</TableCell>
                                     <TableCell className="text-center">{item.quantity}</TableCell>
-                                    <TableCell className="text-right">₹{item.price.toLocaleString('en-IN')}</TableCell>
+                                    <TableCell className="text-right flex items-center justify-end gap-1"><IndianRupee className="h-3 w-3" />{item.price.toLocaleString('en-IN')}</TableCell>
                                   </TableRow>
                                 ))}
                               </TableBody>

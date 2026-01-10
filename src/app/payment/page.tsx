@@ -19,7 +19,7 @@ import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal } from 'lucide-react';
+import { Terminal, IndianRupee } from 'lucide-react';
 
 type UserProfile = {
   subscriptionStatus?: 'active' | 'inactive' | 'pending_verification' | 'rejected';
@@ -151,7 +151,7 @@ export default function PaymentPage() {
           <CardContent className="space-y-4">
             <div className="flex justify-between items-center border rounded-md p-4 bg-muted/20">
               <span className="font-medium">{userData?.planName || 'Pro Plan'}</span>
-              <span className="font-bold text-lg">₹{userData?.planPrice?.toLocaleString('en-IN') || '799'}/month</span>
+              <span className="font-bold text-lg flex items-center gap-1"><IndianRupee className="h-5 w-5"/>{userData?.planPrice?.toLocaleString('en-IN') || '799'}/month</span>
             </div>
             <div className="flex justify-center items-center p-4 border rounded-md">
                 <Image 

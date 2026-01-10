@@ -256,7 +256,7 @@ export default function KhataBookPage({ isDemoMode, demoKhataEntries, setDemoKha
             Total Due <CaretSortIcon className="ml-2 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => <div className={cn("text-right font-bold text-lg", row.original.totalDue > 0 ? 'text-destructive' : 'text-green-600' )}>₹{Math.abs(row.original.totalDue).toLocaleString('en-IN')}</div>,
+      cell: ({ row }) => <div className={cn("text-right font-bold text-lg flex items-center justify-end gap-1", row.original.totalDue > 0 ? 'text-destructive' : 'text-green-600' )}><IndianRupee className="h-5 w-5"/>{Math.abs(row.original.totalDue).toLocaleString('en-IN')}</div>,
     },
     {
       accessorKey: 'lastEntryDate',
@@ -397,7 +397,7 @@ export default function KhataBookPage({ isDemoMode, demoKhataEntries, setDemoKha
         <div className="flex items-center gap-4">
             <div className="text-right">
                 <p className="text-sm text-muted-foreground">Grand Total Due</p>
-                <p className="text-2xl font-bold text-destructive">₹{grandTotalDue.toLocaleString('en-IN')}</p>
+                <p className="text-2xl font-bold text-destructive flex items-center justify-end gap-1"><IndianRupee className="h-6 w-6" />{grandTotalDue.toLocaleString('en-IN')}</p>
             </div>
             <Button onClick={() => openNewCreditDialog()} className="bg-green-600 hover:bg-green-700">
                 <PlusCircle className="mr-2 h-4 w-4" /> Add New Credit
@@ -508,9 +508,9 @@ export default function KhataBookPage({ isDemoMode, demoKhataEntries, setDemoKha
                                     <TableCell>
                                         <Badge variant={entry.type === 'credit' ? 'destructive' : 'default'} className="capitalize">{entry.type}</Badge>
                                     </TableCell>
-                                    <TableCell className={cn("text-right font-semibold", entry.type === 'credit' ? 'text-destructive' : 'text-green-600')}>
+                                    <TableCell className={cn("text-right font-semibold flex items-center justify-end gap-1", entry.type === 'credit' ? 'text-destructive' : 'text-green-600')}>
                                         {entry.type === 'payment' && '- '}
-                                        ₹{Math.abs(entry.amount).toLocaleString('en-IN')}
+                                        <IndianRupee className="h-4 w-4" />{Math.abs(entry.amount).toLocaleString('en-IN')}
                                     </TableCell>
                                   </TableRow>
                                 ))}
@@ -572,7 +572,7 @@ export default function KhataBookPage({ isDemoMode, demoKhataEntries, setDemoKha
                 </div>
              </div>
              <div className="space-y-2">
-                <Label htmlFor="amount">Amount (₹)</Label>
+                <Label htmlFor="amount">Amount</Label>
                 <div className="relative">
                     <IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input 
@@ -612,12 +612,12 @@ export default function KhataBookPage({ isDemoMode, demoKhataEntries, setDemoKha
             <DialogTitle>Record a Payment</DialogTitle>
             <DialogDescription>
               Record a payment received from <span className="font-bold">{selectedCustomer?.customerName}</span>.
-              Current due: <span className="font-bold text-destructive">₹{selectedCustomer?.totalDue.toLocaleString('en-IN')}</span>
+              Current due: <span className="font-bold text-destructive flex items-center gap-1"><IndianRupee className="h-4 w-4" />{selectedCustomer?.totalDue.toLocaleString('en-IN')}</span>
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
              <div className="space-y-2">
-                <Label htmlFor="payment-amount">Payment Amount (₹)</Label>
+                <Label htmlFor="payment-amount">Payment Amount</Label>
                 <div className="relative">
                     <IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input 

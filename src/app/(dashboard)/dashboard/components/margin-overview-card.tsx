@@ -18,7 +18,7 @@ import {
 import { subMonths, startOfMonth, endOfMonth, startOfYear, endOfYear, subYears, startOfWeek, endOfWeek } from 'date-fns';
 import type { Sale } from '../page';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Percent } from 'lucide-react';
+import { Percent, IndianRupee } from 'lucide-react';
 
 
 export function MarginOverviewCard({ salesData, isLoading }: { salesData: Sale[] | null, isLoading: boolean }) {
@@ -106,11 +106,10 @@ export function MarginOverviewCard({ salesData, isLoading }: { salesData: Sale[]
       </CardHeader>
       <CardContent>
         {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">{marginPercentage.toFixed(2)}%</div>}
-         <p className="text-xs text-muted-foreground">
-            Profit of ₹{totalProfit.toLocaleString('en-IN', { maximumFractionDigits: 0 })} from revenue of ₹{totalRevenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+         <p className="text-xs text-muted-foreground flex items-center gap-1">
+            Profit of <IndianRupee className="h-3 w-3" />{totalProfit.toLocaleString('en-IN', { maximumFractionDigits: 0 })} from revenue of <IndianRupee className="h-3 w-3" />{totalRevenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
         </p>
       </CardContent>
     </Card>
   );
 }
-

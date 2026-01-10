@@ -36,6 +36,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { add, differenceInDays } from 'date-fns';
+import { IndianRupee } from 'lucide-react';
 
 type UserProfile = {
   id: string;
@@ -274,7 +275,7 @@ export default function AdminPage() {
                   <TableRow key={u.id}>
                     <TableCell className="font-medium">{u.name || 'N/A'}</TableCell>
                     <TableCell>{u.email}</TableCell>
-                    <TableCell>₹{u.planPrice?.toLocaleString('en-IN') || 'N/A'}</TableCell>
+                    <TableCell className="flex items-center gap-1"><IndianRupee className="h-3 w-3" />{u.planPrice?.toLocaleString('en-IN') || 'N/A'}</TableCell>
                     <TableCell>{u.utr || 'N/A'}</TableCell>
                     <TableCell>
                       {u.subscriptionType === 'Renew' ? (
@@ -354,7 +355,7 @@ export default function AdminPage() {
                   <div><strong>Name:</strong> {selectedUser?.name}</div>
                   <div><strong>Email:</strong> {selectedUser?.email}</div>
                   <div><strong>UTR:</strong> {selectedUser?.utr}</div>
-                  <div><strong>Amount:</strong> ₹{selectedUser?.planPrice?.toLocaleString('en-IN')}</div>
+                  <div className="flex items-center gap-1"><strong>Amount:</strong> <IndianRupee className="h-4 w-4"/>{selectedUser?.planPrice?.toLocaleString('en-IN')}</div>
                   <div><strong>Type:</strong> <Badge variant={selectedUser?.subscriptionType === 'Renew' ? 'default' : 'outline'}>{selectedUser?.subscriptionType}</Badge></div>
               </div>
             </AlertDialogHeader>

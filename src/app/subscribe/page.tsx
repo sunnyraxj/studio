@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Check, BadgePercent } from 'lucide-react';
+import { Check, BadgePercent, IndianRupee } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, updateDoc, collection, query, orderBy } from 'firebase/firestore';
@@ -173,9 +173,9 @@ export default function SubscribePage() {
                     <CardContent className="flex-grow flex flex-col justify-between">
                         <div className="flex-grow">
                              <div className="flex items-baseline flex-wrap gap-x-2">
-                                <span className="text-4xl font-bold">₹{plan.price.toLocaleString('en-IN')}</span>
+                                <span className="text-4xl font-bold flex items-center gap-1"><IndianRupee className="h-8 w-8"/>{plan.price.toLocaleString('en-IN')}</span>
                                 {plan.originalPrice && plan.originalPrice > plan.price && (
-                                     <span className="text-lg font-medium text-muted-foreground line-through">₹{plan.originalPrice.toLocaleString('en-IN')}</span>
+                                     <span className="text-lg font-medium text-muted-foreground line-through flex items-center gap-1"><IndianRupee className="h-4 w-4"/>{plan.originalPrice.toLocaleString('en-IN')}</span>
                                 )}
                             </div>
                              {plan.durationMonths > 1 && plan.durationMonths < 100 && (
@@ -207,7 +207,7 @@ export default function SubscribePage() {
           onClick={handleSubscribe}
           disabled={!selectedPlan || isPlansLoading}
         >
-          {selectedPlan ? `Pay ₹${selectedPlan.price.toLocaleString('en-IN')}` : 'Select a Plan'}
+          {selectedPlan ? <>Pay <IndianRupee className="h-5 w-5 mx-1" /> {selectedPlan.price.toLocaleString('en-IN')}</> : 'Select a Plan'}
         </Button>
       </div>
     </div>

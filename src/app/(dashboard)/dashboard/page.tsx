@@ -278,7 +278,7 @@ export default function DashboardPage() {
                         <IndianRupee className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                        {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">₹{todaySales.toLocaleString('en-IN')}</div>}
+                        {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold flex items-center gap-1"><IndianRupee className="h-6 w-6"/>{todaySales.toLocaleString('en-IN')}</div>}
                         </CardContent>
                     </Card>
                     <MarginOverviewCard salesData={salesData} isLoading={isLoading} />
@@ -288,7 +288,7 @@ export default function DashboardPage() {
                         <IndianRupee className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                        {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">₹{thisMonthSales.toLocaleString('en-IN')}</div>}
+                        {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold flex items-center gap-1"><IndianRupee className="h-6 w-6"/>{thisMonthSales.toLocaleString('en-IN')}</div>}
                         </CardContent>
                     </Card>
                     <Card>
@@ -297,7 +297,7 @@ export default function DashboardPage() {
                         <IndianRupee className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                        {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">₹{thisYearSales.toLocaleString('en-IN')}</div>}
+                        {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold flex items-center gap-1"><IndianRupee className="h-6 w-6"/>{thisYearSales.toLocaleString('en-IN')}</div>}
                         </CardContent>
                     </Card>
                 </div>
@@ -373,5 +373,3 @@ export default function DashboardPage() {
     </TooltipProvider>
   );
 }
-
-    

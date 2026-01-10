@@ -34,7 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { FileDown, ReceiptText } from 'lucide-react';
+import { FileDown, ReceiptText, IndianRupee } from 'lucide-react';
 import { useFirestore, useUser, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc, query, where, orderBy } from 'firebase/firestore';
 import { format } from 'date-fns';
@@ -162,12 +162,12 @@ export function GstTab({ isDemoMode, demoSales }: GstTabProps) {
         { accessorKey: 'invoiceNumber', header: 'Invoice #' },
         { accessorKey: 'customerName', header: 'Customer Name' },
         { accessorKey: 'customerGstin', header: 'Customer GSTIN', cell: ({row}) => row.getValue('customerGstin') || '-' },
-        { accessorKey: 'taxableAmount', header: 'Taxable Amount', cell: ({ row }) => `₹${row.original.taxableAmount.toFixed(2)}` },
-        { accessorKey: 'cgstAmount', header: 'CGST', cell: ({ row }) => `₹${row.original.cgstAmount.toFixed(2)}` },
-        { accessorKey: 'sgstAmount', header: 'SGST', cell: ({ row }) => `₹${row.original.sgstAmount.toFixed(2)}` },
-        { accessorKey: 'igstAmount', header: 'IGST', cell: ({ row }) => `₹${row.original.igstAmount.toFixed(2)}` },
-        { accessorKey: 'totalGst', header: 'Total GST', cell: ({ row }) => `₹${row.original.totalGst.toFixed(2)}` },
-        { accessorKey: 'invoiceTotal', header: 'Invoice Total', cell: ({ row }) => `₹${row.original.invoiceTotal.toFixed(2)}` },
+        { accessorKey: 'taxableAmount', header: 'Taxable Amount', cell: ({ row }) => <div className="flex items-center gap-1"><IndianRupee className="h-3 w-3" />{row.original.taxableAmount.toFixed(2)}</div> },
+        { accessorKey: 'cgstAmount', header: 'CGST', cell: ({ row }) => <div className="flex items-center gap-1"><IndianRupee className="h-3 w-3" />{row.original.cgstAmount.toFixed(2)}</div> },
+        { accessorKey: 'sgstAmount', header: 'SGST', cell: ({ row }) => <div className="flex items-center gap-1"><IndianRupee className="h-3 w-3" />{row.original.sgstAmount.toFixed(2)}</div> },
+        { accessorKey: 'igstAmount', header: 'IGST', cell: ({ row }) => <div className="flex items-center gap-1"><IndianRupee className="h-3 w-3" />{row.original.igstAmount.toFixed(2)}</div> },
+        { accessorKey: 'totalGst', header: 'Total GST', cell: ({ row }) => <div className="flex items-center gap-1"><IndianRupee className="h-3 w-3" />{row.original.totalGst.toFixed(2)}</div> },
+        { accessorKey: 'invoiceTotal', header: 'Invoice Total', cell: ({ row }) => <div className="flex items-center gap-1"><IndianRupee className="h-3 w-3" />{row.original.invoiceTotal.toFixed(2)}</div> },
     ];
 
     const table = useReactTable({
@@ -268,7 +268,7 @@ export function GstTab({ isDemoMode, demoSales }: GstTabProps) {
                     </div>
                      <div className="mt-6 rounded-lg bg-muted/50 p-6 text-center">
                         <p className="text-sm font-medium text-muted-foreground">Total GST Payable for {format(new Date(parseInt(year), parseInt(month) - 1), 'MMMM yyyy')}</p>
-                        {isSalesLoading && !isDemoMode ? <Skeleton className="h-9 w-40 mx-auto mt-2" /> : <p className="text-3xl font-bold">₹{totalGstCollected.toFixed(2)}</p>}
+                        {isSalesLoading && !isDemoMode ? <Skeleton className="h-9 w-40 mx-auto mt-2" /> : <p className="text-3xl font-bold flex items-center justify-center gap-1"><IndianRupee className="h-7 w-7"/>{totalGstCollected.toFixed(2)}</p>}
                     </div>
                 </CardContent>
             </Card>
@@ -354,7 +354,7 @@ const StatCard = ({ title, value, isLoading }: { title: string, value: number, i
             <CardTitle className="text-sm font-medium">{title}</CardTitle>
         </CardHeader>
         <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">₹{value.toFixed(2)}</div>}
+            {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold flex items-center gap-1"><IndianRupee className="h-6 w-6"/>{value.toFixed(2)}</div>}
         </CardContent>
     </Card>
 );

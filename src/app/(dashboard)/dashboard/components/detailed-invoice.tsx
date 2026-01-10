@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { format } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { IndianRupee } from 'lucide-react';
 
 type ShopSettings = {
     companyName?: string;
@@ -127,9 +128,9 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
                             {sale.paymentMode === 'both' && sale.paymentDetails && (
                                 <div className="text-sm text-gray-600 mt-1 text-right">
                                     <p className="font-bold">Payment Details:</p>
-                                    {sale.paymentDetails.cash && sale.paymentDetails.cash > 0 && <p>Cash: ₹{sale.paymentDetails.cash.toFixed(2)}</p>}
-                                    {sale.paymentDetails.card && sale.paymentDetails.card > 0 && <p>Card: ₹{sale.paymentDetails.card.toFixed(2)}</p>}
-                                    {sale.paymentDetails.upi && sale.paymentDetails.upi > 0 && <p>UPI: ₹{sale.paymentDetails.upi.toFixed(2)}</p>}
+                                    {sale.paymentDetails.cash && sale.paymentDetails.cash > 0 && <p className="flex items-center justify-end gap-1">Cash: <IndianRupee className="h-3 w-3"/>{sale.paymentDetails.cash.toFixed(2)}</p>}
+                                    {sale.paymentDetails.card && sale.paymentDetails.card > 0 && <p className="flex items-center justify-end gap-1">Card: <IndianRupee className="h-3 w-3"/>{sale.paymentDetails.card.toFixed(2)}</p>}
+                                    {sale.paymentDetails.upi && sale.paymentDetails.upi > 0 && <p className="flex items-center justify-end gap-1">UPI: <IndianRupee className="h-3 w-3"/>{sale.paymentDetails.upi.toFixed(2)}</p>}
                                 </div>
                             )}
                         </div>
@@ -199,31 +200,31 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
                     <div className="w-full sm:w-2/3 md:w-1/2 max-w-sm ml-auto space-y-4">
                          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                             <span className="text-gray-600">Taxable Value:</span>
-                            <span className="font-medium text-gray-800 text-right">₹{subtotal.toFixed(2)}</span>
+                            <span className="font-medium text-gray-800 text-right flex items-center justify-end gap-1"><IndianRupee className="h-3 w-3" />{subtotal.toFixed(2)}</span>
                             
                             {cgst > 0 && (
                                 <>
                                     <span className="text-gray-600">Total CGST:</span>
-                                    <span className="font-medium text-gray-800 text-right">₹{cgst.toFixed(2)}</span>
+                                    <span className="font-medium text-gray-800 text-right flex items-center justify-end gap-1"><IndianRupee className="h-3 w-3" />{cgst.toFixed(2)}</span>
                                 </>
                             )}
                             {sgst > 0 && (
                                 <>
                                     <span className="text-gray-600">Total SGST:</span>
-                                    <span className="font-medium text-gray-800 text-right">₹{sgst.toFixed(2)}</span>
+                                    <span className="font-medium text-gray-800 text-right flex items-center justify-end gap-1"><IndianRupee className="h-3 w-3" />{sgst.toFixed(2)}</span>
                                 </>
                             )}
                             {igst > 0 && (
                                 <>
                                     <span className="text-gray-600">Total IGST:</span>
-                                    <span className="font-medium text-gray-800 text-right">₹{igst.toFixed(2)}</span>
+                                    <span className="font-medium text-gray-800 text-right flex items-center justify-end gap-1"><IndianRupee className="h-3 w-3" />{igst.toFixed(2)}</span>
                                 </>
                             )}
                         </div>
                         <div className="pt-2 border-t-2 border-gray-700">
                             <div className="flex justify-between items-center mb-2">
                                 <span className="text-xl font-bold text-gray-900">Total:</span>
-                                <span className="text-xl font-bold text-gray-900">₹{total.toFixed(2)}</span>
+                                <span className="text-xl font-bold text-gray-900 flex items-center gap-1"><IndianRupee className="h-5 w-5" />{total.toFixed(2)}</span>
                             </div>
                         </div>
 

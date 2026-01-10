@@ -31,7 +31,7 @@ import { DataTablePagination } from '@/components/data-table-pagination';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
-import { FileDown, X, Search } from 'lucide-react';
+import { FileDown, X, Search, IndianRupee } from 'lucide-react';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import * as XLSX from 'xlsx';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
@@ -50,13 +50,13 @@ const reportsColumns: ColumnDef<ReportItem>[] = [
   { accessorKey: 'quantity', header: 'Quantity Sold', cell: ({ row }) => <div className='text-center'>{row.getValue('quantity')}</div> },
   { accessorKey: 'hsn', header: 'HSN Code' },
   { accessorKey: 'gst', header: 'GST (%)', cell: ({ row }) => <div className='text-center'>{`${row.original.gst || 0}%`}</div>},
-  { accessorKey: 'price', header: 'Price per Item', cell: ({ row }) => <div className="text-right">₹{row.original.price.toLocaleString('en-IN')}</div> },
+  { accessorKey: 'price', header: 'Price per Item', cell: ({ row }) => <div className="text-right flex items-center justify-end gap-1"><IndianRupee className="h-3 w-3"/>{row.original.price.toLocaleString('en-IN')}</div> },
   {
     id: 'total',
     header: () => <div className="text-right">Total</div>,
     cell: ({ row }) => {
       const total = row.original.price * row.original.quantity;
-      return <div className="text-right font-medium">₹{total.toLocaleString('en-IN')}</div>;
+      return <div className="text-right font-medium flex items-center justify-end gap-1"><IndianRupee className="h-4 w-4"/>{total.toLocaleString('en-IN')}</div>;
     },
   },
 ];
@@ -232,8 +232,8 @@ export function ReportsTab({ isDemoMode, demoSales }: ReportsTabProps) {
             <div>
               <div className="flex items-center gap-4">
                 <CardTitle>Sales Reports</CardTitle>
-                <div className="text-lg font-medium text-muted-foreground">
-                    Total Sales (Filtered): <span className="font-bold text-foreground">₹{totalSales.toLocaleString('en-IN')}</span>
+                <div className="text-lg font-medium text-muted-foreground flex items-center gap-1">
+                    Total Sales (Filtered): <span className="font-bold text-foreground flex items-center gap-1"><IndianRupee className="h-4 w-4"/>{totalSales.toLocaleString('en-IN')}</span>
                 </div>
               </div>
               <CardDescription>A detailed report of all items sold.</CardDescription>

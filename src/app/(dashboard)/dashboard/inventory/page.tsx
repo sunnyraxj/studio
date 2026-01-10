@@ -44,7 +44,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, FileDown, ScanBarcode, Printer } from 'lucide-react';
+import { PlusCircle, FileDown, ScanBarcode, Printer, IndianRupee } from 'lucide-react';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -210,13 +210,7 @@ export default function InventoryPage() {
       ),
       cell: ({ row }) => {
         const price = parseFloat(row.getValue('price'));
-
-        const formatted = new Intl.NumberFormat('en-IN', {
-          style: 'currency',
-          currency: 'INR',
-        }).format(price);
-
-        return <div className="text-right font-medium">{formatted}</div>;
+        return <div className="text-right font-medium flex items-center justify-end gap-1"><IndianRupee className="h-4 w-4"/>{price.toLocaleString('en-IN')}</div>;
       },
       filterFn: (row, columnId, filterValue) => {
           const rowValue = row.getValue(columnId) as number;

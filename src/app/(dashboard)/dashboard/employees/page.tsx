@@ -31,7 +31,7 @@ import { DataTablePagination } from '@/components/data-table-pagination';
 import { format, differenceInMonths, startOfMonth } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { CaretSortIcon } from '@radix-ui/react-icons';
-import { Search, PlusCircle, HandCoins, Calendar as CalendarIcon, MessageSquare, Phone, MapPin, Banknote, Landmark, Hash, Fingerprint, Wallet, University, ChevronDown, ChevronRight } from 'lucide-react';
+import { Search, PlusCircle, HandCoins, Calendar as CalendarIcon, MessageSquare, Phone, MapPin, Banknote, Landmark, Hash, Fingerprint, Wallet, University, ChevronDown, ChevronRight, IndianRupee } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -96,7 +96,7 @@ const paymentHistoryColumns: ColumnDef<SalaryPayment>[] = [
     { accessorKey: 'paymentDate', header: 'Date', cell: ({ row }) => format(new Date(row.getValue('paymentDate')), 'dd MMM, yyyy')},
     { accessorKey: 'notes', header: 'Notes' },
     { accessorKey: 'paymentMode', header: 'Mode', cell: ({ row }) => <div className="capitalize flex items-center">{getModeIcon(row.getValue('paymentMode'))}{row.getValue('paymentMode') === 'bank' ? 'Bank Transfer' : row.getValue('paymentMode')}</div> },
-    { accessorKey: 'amount', header: () => <div className="text-right">Amount Paid</div>, cell: ({ row }) => <div className="text-right font-semibold">₹{row.original.amount.toLocaleString('en-IN')}</div>}
+    { accessorKey: 'amount', header: () => <div className="text-right">Amount Paid</div>, cell: ({ row }) => <div className="text-right font-semibold flex items-center justify-end gap-1"><IndianRupee className="h-4 w-4" />{row.original.amount.toLocaleString('en-IN')}</div>}
 ];
 
 const SalaryPaymentHistory: React.FC<{ employee: Employee, payments: SalaryPayment[], isLoading: boolean }> = ({ employee, payments, isLoading }) => {
@@ -133,7 +133,7 @@ const SalaryPaymentHistory: React.FC<{ employee: Employee, payments: SalaryPayme
                                 <AccordionTrigger>
                                     <div className="flex justify-between w-full pr-4">
                                         <span className="font-semibold">{format(monthDate, 'MMMM yyyy')}</span>
-                                        <span className="font-bold text-green-600">Total Paid: ₹{totalMonthPayment.toLocaleString('en-IN')}</span>
+                                        <span className="font-bold text-green-600 flex items-center gap-1">Total Paid: <IndianRupee className="h-4 w-4" />{totalMonthPayment.toLocaleString('en-IN')}</span>
                                     </div>
                                 </AccordionTrigger>
                                 <AccordionContent>
@@ -156,7 +156,7 @@ const SalaryPaymentHistory: React.FC<{ employee: Employee, payments: SalaryPayme
                                                             {getModeIcon(payment.paymentMode)}{payment.paymentMode === 'bank' ? 'Bank Transfer' : payment.paymentMode}
                                                         </div>
                                                     </TableCell>
-                                                    <TableCell className="text-right font-semibold">₹{payment.amount.toLocaleString('en-IN')}</TableCell>
+                                                    <TableCell className="text-right font-semibold flex items-center justify-end gap-1"><IndianRupee className="h-4 w-4" />{payment.amount.toLocaleString('en-IN')}</TableCell>
                                                 </TableRow>
                                             ))}
                                         </TableBody>
@@ -263,15 +263,15 @@ const EmployeeDetailsDialog: React.FC<{ employee: Employee | null, open: boolean
                         <div className="grid grid-cols-3 gap-4 text-center">
                             <div>
                                 <p className="text-sm text-muted-foreground">Total Accrued</p>
-                                <p className="text-lg font-bold">₹{totalAccrued.toLocaleString('en-IN')}</p>
+                                <p className="text-lg font-bold flex items-center justify-center gap-1"><IndianRupee className="h-5 w-5"/>{totalAccrued.toLocaleString('en-IN')}</p>
                             </div>
                             <div>
                                 <p className="text-sm text-muted-foreground">Total Paid</p>
-                                <p className="text-lg font-bold text-green-600">₹{totalPaid.toLocaleString('en-IN')}</p>
+                                <p className="text-lg font-bold text-green-600 flex items-center justify-center gap-1"><IndianRupee className="h-5 w-5"/>{totalPaid.toLocaleString('en-IN')}</p>
                             </div>
                             <div>
                                 <p className="text-sm text-muted-foreground">{balanceLabel}</p>
-                                <p className={cn("text-lg font-bold", balanceDue > 0 ? 'text-green-600' : balanceDue < 0 ? 'text-destructive' : '' )}>{balanceDue === 0 ? '₹0' : `₹${Math.abs(balanceDue).toLocaleString('en-IN')}`}</p>
+                                <p className={cn("text-lg font-bold flex items-center justify-center gap-1", balanceDue > 0 ? 'text-green-600' : balanceDue < 0 ? 'text-destructive' : '' )}>{balanceDue === 0 ? <><IndianRupee className="h-5 w-5"/>0</> : <><IndianRupee className="h-5 w-5"/>{Math.abs(balanceDue).toLocaleString('en-IN')}</>}</p>
                             </div>
                         </div>
                     </div>
@@ -385,7 +385,7 @@ export default function EmployeesPage() {
             Salary <CaretSortIcon className="ml-2 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => <div className="text-right font-semibold">₹{row.original.monthlySalary.toLocaleString('en-IN')}</div>
+      cell: ({ row }) => <div className="text-right font-semibold flex items-center justify-end gap-1"><IndianRupee className="h-4 w-4" />{row.original.monthlySalary.toLocaleString('en-IN')}</div>
     },
     {
       id: 'actions',
@@ -498,7 +498,7 @@ export default function EmployeesPage() {
             }
             return emp;
         }))
-        toast({ title: 'Success (Demo)', description: `Paid ₹${paymentAmount} to ${selectedEmployee.name}.` });
+        toast({ title: 'Success (Demo)', description: `Paid ${paymentAmount} to ${selectedEmployee.name}.` });
     } else {
       if (!shopId || !firestore) return;
       const {id, ...paymentData} = newPayment;
@@ -605,7 +605,7 @@ export default function EmployeesPage() {
                       <Input id="joiningDate" type="date" value={joiningDate} onChange={e => setJoiningDate(e.target.value)} />
                     </div>
                 </div>
-                <div className="space-y-2"><Label htmlFor="salary">Monthly Salary (₹)*</Label><Input id="salary" type="number" value={monthlySalary} onChange={e => setMonthlySalary(e.target.value)} /></div>
+                <div className="space-y-2"><Label htmlFor="salary">Monthly Salary*</Label><div className="relative"><IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input id="salary" type="number" value={monthlySalary} onChange={e => setMonthlySalary(e.target.value)} className="pl-8"/></div></div>
                 <h4 className="font-semibold text-muted-foreground pt-4 border-t">Bank Details (Optional)</h4>
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2"><Label htmlFor="bankName">Bank Name</Label><Input id="bankName" value={bankName} onChange={e => setBankName(e.target.value)} /></div>
@@ -631,8 +631,8 @@ export default function EmployeesPage() {
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-2 gap-4 items-end">
                     <div className="space-y-2">
-                        <Label htmlFor="pay-amount">Amount (₹)</Label>
-                        <Input id="pay-amount" type="number" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)} placeholder={`Monthly: ₹${selectedEmployee?.monthlySalary.toLocaleString()}`} />
+                        <Label htmlFor="pay-amount">Amount</Label>
+                        <div className="relative"><IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input id="pay-amount" type="number" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)} placeholder={`Monthly: ${selectedEmployee?.monthlySalary.toLocaleString()}`} className="pl-8" /></div>
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="pay-date">Payment Date</Label>
@@ -671,7 +671,7 @@ export default function EmployeesPage() {
                               unoptimized
                           />
                           <p className="text-xs text-muted-foreground mt-1 text-center">
-                              Scan to pay ₹{paymentAmount} to<br />{selectedEmployee?.bankDetails?.upiId}
+                              Scan to pay {paymentAmount} to<br />{selectedEmployee?.bankDetails?.upiId}
                           </p>
                       </div>
                     )}

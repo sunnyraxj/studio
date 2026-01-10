@@ -84,7 +84,7 @@ const paymentColumns: ColumnDef<Sale>[] = [
         Amount <CaretSortIcon className="ml-2 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => <div className="text-right font-semibold">₹{row.original.total.toLocaleString('en-IN')}</div>,
+    cell: ({ row }) => <div className="text-right font-semibold flex items-center justify-end gap-1"><IndianRupee className="h-4 w-4"/>{row.original.total.toLocaleString('en-IN')}</div>,
   },
 ];
 
@@ -361,7 +361,7 @@ export function PaymentsTab({ isDemoMode, demoSales }: PaymentsTabProps) {
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                      <div className="text-2xl font-bold">₹{todaySales.toLocaleString('en-IN')}</div>
+                      <div className="text-2xl font-bold flex items-center gap-1"><IndianRupee className="h-6 w-6"/>{todaySales.toLocaleString('en-IN')}</div>
                   </CardContent>
               </Card>
                <Card>
@@ -370,7 +370,7 @@ export function PaymentsTab({ isDemoMode, demoSales }: PaymentsTabProps) {
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                      <div className="text-2xl font-bold">₹{yesterdaySales.toLocaleString('en-IN')}</div>
+                      <div className="text-2xl font-bold flex items-center gap-1"><IndianRupee className="h-6 w-6"/>{yesterdaySales.toLocaleString('en-IN')}</div>
                   </CardContent>
               </Card>
               <Card>
@@ -379,7 +379,7 @@ export function PaymentsTab({ isDemoMode, demoSales }: PaymentsTabProps) {
                       <TrendingUp className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                      <div className="text-2xl font-bold">₹{thisMonthSales.toLocaleString('en-IN')}</div>
+                      <div className="text-2xl font-bold flex items-center gap-1"><IndianRupee className="h-6 w-6"/>{thisMonthSales.toLocaleString('en-IN')}</div>
                   </CardContent>
               </Card>
           </div>

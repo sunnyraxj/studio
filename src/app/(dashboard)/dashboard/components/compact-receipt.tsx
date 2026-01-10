@@ -1,8 +1,10 @@
+
 'use client';
 
 import React from 'react';
 import { format } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
+import { IndianRupee } from 'lucide-react';
 
 type ShopSettings = {
     companyName?: string;
@@ -79,16 +81,16 @@ export const CompactReceipt: React.FC<CompactReceiptProps> = ({ sale, settings }
                  <div className="flex justify-between">
                     <span>CUSTOMER: {customer.name}</span>
                     {paymentMode !== 'both' && (
-                        <span>
-                            <span className="uppercase">{paymentMode}</span>: ₹{total.toFixed(2)}
+                        <span className="flex items-center gap-1">
+                            <span className="uppercase">{paymentMode}</span>: <IndianRupee className="h-2.5 w-2.5" />{total.toFixed(2)}
                         </span>
                     )}
                 </div>
                 {paymentMode === 'both' && paymentDetails && (
                     <div className="pt-1">
-                        {paymentDetails.cash && paymentDetails.cash > 0 && <div className="flex justify-between"><span>Cash Paid:</span><span>₹{paymentDetails.cash.toFixed(2)}</span></div>}
-                        {paymentDetails.card && paymentDetails.card > 0 && <div className="flex justify-between"><span>Card Paid:</span><span>₹{paymentDetails.card.toFixed(2)}</span></div>}
-                        {paymentDetails.upi && paymentDetails.upi > 0 && <div className="flex justify-between"><span>UPI Paid:</span><span>₹{paymentDetails.upi.toFixed(2)}</span></div>}
+                        {paymentDetails.cash && paymentDetails.cash > 0 && <div className="flex justify-between items-center"><span>Cash Paid:</span><span className="flex items-center gap-1"><IndianRupee className="h-2.5 w-2.5" />{paymentDetails.cash.toFixed(2)}</span></div>}
+                        {paymentDetails.card && paymentDetails.card > 0 && <div className="flex justify-between items-center"><span>Card Paid:</span><span className="flex items-center gap-1"><IndianRupee className="h-2.5 w-2.5" />{paymentDetails.card.toFixed(2)}</span></div>}
+                        {paymentDetails.upi && paymentDetails.upi > 0 && <div className="flex justify-between items-center"><span>UPI Paid:</span><span className="flex items-center gap-1"><IndianRupee className="h-2.5 w-2.5" />{paymentDetails.upi.toFixed(2)}</span></div>}
                     </div>
                 )}
             </div>
@@ -132,9 +134,9 @@ export const CompactReceipt: React.FC<CompactReceiptProps> = ({ sale, settings }
                         {igst > 0 && <div className="flex justify-between"><span>IGST</span><span>{igst.toFixed(2)}</span></div>}
                     </>
                 )}
-                 <div className="flex justify-between font-bold text-xs border-t border-dashed pt-1">
+                 <div className="flex justify-between font-bold text-xs border-t border-dashed pt-1 items-center">
                     <span>GRAND TOTAL</span>
-                    <span>₹{total.toFixed(2)}</span>
+                    <span className="flex items-center gap-1"><IndianRupee className="h-3 w-3" />{total.toFixed(2)}</span>
                 </div>
             </div>
 

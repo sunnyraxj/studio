@@ -25,6 +25,7 @@ import {
 import { subMonths, startOfMonth, endOfMonth, format, startOfYear, endOfYear, subYears, eachDayOfInterval, isValid } from 'date-fns';
 import type { Sale } from '../page';
 import { Skeleton } from '@/components/ui/skeleton';
+import { IndianRupee } from 'lucide-react';
 
 
 const chartConfig = {
@@ -129,9 +130,15 @@ export function MonthlySalesChart({ salesData, isLoading }: { salesData: Sale[] 
               tickFormatter={(value) => format(new Date(value), 'dd MMM')}
             />
             <YAxis
-              tickFormatter={(value) => `₹${Number(value) / 1000}k`}
+              tickFormatter={(value) => {
+                  const num = Number(value);
+                  if (num >= 100000) return `${num / 100000}L`;
+                  if (num >= 1000) return `${num / 1000}k`;
+                  return `${num}`;
+              }}
               tickLine={false}
               axisLine={false}
+              tickPrefix="₹"
             />
             <ChartTooltip
               cursor={false}
@@ -142,7 +149,12 @@ export function MonthlySalesChart({ salesData, isLoading }: { salesData: Sale[] 
                     }
                     return label;
                 }}
-                formatter={(value) => `₹${Number(value).toLocaleString('en-IN')}`}
+                formatter={(value) => 
+                    <div className="flex items-center gap-1">
+                        <IndianRupee className="h-3 w-3" />
+                        {Number(value).toLocaleString('en-IN')}
+                    </div>
+                }
                 />}
             />
             <Bar dataKey="sales" fill="var(--color-sales)" radius={8} />
