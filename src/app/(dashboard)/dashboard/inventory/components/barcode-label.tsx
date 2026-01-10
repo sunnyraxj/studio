@@ -46,7 +46,7 @@ export const BarcodeLabel: React.FC<BarcodeLabelProps> = ({ item, shopName, isQu
                     />
                 </div>
             </div>
-            <div className='text-[10px] flex items-center justify-between w-full px-1'>
+            <div className='text-[10px] flex items-center justify-between w-full px-1 relative top-[-5%]'>
                 <div className="flex items-center">
                     MRP: <IndianRupee className="h-3 w-3 mx-0.5" />
                     {(item.price || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
