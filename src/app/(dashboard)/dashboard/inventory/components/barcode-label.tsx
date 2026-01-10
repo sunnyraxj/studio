@@ -34,7 +34,7 @@ export const BarcodeLabel: React.FC<BarcodeLabelProps> = ({ item, shopName, isQu
             
             <div className="w-full flex-grow flex flex-col justify-center items-center gap-0">
                  <p className="text-base truncate max-w-full relative top-[-20%]">{item.name}</p>
-                <div className="flex flex-col items-center relative top-[-15%]">
+                <div className="flex flex-col items-center relative top-[-15%] pb-1">
                     <Barcode 
                         value={item.sku || 'N/A'}
                         width={1.2}
