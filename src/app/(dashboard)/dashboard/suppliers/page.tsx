@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   ColumnDef,
   flexRender,
@@ -29,7 +28,7 @@ import {
 import { DataTablePagination } from '@/components/data-table-pagination';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { Search, PlusCircle, Pencil, Trash2, X, IndianRupee } from 'lucide-react';
+import { Search, PlusCircle, Pencil, Trash2, X, IndianRupee, Printer } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -41,6 +40,7 @@ import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { PurchaseBill } from './components/purchase-bill';
 
 type Supplier = {
   id: string;
@@ -87,6 +87,10 @@ const SupplierDetails: React.FC<{ supplier: AggregatedSupplier, shopId: string |
     const { data: purchasesData, isLoading: isPurchasesLoading } = useCollection<Purchase>(purchasesQuery);
 
     const [isAddPurchaseOpen, setIsAddPurchaseOpen] = useState(false);
+    const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
+    const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
+    const printRef = useRef<HTMLDivElement>(null);
+
     const [purchaseForm, setPurchaseForm] = useState<Partial<Purchase & { paymentMode: PurchasePayment['mode']}>>({ 
       items: [{ itemName: '', quantity: 1, rate: 0 }], 
       billDate: format(new Date(), 'yyyy-MM-dd'),
@@ -133,7 +137,6 @@ const SupplierDetails: React.FC<{ supplier: AggregatedSupplier, shopId: string |
 
         const status = paidAmount === 0 ? 'Unpaid' : paidAmount < totalAmount ? 'Partially Paid' : 'Paid';
 
-        // Destructure to separate paymentMode from the purchase data
         const { paymentMode, ...purchaseCoreData } = purchaseForm;
         
         const finalPurchaseData = {
@@ -142,6 +145,7 @@ const SupplierDetails: React.FC<{ supplier: AggregatedSupplier, shopId: string |
             totalAmount: totalAmount,
             paidAmount: paidAmount,
             status: status,
+            items: purchaseCoreData.items?.filter(item => item.itemName) || []
         };
         
         try {
@@ -150,7 +154,6 @@ const SupplierDetails: React.FC<{ supplier: AggregatedSupplier, shopId: string |
             await runTransaction(firestore, async (transaction) => {
                 transaction.set(purchaseRef, finalPurchaseData);
                 
-                // If an initial payment is made, create a payment subdocument
                 if (paidAmount > 0) {
                     const paymentRef = doc(collection(purchaseRef, 'payments'));
                     transaction.set(paymentRef, {
@@ -170,7 +173,30 @@ const SupplierDetails: React.FC<{ supplier: AggregatedSupplier, shopId: string |
         }
     };
     
+    const handlePrint = () => {
+        const printContent = printRef.current;
+        if (printContent) {
+            const newWindow = window.open('', '_blank', 'width=800,height=600');
+            if (newWindow) {
+                const printableContent = printContent.innerHTML;
+                newWindow.document.write('<html><head><title>Print Purchase Bill</title>');
+                const styles = Array.from(document.styleSheets).map(styleSheet => {
+                    try { return Array.from(styleSheet.cssRules).map(rule => rule.cssText).join(''); } 
+                    catch (e) { console.log('Access to stylesheet %s is denied. Skipping.', styleSheet.href); return ''; }
+                }).join('');
+                newWindow.document.write(`<style>${styles}</style>`);
+                newWindow.document.write('</head><body><div class="print-container">');
+                newWindow.document.write(printableContent);
+                newWindow.document.write('</div></body></html>');
+                newWindow.document.close();
+                newWindow.focus();
+                setTimeout(() => { newWindow.print(); newWindow.close(); }, 250);
+            }
+        }
+    };
+
     return (
+        <>
         <DialogContent className="max-w-6xl">
             <DialogHeader>
                 <div className="flex justify-between items-start">
@@ -212,10 +238,11 @@ const SupplierDetails: React.FC<{ supplier: AggregatedSupplier, shopId: string |
                                     <TableHead className="text-right py-2">Paid</TableHead>
                                     <TableHead className="text-right py-2">Due</TableHead>
                                     <TableHead className="py-2">Status</TableHead>
+                                    <TableHead className="text-right py-2">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {isPurchasesLoading ? <TableRow><TableCell colSpan={6} className="text-center">Loading purchases...</TableCell></TableRow>
+                                {isPurchasesLoading ? <TableRow><TableCell colSpan={7} className="text-center">Loading purchases...</TableCell></TableRow>
                                 : purchasesData && purchasesData.length > 0 ? purchasesData.map(p => {
                                     const due = p.totalAmount - p.paidAmount;
                                     return (
@@ -226,10 +253,15 @@ const SupplierDetails: React.FC<{ supplier: AggregatedSupplier, shopId: string |
                                             <TableCell className="text-right py-2 text-green-600 text-xs">₹{p.paidAmount.toLocaleString()}</TableCell>
                                             <TableCell className="text-right py-2 text-destructive text-xs">₹{due.toLocaleString()}</TableCell>
                                             <TableCell className="py-2"><Badge variant={p.status === 'Paid' ? 'default' : p.status === 'Unpaid' ? 'destructive' : 'secondary'} className="text-[10px] py-0.5 px-1.5">{p.status}</Badge></TableCell>
+                                            <TableCell className="text-right py-2">
+                                                <Button variant="outline" size="sm" onClick={() => { setSelectedPurchase(p); setIsPrintDialogOpen(true); }}>
+                                                    <Printer className="h-3 w-3" />
+                                                </Button>
+                                            </TableCell>
                                         </TableRow>
                                     )
                                 })
-                                : <TableRow><TableCell colSpan={6} className="text-center">No purchase bills found.</TableCell></TableRow>}
+                                : <TableRow><TableCell colSpan={7} className="text-center">No purchase bills found.</TableCell></TableRow>}
                             </TableBody>
                         </Table>
                     </div>
@@ -294,6 +326,23 @@ const SupplierDetails: React.FC<{ supplier: AggregatedSupplier, shopId: string |
                 </DialogContent>
             </Dialog>
         </DialogContent>
+
+        <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
+            <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>Print Purchase Bill</DialogTitle>
+                    <DialogDescription>Bill #{selectedPurchase?.billNumber || selectedPurchase?.id}</DialogDescription>
+                </DialogHeader>
+                <div className="max-h-[70vh] overflow-y-auto p-1" ref={printRef}>
+                    {selectedPurchase && <PurchaseBill purchase={selectedPurchase} supplier={supplier} />}
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsPrintDialogOpen(false)}>Close</Button>
+                    <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> Print</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+        </>
     );
 }
 
@@ -426,7 +475,7 @@ export default function SuppliersPage() {
         <CardHeader className="flex flex-row items-start justify-between">
           <div>
             <CardTitle>Suppliers</CardTitle>
-            <CardDescription>Manage your suppliers and track purchases & payments.</CardDescription>
+            <CardDescription>Manage your suppliers and track purchases &amp; payments.</CardDescription>
           </div>
           <Button onClick={() => { setSupplierForm({}); setIsAddSupplierOpen(true); }}><PlusCircle className="mr-2 h-4 w-4" /> Add Supplier</Button>
         </CardHeader>
