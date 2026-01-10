@@ -10,8 +10,6 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   SortingState,
-  getExpandedRowModel,
-  ExpandedState,
 } from '@tanstack/react-table';
 import {
   Table,
@@ -29,26 +27,19 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { DataTablePagination } from '@/components/data-table-pagination';
-import { format, subDays } from 'date-fns';
+import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { CaretSortIcon, ChevronDownIcon, ChevronRightIcon } from '@radix-ui/react-icons';
-import { Search, PlusCircle, IndianRupee, HandCoins, Truck, Pencil, Trash2 } from 'lucide-react';
+import { Search, PlusCircle, Pencil, Trash2, X, IndianRupee } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, doc, addDoc, updateDoc, deleteDoc, writeBatch, orderBy, where, getDocs, serverTimestamp } from 'firebase/firestore';
+import { collection, query, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, orderBy, writeBatch, getDocs, where, runTransaction } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast.tsx';
 import { cn } from '@/lib/utils';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 
 type Supplier = {
   id: string;
@@ -67,6 +58,7 @@ type Purchase = {
   paidAmount: number;
   status: 'Paid' | 'Unpaid' | 'Partially Paid';
   items: { itemName: string; quantity: number; rate: number }[];
+  payments?: PurchasePayment[];
 };
 
 type PurchasePayment = {
@@ -88,6 +80,165 @@ const demoSuppliers: Supplier[] = [
     { id: 'sup2', name: 'Premium Leathers', category: 'Raw Material', phone: '9876543211', email: 'sales@premiumleathers.in', address: '456 Tannery Road, Kanpur' },
 ];
 
+const SupplierDetails: React.FC<{ supplier: AggregatedSupplier, shopId: string | null, isDemoMode: boolean, onClose: () => void }> = ({ supplier, shopId, isDemoMode, onClose }) => {
+    const firestore = useFirestore();
+    const purchasesQuery = useMemoFirebase(() => (shopId && firestore ? query(collection(firestore, `shops/${shopId}/suppliers/${supplier.id}/purchases`), orderBy('billDate', 'desc')) : null), [shopId, firestore, supplier.id]);
+    const { data: purchasesData, isLoading: isPurchasesLoading } = useCollection<Purchase>(purchasesQuery);
+
+    const [isAddPurchaseOpen, setIsAddPurchaseOpen] = useState(false);
+    const [purchaseForm, setPurchaseForm] = useState<Partial<Purchase>>({ items: [{ itemName: '', quantity: 1, rate: 0 }], billDate: format(new Date(), 'yyyy-MM-dd') });
+
+    const handlePurchaseItemChange = (index: number, field: 'itemName' | 'quantity' | 'rate', value: string | number) => {
+        const newItems = [...(purchaseForm.items || [])];
+        newItems[index] = { ...newItems[index], [field]: value };
+        setPurchaseForm(prev => ({ ...prev, items: newItems }));
+    };
+
+    const addPurchaseItem = () => {
+        setPurchaseForm(prev => ({ ...prev, items: [...(prev.items || []), { itemName: '', quantity: 1, rate: 0 }] }));
+    };
+
+    const removePurchaseItem = (index: number) => {
+        setPurchaseForm(prev => ({ ...prev, items: prev.items?.filter((_, i) => i !== index) }));
+    };
+    
+    const purchaseFormTotal = useMemo(() => {
+        return purchaseForm.items?.reduce((total, item) => total + (Number(item.quantity) * Number(item.rate)), 0) || 0;
+    }, [purchaseForm.items]);
+
+    const handleSavePurchase = async () => {
+        if (isDemoMode || !shopId || !firestore) {
+            toast({ title: "Demo Mode", description: "Cannot save purchase in demo." });
+            return;
+        }
+
+        if (!purchaseForm.billDate) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Bill date is required.'});
+            return;
+        }
+
+        const purchaseData = {
+            ...purchaseForm,
+            billDate: new Date(purchaseForm.billDate).toISOString(),
+            totalAmount: purchaseFormTotal,
+            paidAmount: 0,
+            status: 'Unpaid' as const,
+        };
+        
+        try {
+            const ref = collection(firestore, `shops/${shopId}/suppliers/${supplier.id}/purchases`);
+            await addDoc(ref, purchaseData);
+            toast({ title: 'Success', description: 'Purchase bill added.' });
+            setIsAddPurchaseOpen(false);
+            setPurchaseForm({ items: [{ itemName: '', quantity: 1, rate: 0 }], billDate: format(new Date(), 'yyyy-MM-dd') });
+        } catch(e: any) {
+            toast({ variant: 'destructive', title: 'Error', description: e.message });
+        }
+    };
+    
+    return (
+        <DialogContent className="max-w-6xl">
+            <DialogHeader>
+                <div className="flex justify-between items-start">
+                    <div>
+                        <DialogTitle className="text-2xl">{supplier.name}</DialogTitle>
+                        <DialogDescription>{supplier.category} | {supplier.phone} | {supplier.email}</DialogDescription>
+                    </div>
+                    <Button onClick={() => setIsAddPurchaseOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Add Purchase Bill</Button>
+                </div>
+            </DialogHeader>
+
+            <div className="grid grid-cols-3 gap-4 text-center p-4 border rounded-lg bg-muted/50 my-4">
+                <div>
+                    <p className="text-sm text-muted-foreground">Total Purchase</p>
+                    <p className="text-xl font-bold flex items-center justify-center gap-1"><IndianRupee className="h-5 w-5"/>{supplier.totalPurchase.toLocaleString()}</p>
+                </div>
+                <div>
+                    <p className="text-sm text-muted-foreground">Total Paid</p>
+                    <p className="text-xl font-bold text-green-600 flex items-center justify-center gap-1"><IndianRupee className="h-5 w-5"/>{supplier.totalPaid.toLocaleString()}</p>
+                </div>
+                <div>
+                    <p className="text-sm text-muted-foreground">Total Due</p>
+                    <p className="text-xl font-bold text-destructive flex items-center justify-center gap-1"><IndianRupee className="h-5 w-5"/>{supplier.totalDue.toLocaleString()}</p>
+                </div>
+            </div>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Purchase History</CardTitle>
+                </CardHeader>
+                <CardContent>
+                     <div className="max-h-[40vh] overflow-y-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Bill Date</TableHead>
+                                    <TableHead>Bill #</TableHead>
+                                    <TableHead className="text-right">Total Amount</TableHead>
+                                    <TableHead className="text-right">Amount Paid</TableHead>
+                                    <TableHead className="text-right">Due</TableHead>
+                                    <TableHead>Status</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {isPurchasesLoading ? <TableRow><TableCell colSpan={6} className="text-center">Loading purchases...</TableCell></TableRow>
+                                : purchasesData && purchasesData.length > 0 ? purchasesData.map(p => {
+                                    const due = p.totalAmount - p.paidAmount;
+                                    return (
+                                        <TableRow key={p.id}>
+                                            <TableCell>{format(new Date(p.billDate), 'dd MMM, yyyy')}</TableCell>
+                                            <TableCell>{p.billNumber || 'N/A'}</TableCell>
+                                            <TableCell className="text-right font-medium flex items-center justify-end gap-1"><IndianRupee className="h-4 w-4"/>{p.totalAmount.toLocaleString()}</TableCell>
+                                            <TableCell className="text-right text-green-600 flex items-center justify-end gap-1"><IndianRupee className="h-4 w-4"/>{p.paidAmount.toLocaleString()}</TableCell>
+                                            <TableCell className="text-right text-destructive flex items-center justify-end gap-1"><IndianRupee className="h-4 w-4"/>{due.toLocaleString()}</TableCell>
+                                            <TableCell><Badge variant={p.status === 'Paid' ? 'default' : p.status === 'Unpaid' ? 'destructive' : 'secondary'}>{p.status}</Badge></TableCell>
+                                        </TableRow>
+                                    )
+                                })
+                                : <TableRow><TableCell colSpan={6} className="text-center">No purchase bills found.</TableCell></TableRow>}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Add Purchase Bill Dialog */}
+            <Dialog open={isAddPurchaseOpen} onOpenChange={setIsAddPurchaseOpen}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader><DialogTitle>Add New Purchase Bill for {supplier.name}</DialogTitle></DialogHeader>
+                    <div className="max-h-[60vh] overflow-y-auto p-1">
+                        <div className="grid grid-cols-2 gap-4 py-4">
+                            <div className="space-y-2"><Label>Bill Number (Optional)</Label><Input value={purchaseForm.billNumber || ''} onChange={e => setPurchaseForm(p => ({...p, billNumber: e.target.value}))}/></div>
+                            <div className="space-y-2"><Label>Bill Date*</Label><Input type="date" value={purchaseForm.billDate} onChange={e => setPurchaseForm(p => ({...p, billDate: e.target.value}))}/></div>
+                        </div>
+                        <Separator className="my-4" />
+                        <h4 className="font-semibold mb-2">Items</h4>
+                        <div className="space-y-2">
+                           {purchaseForm.items?.map((item, index) => (
+                                <div key={index} className="flex gap-2 items-end">
+                                    <div className="flex-grow space-y-1"><Label>Item Name</Label><Input value={item.itemName} onChange={e => handlePurchaseItemChange(index, 'itemName', e.target.value)} /></div>
+                                    <div className="w-24 space-y-1"><Label>Quantity</Label><Input type="number" value={item.quantity} onChange={e => handlePurchaseItemChange(index, 'quantity', e.target.value)} /></div>
+                                    <div className="w-32 space-y-1"><Label>Rate</Label><Input type="number" value={item.rate} onChange={e => handlePurchaseItemChange(index, 'rate', e.target.value)} /></div>
+                                    <Button variant="destructive" size="icon" onClick={() => removePurchaseItem(index)}><Trash2 className="h-4 w-4"/></Button>
+                                </div>
+                            ))}
+                        </div>
+                        <Button variant="outline" size="sm" onClick={addPurchaseItem} className="mt-2"><PlusCircle className="mr-2 h-4 w-4"/>Add Row</Button>
+                         <Separator className="my-4" />
+                         <div className="text-right">
+                             <p className="text-lg font-bold">Total Bill Amount: <span className="flex items-center justify-end gap-1"><IndianRupee className="h-5 w-5" />{purchaseFormTotal.toLocaleString()}</span></p>
+                         </div>
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                        <Button onClick={handleSavePurchase}>Save Bill</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </DialogContent>
+    );
+}
+
 export default function SuppliersPage() {
   const { user } = useUser();
   const firestore = useFirestore();
@@ -96,16 +247,12 @@ export default function SuppliersPage() {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'name', desc: false }]);
   const [searchTerm, setSearchTerm] = useState('');
   
-  // State for dialogs
   const [isAddSupplierOpen, setIsAddSupplierOpen] = useState(false);
-  const [isAddPurchaseOpen, setIsAddPurchaseOpen] = useState(false);
   const [isViewDetailsOpen, setIsViewDetailsOpen] = useState(false);
   
   const [selectedSupplier, setSelectedSupplier] = useState<AggregatedSupplier | null>(null);
   
-  // Form States
   const [supplierForm, setSupplierForm] = useState<Partial<Supplier>>({});
-  const [purchaseForm, setPurchaseForm] = useState<Partial<Purchase>>({ items: [{ itemName: '', quantity: 1, rate: 0 }] });
 
   const userDocRef = useMemoFirebase(() => (user && firestore ? doc(firestore, `users/${user.uid}`) : null), [user, firestore]);
   const { data: userData } = useDoc(userDocRef);
@@ -114,23 +261,54 @@ export default function SuppliersPage() {
   const suppliersQuery = useMemoFirebase(() => (shopId && firestore ? query(collection(firestore, `shops/${shopId}/suppliers`), orderBy('name')) : null), [shopId, firestore]);
   const { data: suppliersData, isLoading: isSuppliersLoading } = useCollection<Supplier>(suppliersQuery);
 
-  const aggregatedData: AggregatedSupplier[] = useMemo(() => {
-    // This is a placeholder. A real implementation would need to fetch all purchases for all suppliers to calculate totals.
-    // For simplicity, we'll return mock totals.
-    const dataToProcess = isDemoMode ? demoSuppliers : (suppliersData || []);
-    return dataToProcess.map(s => ({
-        ...s,
-        totalPurchase: 50000,
-        totalPaid: 35000,
-        totalDue: 15000,
-    }));
-  }, [suppliersData, isDemoMode]);
-  
+  const [aggregatedData, setAggregatedData] = useState<AggregatedSupplier[]>([]);
+  const [isAggregating, setIsAggregating] = useState(true);
+
+  useEffect(() => {
+    const aggregateData = async () => {
+        if (isDemoMode) {
+            setAggregatedData(demoSuppliers.map(s => ({ ...s, totalPurchase: 50000, totalPaid: 35000, totalDue: 15000 })));
+            setIsAggregating(false);
+            return;
+        }
+
+        if (!suppliersData || !shopId || !firestore) {
+            if (!isSuppliersLoading) {
+              setAggregatedData([]);
+              setIsAggregating(false);
+            }
+            return;
+        }
+        
+        setIsAggregating(true);
+        const aggregated: AggregatedSupplier[] = await Promise.all(suppliersData.map(async (s) => {
+            const purchasesRef = collection(firestore, `shops/${shopId}/suppliers/${s.id}/purchases`);
+            const purchasesSnapshot = await getDocs(purchasesRef);
+            const purchases = purchasesSnapshot.docs.map(d => d.data() as Purchase);
+
+            const totalPurchase = purchases.reduce((sum, p) => sum + p.totalAmount, 0);
+            const totalPaid = purchases.reduce((sum, p) => sum + p.paidAmount, 0);
+            
+            return {
+                ...s,
+                totalPurchase,
+                totalPaid,
+                totalDue: totalPurchase - totalPaid,
+            };
+        }));
+        
+        setAggregatedData(aggregated);
+        setIsAggregating(false);
+    };
+
+    aggregateData();
+  }, [suppliersData, isDemoMode, shopId, firestore, isSuppliersLoading]);
+
+
   const filteredData = useMemo(() => aggregatedData.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase())), [aggregatedData, searchTerm]);
 
-  const handleAddSupplier = async () => {
-    // Logic to add/edit supplier
-    if (!shopId || !firestore) return;
+  const handleSaveSupplier = async () => {
+    if (isDemoMode || !shopId || !firestore) return;
     const ref = collection(firestore, `shops/${shopId}/suppliers`);
     try {
         if(supplierForm.id) { // Editing
@@ -145,6 +323,16 @@ export default function SuppliersPage() {
     } catch(e: any) {
         toast({ variant: 'destructive', title: 'Error', description: e.message });
     }
+  }
+  
+  const handleDeleteSupplier = async (supplierId: string) => {
+      if (isDemoMode || !shopId || !firestore) return;
+      try {
+          await deleteDoc(doc(firestore, `shops/${shopId}/suppliers`, supplierId));
+          toast({ title: 'Success', description: 'Supplier deleted.' });
+      } catch (e: any) {
+           toast({ variant: 'destructive', title: 'Error', description: e.message });
+      }
   }
 
   const columns: ColumnDef<AggregatedSupplier>[] = [
@@ -199,7 +387,7 @@ export default function SuppliersPage() {
                 ))}
               </TableHeader>
               <TableBody>
-                {isSuppliersLoading ? (
+                {isSuppliersLoading || isAggregating ? (
                   <TableRow><TableCell colSpan={columns.length} className="h-24 text-center">Loading suppliers...</TableCell></TableRow>
                 ) : table.getRowModel().rows?.length ? (
                   table.getRowModel().rows.map((row) => (
@@ -215,7 +403,6 @@ export default function SuppliersPage() {
         </CardContent>
       </Card>
 
-      {/* Add/Edit Supplier Dialog */}
       <Dialog open={isAddSupplierOpen} onOpenChange={setIsAddSupplierOpen}>
         <DialogContent>
           <DialogHeader>
@@ -234,23 +421,13 @@ export default function SuppliersPage() {
           </div>
           <DialogFooter>
             <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-            <Button onClick={handleAddSupplier}>Save Supplier</Button>
+            <Button onClick={handleSaveSupplier}>Save Supplier</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
       
-      {/* View Supplier Details Dialog */}
       <Dialog open={isViewDetailsOpen} onOpenChange={setIsViewDetailsOpen}>
-          <DialogContent className="max-w-4xl">
-              <DialogHeader>
-                  <DialogTitle>{selectedSupplier?.name}</DialogTitle>
-                  <DialogDescription>
-                      Purchase history and payment details for {selectedSupplier?.name}.
-                  </DialogDescription>
-              </DialogHeader>
-              {/* Detailed view will be implemented here */}
-              <p className="py-10 text-center">Detailed purchase and payment history will be shown here.</p>
-          </DialogContent>
+          {selectedSupplier && <SupplierDetails supplier={selectedSupplier} shopId={shopId} isDemoMode={isDemoMode} onClose={() => setIsViewDetailsOpen(false)} />}
       </Dialog>
     </>
   );
