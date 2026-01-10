@@ -400,6 +400,69 @@
         "order": { "type": "number", "description": "Sort order for displaying plans." }
       },
       "required": ["id", "name", "price", "durationMonths", "order"]
+    },
+    "Supplier": {
+      "title": "Supplier",
+      "type": "object",
+      "description": "Represents a supplier or vendor.",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "address": { "type": "string" }
+      },
+      "required": ["id", "name", "category"]
+    },
+    "SupplierCategory": {
+      "title": "Supplier Category",
+      "type": "object",
+      "description": "A category for organizing suppliers.",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" }
+      },
+      "required": ["id", "name"]
+    },
+    "Purchase": {
+      "title": "Purchase",
+      "type": "object",
+      "description": "Represents a purchase bill from a supplier.",
+      "properties": {
+        "id": { "type": "string" },
+        "billNumber": { "type": "string" },
+        "billDate": { "type": "string", "format": "date-time" },
+        "totalAmount": { "type": "number" },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "itemName": { "type": "string" },
+              "quantity": { "type": "number" },
+              "rate": { "type": "number" }
+            },
+            "required": ["itemName", "quantity", "rate"]
+          }
+        },
+        "paidAmount": { "type": "number" },
+        "status": { "type": "string", "enum": ["Paid", "Unpaid", "Partially Paid"] }
+      },
+      "required": ["id", "billDate", "totalAmount", "items", "paidAmount", "status"]
+    },
+    "PurchasePayment": {
+      "title": "Purchase Payment",
+      "type": "object",
+      "description": "Represents a payment made towards a purchase bill.",
+      "properties": {
+        "id": { "type": "string" },
+        "paymentDate": { "type": "string", "format": "date-time" },
+        "amount": { "type": "number" },
+        "mode": { "type": "string", "enum": ["Cash", "Bank Transfer", "UPI", "Cheque"] },
+        "notes": { "type": "string" }
+      },
+      "required": ["id", "paymentDate", "amount", "mode"]
     }
   },
   "auth": {
@@ -498,6 +561,42 @@
             "$ref": "#/backend/entities/SubscriptionPlan"
           },
           "description": "Global subscription plans available to all users."
+        }
+      },
+      {
+        "path": "/shops/{shopId}/suppliers/{supplierId}",
+        "definition": {
+          "schema": {
+            "$ref": "#/backend/entities/Supplier"
+          },
+          "description": "Suppliers for a specific shop."
+        }
+      },
+      {
+        "path": "/shops/{shopId}/supplierCategories/{categoryId}",
+        "definition": {
+          "schema": {
+            "$ref": "#/backend/entities/SupplierCategory"
+          },
+          "description": "Categories for organizing suppliers."
+        }
+      },
+      {
+        "path": "/shops/{shopId}/suppliers/{supplierId}/purchases/{purchaseId}",
+        "definition": {
+          "schema": {
+            "$ref": "#/backend/entities/Purchase"
+          },
+          "description": "Purchase records from a specific supplier."
+        }
+      },
+      {
+        "path": "/shops/{shopId}/suppliers/{supplierId}/purchases/{purchaseId}/payments/{paymentId}",
+        "definition": {
+          "schema": {
+            "$ref": "#/backend/entities/PurchasePayment"
+          },
+          "description": "Payments made for a specific purchase."
         }
       }
     ]

@@ -24,6 +24,7 @@ import {
   Percent,
   FileText,
   ScanBarcode,
+  Truck,
 } from 'lucide-react';
 
 import {
@@ -89,6 +90,11 @@ const navLinks = [
     href: '/dashboard/inventory',
     icon: Package,
     label: 'Inventory',
+  },
+  {
+    href: '/dashboard/suppliers',
+    icon: Truck,
+    label: 'Suppliers',
   },
   {
     href: '/dashboard/quick-barcode',
@@ -368,6 +374,11 @@ export default function DashboardLayout({
         <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
             <MobileSidebar shopName={shopName} isExpired={isUIBlocked} />
             <div className="w-full flex-1" />
+            <Link href="/dashboard/suppliers">
+                <Button>
+                    <Truck className="mr-2 h-4 w-4" /> Manage Suppliers
+                </Button>
+            </Link>
             <Link href="/dashboard/employees">
                 <Button>
                     <Users className="mr-2 h-4 w-4" /> Manage Employees
