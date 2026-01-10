@@ -47,7 +47,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { CompactReceipt } from '../dashboard/components/compact-receipt';
+import { CompactReceipt } from './../dashboard/components/compact-receipt';
 import { CameraScanner } from './components/camera-scanner';
 
 
@@ -212,7 +212,6 @@ export default function POSPage() {
     }
   };
   
-
   useEffect(() => {
     const generateNextInvoiceNumber = async () => {
       if (isDemoMode) {
@@ -426,7 +425,6 @@ export default function POSPage() {
     setCustomerGstin('');
     setPaymentMode('cash');
     setPaymentDetails({ cash: 0, card: 0, upi: 0 });
-    generateNextInvoiceNumber();
   };
   
   const showPrintToast = () => {
