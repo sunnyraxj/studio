@@ -16,9 +16,13 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { Printer } from 'lucide-react';
+import { Printer, Calendar as CalendarIcon } from 'lucide-react';
 import { BarcodeLabel } from '../inventory/components/barcode-label';
 import type { InventoryItem } from '../inventory/page';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 
 type ShopSettings = {
@@ -49,12 +53,14 @@ export default function QuickBarcodePage() {
     name: '',
     price: 0,
     sku: '',
+    size: '',
+    expiryDate: undefined,
   });
   
   const [showBarcode, setShowBarcode] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
   
-  const handleInputChange = (field: keyof typeof product, value: string) => {
+  const handleInputChange = (field: keyof typeof product, value: string | number | Date | undefined) => {
     setProduct(prev => ({ ...prev, [field]: value }));
     setShowBarcode(false);
   }
@@ -114,7 +120,7 @@ export default function QuickBarcodePage() {
           <CardHeader>
             <CardTitle>Product Details</CardTitle>
             <CardDescription>
-              Enter the item details for the barcode label. SKU is optional.
+              Enter the item details for the barcode label.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 gap-6">
@@ -128,26 +134,64 @@ export default function QuickBarcodePage() {
                 required
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="product-code">Product Code / SKU</Label>
-              <Input
-                id="product-code"
-                placeholder="e.g., QCK-001 (or scan existing)"
-                value={product.sku}
-                onChange={(e) => handleInputChange('sku', e.target.value)}
-              />
+             <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="mrp">MRP (₹) <span className="text-destructive">*</span></Label>
+                    <Input
+                        id="mrp"
+                        type="number"
+                        placeholder="e.g., 299"
+                        value={product.price || ''}
+                        onChange={(e) => handleInputChange('price', e.target.value)}
+                        required
+                    />
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="size">Size (Optional)</Label>
+                    <Input
+                        id="size"
+                        placeholder="e.g., L, M, XL"
+                        value={product.size}
+                        onChange={(e) => handleInputChange('size', e.target.value)}
+                    />
+                </div>
             </div>
-             <div className="space-y-2">
-              <Label htmlFor="mrp">MRP (₹) <span className="text-destructive">*</span></Label>
-              <Input
-                id="mrp"
-                type="number"
-                placeholder="e.g., 299"
-                value={product.price || ''}
-                onChange={(e) => handleInputChange('price', e.target.value)}
-                required
-              />
-            </div>
+             <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="product-code">SKU (Optional)</Label>
+                  <Input
+                    id="product-code"
+                    placeholder="e.g., QCK-001 (or scan existing)"
+                    value={product.sku}
+                    onChange={(e) => handleInputChange('sku', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="expiry-date">Expiry Date (Optional)</Label>
+                     <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !product.expiryDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {product.expiryDate ? format(new Date(product.expiryDate), "PPP") : <span>Pick a date</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={product.expiryDate ? new Date(product.expiryDate) : undefined}
+                          onSelect={(date) => handleInputChange('expiryDate', date)}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                </div>
+             </div>
           </CardContent>
           <CardFooter className="flex justify-end gap-2">
             <Button onClick={handleGenerate} disabled={!product.name || !product.price}>Generate Barcode</Button>
