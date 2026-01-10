@@ -91,6 +91,24 @@ const SupplierDetails: React.FC<{ supplier: AggregatedSupplier, shopId: string |
     const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
     const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
     const printRef = useRef<HTMLDivElement>(null);
+    
+    const liveTotals = useMemo(() => {
+        if (!purchasesData) {
+            return {
+                totalPurchase: supplier.totalPurchase,
+                totalPaid: supplier.totalPaid,
+                totalDue: supplier.totalDue
+            };
+        }
+        const totalPurchase = purchasesData.reduce((sum, p) => sum + p.totalAmount, 0);
+        const totalPaid = purchasesData.reduce((sum, p) => sum + p.paidAmount, 0);
+        return {
+            totalPurchase,
+            totalPaid,
+            totalDue: totalPurchase - totalPaid,
+        };
+    }, [purchasesData, supplier]);
+
 
     const [purchaseForm, setPurchaseForm] = useState<Partial<Purchase & { paymentMode: PurchasePayment['mode']}>>({ 
       items: [{ itemName: '', quantity: 1, rate: 0 }], 
@@ -256,15 +274,15 @@ const SupplierDetails: React.FC<{ supplier: AggregatedSupplier, shopId: string |
             <div className="grid grid-cols-3 gap-4 text-center p-4 border rounded-lg bg-muted/50 my-4">
                 <div>
                     <p className="text-sm text-muted-foreground">Total Purchase</p>
-                    <p className="text-xl font-bold flex items-center justify-center gap-1"><IndianRupee className="h-5 w-5"/>{supplier.totalPurchase.toLocaleString()}</p>
+                    <p className="text-xl font-bold flex items-center justify-center gap-1"><IndianRupee className="h-5 w-5"/>{liveTotals.totalPurchase.toLocaleString()}</p>
                 </div>
                 <div>
                     <p className="text-sm text-muted-foreground">Total Paid</p>
-                    <p className="text-xl font-bold text-green-600 flex items-center justify-center gap-1"><IndianRupee className="h-5 w-5"/>{supplier.totalPaid.toLocaleString()}</p>
+                    <p className="text-xl font-bold text-green-600 flex items-center justify-center gap-1"><IndianRupee className="h-5 w-5"/>{liveTotals.totalPaid.toLocaleString()}</p>
                 </div>
                 <div>
                     <p className="text-sm text-muted-foreground">Total Due</p>
-                    <p className="text-xl font-bold text-destructive flex items-center justify-center gap-1"><IndianRupee className="h-5 w-5"/>{supplier.totalDue.toLocaleString()}</p>
+                    <p className="text-xl font-bold text-destructive flex items-center justify-center gap-1"><IndianRupee className="h-5 w-5"/>{liveTotals.totalDue.toLocaleString()}</p>
                 </div>
             </div>
 
@@ -294,9 +312,9 @@ const SupplierDetails: React.FC<{ supplier: AggregatedSupplier, shopId: string |
                                         <TableRow key={p.id}>
                                             <TableCell className="py-2 text-xs">{format(new Date(p.billDate), 'dd MMM, yy')}</TableCell>
                                             <TableCell className="py-2 text-xs">{p.billNumber || 'N/A'}</TableCell>
-                                            <TableCell className="text-right py-2 font-medium text-xs">₹{p.totalAmount.toLocaleString()}</TableCell>
-                                            <TableCell className="text-right py-2 text-green-600 text-xs">₹{p.paidAmount.toLocaleString()}</TableCell>
-                                            <TableCell className="text-right py-2 text-destructive text-xs">₹{due.toLocaleString()}</TableCell>
+                                            <TableCell className="text-right py-2 font-medium text-xs flex items-center justify-end gap-1"><IndianRupee className="h-3 w-3"/>{p.totalAmount.toLocaleString()}</TableCell>
+                                            <TableCell className="text-right py-2 text-green-600 text-xs flex items-center justify-end gap-1"><IndianRupee className="h-3 w-3"/>{p.paidAmount.toLocaleString()}</TableCell>
+                                            <TableCell className="text-right py-2 text-destructive text-xs flex items-center justify-end gap-1"><IndianRupee className="h-3 w-3"/>{due.toLocaleString()}</TableCell>
                                             <TableCell className="py-2"><Badge variant={p.status === 'Paid' ? 'default' : p.status === 'Unpaid' ? 'destructive' : 'secondary'} className="text-[10px] py-0.5 px-1.5">{p.status}</Badge></TableCell>
                                             <TableCell className="text-right py-2">
                                                 <Button variant="outline" size="sm" onClick={() => { setSelectedPurchase(p); setIsPrintDialogOpen(true); }}>
