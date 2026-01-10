@@ -23,7 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { PlusCircle, Search, Trash2, MinusCircle, IndianRupee, ChevronDown, Loader2, Camera } from 'lucide-react';
+import { PlusCircle, Search, Trash2, MinusCircle, IndianRupee, ChevronDown, Loader2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import {
   RadioGroup,
@@ -48,7 +48,6 @@ import {
 } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { CompactReceipt } from './../dashboard/components/compact-receipt';
-import { CameraScanner } from './components/camera-scanner';
 
 
 type Product = {
@@ -166,7 +165,6 @@ export default function POSPage() {
   const [quickItemGst, setQuickItemGst] = useState<number | string>(5);
   
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
-  const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [lastSaleData, setLastSaleData] = useState<any>(null);
   const invoiceRef = useRef(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -265,7 +263,6 @@ export default function POSPage() {
   };
 
   const handleBarcodeScanned = (code: string) => {
-    setIsScannerOpen(false);
     if (code) {
       const foundProduct = products.find(p => p.sku === code);
       if (foundProduct) {
@@ -632,10 +629,6 @@ export default function POSPage() {
                                 />
                             </div>
                              <div className='flex items-center gap-2 w-full sm:w-auto'>
-                                <Button variant="outline" className="w-full sm:w-auto" onClick={() => setIsScannerOpen(true)}>
-                                  <Camera className="h-4 w-4 sm:mr-2" />
-                                  <span className="hidden sm:inline">Scan from Phone</span>
-                                </Button>
                                 <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
                                     <SelectTrigger className="w-auto flex-1">
                                         <SelectValue placeholder="Material Filter" />
@@ -873,12 +866,6 @@ export default function POSPage() {
         </div>
     </div>
     
-    <CameraScanner 
-      isOpen={isScannerOpen} 
-      onOpenChange={setIsScannerOpen} 
-      onScan={handleBarcodeScanned}
-    />
-
     <Dialog open={isInvoiceOpen} onOpenChange={(open) => { if (!open) { setIsInvoiceOpen(false); setLastSaleData(null); }}}>
         <DialogContent className="max-w-sm p-0 border-0">
              <DialogHeader className="sr-only">
