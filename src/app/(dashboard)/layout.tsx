@@ -23,6 +23,7 @@ import {
   BookUser,
   Percent,
   FileText,
+  ScanBarcode,
 } from 'lucide-react';
 
 import {
@@ -88,6 +89,11 @@ const navLinks = [
     href: '/dashboard/inventory',
     icon: Package,
     label: 'Inventory',
+  },
+  {
+    href: '/dashboard/quick-barcode',
+    icon: ScanBarcode,
+    label: 'Quick Barcode',
   },
   {
     href: '/dashboard/subscription',
