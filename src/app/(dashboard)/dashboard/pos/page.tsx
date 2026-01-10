@@ -366,7 +366,7 @@ export default function POSPage() {
     let cgst = 0;
     let sgst = 0;
     let igst = 0;
-    const isIntraState = customerState?.trim().toLowerCase() === "assam";
+    const isIntraState = !customerState || customerState?.trim().toLowerCase() === "assam";
     
     cart.forEach(item => {
         const itemMrp = item.product.price;
