@@ -81,7 +81,7 @@ export default function QuickBarcodePage() {
         price: selectedProduct.price,
         sku: selectedProduct.sku,
         size: selectedProduct.size,
-        expiryDate: selectedProduct.expiryDate ? new Date(selectedProduct.expiryDate) : undefined,
+        expiryDate: selectedProduct.expiryDate,
     });
     setInventorySearch('');
     setShowBarcode(false);
@@ -228,28 +228,12 @@ export default function QuickBarcodePage() {
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="expiry-date">Expiry Date (Optional)</Label>
-                     <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !product.expiryDate && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {product.expiryDate ? format(new Date(product.expiryDate), "PPP") : <span>Pick a date</span>}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={product.expiryDate ? new Date(product.expiryDate) : undefined}
-                          onSelect={(date) => handleInputChange('expiryDate', date)}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <Input
+                        id="expiry-date"
+                        type="date"
+                        value={product.expiryDate ? format(new Date(product.expiryDate), 'yyyy-MM-dd') : ''}
+                        onChange={(e) => handleInputChange('expiryDate', e.target.value)}
+                    />
                 </div>
              </div>
           </CardContent>
