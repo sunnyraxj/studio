@@ -25,7 +25,6 @@ import { format, differenceInDays, isBefore } from 'date-fns';
 import { collection, doc, query, orderBy, onSnapshot, Query } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -44,7 +43,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, FileDown, ScanBarcode, Printer, IndianRupee } from 'lucide-react';
+import { PlusCircle, FileDown, ScanBarcode, IndianRupee } from 'lucide-react';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -53,7 +52,6 @@ import * as XLSX from 'xlsx';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast.tsx';
 import { BarcodeDialog } from './components/barcode-dialog';
-import { BulkBarcodeDialog } from './components/bulk-barcode-dialog';
 
 const demoData: InventoryItem[] = [
     { id: '1', name: 'Cotton T-Shirt', sku: 'DEMO-TS-M', stock: 85, price: 499, margin: 30, status: 'in stock', dateAdded: '2023-10-01T10:00:00Z', expiryDate: null, category: 'Apparel', material: 'Cotton', size: 'M', gst: 5, hsn: '6109' , unit: 'pcs'},
@@ -114,7 +112,6 @@ export default function InventoryPage() {
   const [data, setData] = React.useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isBarcodeDialogOpen, setIsBarcodeDialogOpen] = React.useState(false);
-  const [isBulkBarcodeDialogOpen, setIsBulkBarcodeDialogOpen] = React.useState(false);
   const [selectedItemForBarcode, setSelectedItemForBarcode] = React.useState<InventoryItem | null>(null);
 
   const [{ pageIndex, pageSize }, setPagination] = React.useState<PaginationState>({
@@ -134,33 +131,10 @@ export default function InventoryPage() {
         margin: false,
         material: false,
     });
-  const [rowSelection, setRowSelection] = React.useState({});
   const [searchBy, setSearchBy] = React.useState('name');
   const [filterValue, setFilterValue] = React.useState('');
 
   const columns: ColumnDef<InventoryItem>[] = [
-    {
-      id: 'select',
-      header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && 'indeterminate')
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
-        />
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
     {
       accessorKey: 'name',
       header: 'Name',
@@ -376,14 +350,12 @@ export default function InventoryPage() {
       sorting,
       columnFilters,
       columnVisibility,
-      rowSelection,
       pagination: { pageIndex, pageSize },
     },
     onPaginationChange: setPagination,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -417,8 +389,6 @@ export default function InventoryPage() {
     XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory");
     XLSX.writeFile(workbook, `InventoryExport-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
   }
-
-  const selectedRows = table.getFilteredSelectedRowModel().rows.map(row => row.original);
 
   return (
     <>
@@ -466,14 +436,6 @@ export default function InventoryPage() {
            </Link>
            <Button variant="outline" size="sm" onClick={handleExport}>
               <FileDown className="mr-2 h-4 w-4" /> Export
-           </Button>
-            <Button 
-                variant="outline"
-                size="sm"
-                onClick={() => setIsBulkBarcodeDialogOpen(true)}
-                disabled={selectedRows.length === 0}
-            >
-              <Printer className="mr-2 h-4 w-4" /> Barcode ({selectedRows.length})
            </Button>
             <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -570,12 +532,6 @@ export default function InventoryPage() {
         isOpen={isBarcodeDialogOpen}
         onOpenChange={setIsBarcodeDialogOpen}
         item={selectedItemForBarcode}
-        shopName={shopName}
-    />
-    <BulkBarcodeDialog
-        isOpen={isBulkBarcodeDialogOpen}
-        onOpenChange={setIsBulkBarcodeDialogOpen}
-        items={selectedRows}
         shopName={shopName}
     />
     </>
