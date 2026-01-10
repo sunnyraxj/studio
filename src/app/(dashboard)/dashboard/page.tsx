@@ -16,7 +16,7 @@ import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@
 import { collection, doc, query, where } from 'firebase/firestore';
 import { IndianRupee, PartyPopper, Percent, Calendar as CalendarIcon } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { subDays, format, startOfDay } from 'date-fns';
+import { subDays, format, startOfDay, parse } from 'date-fns';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { PaymentBreakdownCard } from './components/payment-breakdown-card';
 import { MarginOverviewCard } from './components/margin-overview-card';
@@ -26,6 +26,7 @@ import { TopProductsChart } from './components/top-products-chart';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Input } from '@/components/ui/input';
 
 
 // Common Types
@@ -284,28 +285,17 @@ export default function DashboardPage() {
                         </CardHeader>
                         <CardContent className="space-y-2">
                             {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold flex items-center gap-1"><IndianRupee className="h-6 w-6"/>{todaySales.toLocaleString('en-IN')}</div>}
-                             <Popover>
-                                <PopoverTrigger asChild>
-                                <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                    "w-full justify-start text-left font-normal",
-                                    !selectedDate && "text-muted-foreground"
-                                    )}
-                                >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {selectedDate ? format(selectedDate, "yyyy-MM-dd") : <span>Pick a date</span>}
-                                </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                    mode="single"
-                                    selected={selectedDate}
-                                    onSelect={(date) => date && setSelectedDate(startOfDay(date))}
-                                    initialFocus
-                                />
-                                </PopoverContent>
-                            </Popover>
+                             <Input 
+                                type="date" 
+                                value={format(selectedDate, 'yyyy-MM-dd')}
+                                onChange={(e) => {
+                                    const date = parse(e.target.value, 'yyyy-MM-dd', new Date());
+                                    if (!isNaN(date.getTime())) {
+                                        setSelectedDate(startOfDay(date));
+                                    }
+                                }}
+                                className="h-9"
+                            />
                         </CardContent>
                     </Card>
                     <MarginOverviewCard salesData={salesData} isLoading={isLoading} />
@@ -400,3 +390,5 @@ export default function DashboardPage() {
     </TooltipProvider>
   );
 }
+
+    
