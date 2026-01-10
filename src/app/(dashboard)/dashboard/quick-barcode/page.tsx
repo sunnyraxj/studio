@@ -151,38 +151,43 @@ export default function QuickBarcodePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 gap-6">
-            <div className='space-y-2 relative'>
-              <Label htmlFor="search-inventory">Search Inventory</Label>
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="search-inventory"
-                  placeholder="Search by name or SKU..."
-                  value={inventorySearch}
-                  onChange={(e) => setInventorySearch(e.target.value)}
-                />
-              </div>
-              {filteredProducts.length > 0 && (
-                <Card className="absolute z-10 w-full mt-1 shadow-lg">
-                  <ScrollArea className="h-40">
-                    <CardContent className="p-2">
-                      {filteredProducts.map(p => (
-                        <div 
-                          key={p.id}
-                          className="p-2 hover:bg-accent rounded-md cursor-pointer"
-                          onClick={() => handleSelectProduct(p)}
-                        >
-                          <p className="font-medium">{p.name}</p>
-                          <p className="text-sm text-muted-foreground">SKU: {p.sku} - MRP: ₹{p.price}</p>
-                        </div>
-                      ))}
-                    </CardContent>
-                  </ScrollArea>
-                </Card>
-              )}
+            <div className="p-4 border rounded-lg bg-muted/50 relative space-y-2">
+                <Label htmlFor="search-inventory" className="font-semibold">Search Inventory</Label>
+                <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        id="search-inventory"
+                        placeholder="Search by name or SKU..."
+                        value={inventorySearch}
+                        onChange={(e) => setInventorySearch(e.target.value)}
+                        className="bg-background"
+                    />
+                </div>
+                {filteredProducts.length > 0 && (
+                    <Card className="absolute z-10 w-full mt-1 shadow-lg left-0 right-0">
+                    <ScrollArea className="h-40">
+                        <CardContent className="p-2">
+                        {filteredProducts.map(p => (
+                            <div 
+                            key={p.id}
+                            className="p-2 hover:bg-accent rounded-md cursor-pointer"
+                            onClick={() => handleSelectProduct(p)}
+                            >
+                            <p className="font-medium">{p.name}</p>
+                            <p className="text-sm text-muted-foreground">SKU: {p.sku} - MRP: ₹{p.price}</p>
+                            </div>
+                        ))}
+                        </CardContent>
+                    </ScrollArea>
+                    </Card>
+                )}
             </div>
 
-             <Separator />
+            <div className="flex items-center gap-4">
+                <Separator className="flex-1" />
+                <span className="text-xs text-muted-foreground">OR</span>
+                <Separator className="flex-1" />
+            </div>
 
             <div className="space-y-2">
               <Label htmlFor="product-name">Product Name <span className="text-destructive">*</span></Label>
