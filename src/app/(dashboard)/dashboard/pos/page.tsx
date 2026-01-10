@@ -47,7 +47,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { CompactReceipt } from './../dashboard/components/compact-receipt';
+import { CompactReceipt } from './../components/compact-receipt';
 
 
 type Product = {
@@ -880,4 +880,3 @@ export default function POSPage() {
     </>
   );
 }
-
