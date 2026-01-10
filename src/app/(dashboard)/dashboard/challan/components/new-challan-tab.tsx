@@ -163,6 +163,17 @@ export function NewChallanTab() {
   const invoiceRef = useRef(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
+  const mounted = useRef(false);
+  const timeouts = useRef<NodeJS.Timeout[]>([]);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      timeouts.current.forEach(clearTimeout);
+    };
+  }, []);
+
   const handlePrint = () => {
     const printContent = invoiceRef.current;
     if (printContent) {
@@ -190,13 +201,16 @@ export function NewChallanTab() {
             newWindow.document.write('</body></html>');
             newWindow.document.close();
             newWindow.focus();
-            setTimeout(() => {
+            const timeoutId = setTimeout(() => {
                 newWindow.print();
                 newWindow.close();
-                setIsInvoiceOpen(false);
-                setLastSaleData(null);
-                clearSale();
+                if (mounted.current) {
+                  setIsInvoiceOpen(false);
+                  setLastSaleData(null);
+                  clearSale();
+                }
             }, 500);
+            timeouts.current.push(timeoutId);
         }
     }
   };
@@ -458,10 +472,13 @@ export function NewChallanTab() {
     setLastSaleData(saleData);
 
     if (isDemoMode) {
-      setTimeout(() => {
-        showPrintToast();
-        setIsGenerating(false);
+      const timeoutId = setTimeout(() => {
+        if (mounted.current) {
+          showPrintToast();
+          setIsGenerating(false);
+        }
       }, 1000);
+      timeouts.current.push(timeoutId);
       return;
     }
     
@@ -478,7 +495,9 @@ export function NewChallanTab() {
     } catch(error: any) {
       hotToast.error(`Error completing sale: ${error.message}`);
     } finally {
-        setIsGenerating(false);
+        if (mounted.current) {
+          setIsGenerating(false);
+        }
     }
   };
 

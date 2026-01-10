@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import {
   ColumnDef,
@@ -328,6 +328,14 @@ export default function EmployeesPage() {
   
   const [qrCodeUrl, setQrCodeUrl] = useState('');
 
+  const mounted = useRef(false);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   const { user } = useUser();
   const firestore = useFirestore();
