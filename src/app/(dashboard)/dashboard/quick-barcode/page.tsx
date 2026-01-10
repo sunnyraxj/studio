@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -14,16 +14,16 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import { Printer, Calendar as CalendarIcon } from 'lucide-react';
+import { useFirestore, useUser, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { doc, collection } from 'firebase/firestore';
+import { Printer, Calendar as CalendarIcon, Search } from 'lucide-react';
 import { BarcodeLabel } from '../inventory/components/barcode-label';
 import type { InventoryItem } from '../inventory/page';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type ShopSettings = {
     companyName?: string;
@@ -51,7 +51,7 @@ export default function QuickBarcodePage() {
 
   const [product, setProduct] = useState<Partial<InventoryItem>>({
     name: '',
-    price: 0,
+    price: undefined,
     sku: '',
     size: '',
     expiryDate: undefined,
@@ -60,6 +60,33 @@ export default function QuickBarcodePage() {
   const [showBarcode, setShowBarcode] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
   
+  const [inventorySearch, setInventorySearch] = useState('');
+
+  const productsCollectionRef = useMemoFirebase(() => {
+    if (isDemoMode || !shopId || !firestore) return null;
+    return collection(firestore, `shops/${shopId}/products`);
+  }, [firestore, shopId, isDemoMode]);
+
+  const { data: productsData } = useCollection<InventoryItem>(productsCollectionRef);
+  const products = isDemoMode ? [] : productsData || [];
+
+  const filteredProducts = useMemo(() => {
+    if (!inventorySearch) return [];
+    return products.filter(p => p.name.toLowerCase().includes(inventorySearch.toLowerCase()) || p.sku?.toLowerCase().includes(inventorySearch.toLowerCase()));
+  }, [inventorySearch, products]);
+
+  const handleSelectProduct = (selectedProduct: InventoryItem) => {
+    setProduct({
+        name: selectedProduct.name,
+        price: selectedProduct.price,
+        sku: selectedProduct.sku,
+        size: selectedProduct.size,
+        expiryDate: selectedProduct.expiryDate ? new Date(selectedProduct.expiryDate) : undefined,
+    });
+    setInventorySearch('');
+    setShowBarcode(false);
+  }
+
   const handleInputChange = (field: keyof typeof product, value: string | number | Date | undefined) => {
     setProduct(prev => ({ ...prev, [field]: value }));
     setShowBarcode(false);
@@ -110,7 +137,7 @@ export default function QuickBarcodePage() {
         <div>
             <h2 className="text-3xl font-bold tracking-tight">Quick Barcode Generator</h2>
             <p className="text-muted-foreground">
-                Generate a single barcode label without adding the item to your inventory.
+                Generate a single barcode label for existing or new items.
             </p>
         </div>
       </div>
@@ -120,16 +147,49 @@ export default function QuickBarcodePage() {
           <CardHeader>
             <CardTitle>Product Details</CardTitle>
             <CardDescription>
-              Enter the item details for the barcode label.
+              Search for an existing item or manually enter details below.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 gap-6">
+            <div className='space-y-2 relative'>
+              <Label htmlFor="search-inventory">Search Inventory</Label>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="search-inventory"
+                  placeholder="Search by name or SKU..."
+                  value={inventorySearch}
+                  onChange={(e) => setInventorySearch(e.target.value)}
+                />
+              </div>
+              {filteredProducts.length > 0 && (
+                <Card className="absolute z-10 w-full mt-1 shadow-lg">
+                  <ScrollArea className="h-40">
+                    <CardContent className="p-2">
+                      {filteredProducts.map(p => (
+                        <div 
+                          key={p.id}
+                          className="p-2 hover:bg-accent rounded-md cursor-pointer"
+                          onClick={() => handleSelectProduct(p)}
+                        >
+                          <p className="font-medium">{p.name}</p>
+                          <p className="text-sm text-muted-foreground">SKU: {p.sku} - MRP: ₹{p.price}</p>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </ScrollArea>
+                </Card>
+              )}
+            </div>
+
+             <Separator />
+
             <div className="space-y-2">
               <Label htmlFor="product-name">Product Name <span className="text-destructive">*</span></Label>
               <Input
                 id="product-name"
                 placeholder="e.g., Special Gift Box"
-                value={product.name}
+                value={product.name || ''}
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 required
               />
@@ -142,7 +202,7 @@ export default function QuickBarcodePage() {
                         type="number"
                         placeholder="e.g., 299"
                         value={product.price || ''}
-                        onChange={(e) => handleInputChange('price', e.target.value)}
+                        onChange={(e) => handleInputChange('price', parseFloat(e.target.value))}
                         required
                     />
                 </div>
@@ -151,7 +211,7 @@ export default function QuickBarcodePage() {
                     <Input
                         id="size"
                         placeholder="e.g., L, M, XL"
-                        value={product.size}
+                        value={product.size || ''}
                         onChange={(e) => handleInputChange('size', e.target.value)}
                     />
                 </div>
@@ -162,7 +222,7 @@ export default function QuickBarcodePage() {
                   <Input
                     id="product-code"
                     placeholder="e.g., QCK-001 (or scan existing)"
-                    value={product.sku}
+                    value={product.sku || ''}
                     onChange={(e) => handleInputChange('sku', e.target.value)}
                   />
                 </div>
