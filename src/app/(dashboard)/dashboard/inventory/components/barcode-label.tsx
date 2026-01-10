@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -25,7 +24,7 @@ export const BarcodeLabel: React.FC<BarcodeLabelProps> = ({ item, shopName, isQu
             className="bg-white text-black flex flex-col items-center justify-between font-sans p-1 border border-black relative font-extrabold" 
             style={{ width: '2.5in', height: '1.5in', boxSizing: 'border-box' }}
         >
-            <div className="w-full flex justify-center items-center relative">
+            <div className="w-full flex justify-center items-center relative top-[2%]">
                 <p className="text-xs uppercase">{shopName}</p>
                 {isQuickBarcode && (
                     <span className="absolute right-0 text-[8px] uppercase font-bold">Quick</span>
