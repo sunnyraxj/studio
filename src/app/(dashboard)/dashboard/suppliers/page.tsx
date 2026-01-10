@@ -151,9 +151,7 @@ export default function SuppliersPage() {
     { accessorKey: 'name', header: 'Supplier Name', cell: ({row}) => <div className="font-medium">{row.original.name}</div> },
     { accessorKey: 'category', header: 'Category' },
     { accessorKey: 'phone', header: 'Phone' },
-    { accessorKey: 'totalPurchase', header: () => <div className="text-right">Total Purchase</div>, cell: ({row}) => <div className="text-right font-semibold flex items-center justify-end gap-1"><IndianRupee className="h-4 w-4"/>{row.original.totalPurchase.toLocaleString('en-IN')}</div>},
-    { accessorKey: 'totalPaid', header: () => <div className="text-right">Total Paid</div>, cell: ({row}) => <div className="text-right font-semibold flex items-center justify-end gap-1"><IndianRupee className="h-4 w-4"/>{row.original.totalPaid.toLocaleString('en-IN')}</div>},
-    { accessorKey: 'totalDue', header: () => <div className="text-right">Total Due</div>, cell: ({row}) => <div className="text-right font-bold text-destructive flex items-center justify-end gap-1"><IndianRupee className="h-4 w-4"/>{row.original.totalDue.toLocaleString('en-IN')}</div>},
+    { accessorKey: 'email', header: 'Email' },
     {
       id: 'actions',
       header: () => <div className="text-right">Actions</div>,
@@ -257,4 +255,3 @@ export default function SuppliersPage() {
     </>
   );
 }
-
