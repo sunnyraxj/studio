@@ -7,6 +7,7 @@ import type { InventoryItem } from '../page';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { IndianRupee } from 'lucide-react';
 
 interface BarcodeLabelProps {
     item: Partial<InventoryItem>;
@@ -39,8 +40,9 @@ export const BarcodeLabel: React.FC<BarcodeLabelProps> = ({ item, shopName, isQu
             <div className="w-full flex-grow flex flex-col justify-center items-center">
                  <div className="w-full flex justify-between items-start -mb-1">
                     <div className="text-left">
-                         <p className="text-lg font-bold">
-                            MRP: {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(item.price || 0)}
+                         <p className="text-base font-bold flex items-center">
+                            <IndianRupee className="h-4 w-4 mr-0.5" />
+                            {(item.price || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </p>
                     </div>
                      <div className='text-right text-[10px] space-y-0.5'>
