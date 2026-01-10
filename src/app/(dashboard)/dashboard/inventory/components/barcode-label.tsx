@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -25,23 +26,23 @@ export const BarcodeLabel: React.FC<BarcodeLabelProps> = ({ item, shopName, isQu
             style={{ width: '2.5in', height: '1.5in', boxSizing: 'border-box' }}
         >
             <div className="w-full flex justify-center items-center relative">
-                <p className="text-xs uppercase truncate">{shopName}</p>
+                <p className="text-xs uppercase font-bold">{shopName}</p>
                 {isQuickBarcode && (
-                    <span className="absolute right-0 text-[8px] uppercase">Quick</span>
+                    <span className="absolute right-0 text-[8px] uppercase font-bold">Quick</span>
                 )}
             </div>
             
             <div className="w-full flex-grow flex flex-col justify-center items-center gap-0">
                  <div className="w-full flex justify-between items-start">
                     <div className="text-left">
-                         <p className="text-lg flex items-center">
+                         <p className="text-lg flex items-center font-bold">
                             <IndianRupee className="h-4 w-4 mr-0.5" />
                             {(item.price || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </p>
                     </div>
-                     <div className='text-right text-[10px] flex items-center gap-x-2'>
+                     <div className='text-right text-[10px] flex items-center gap-x-2 font-bold'>
                         {item.size && <div>Size: {item.size}</div>}
-                        {item.expiryDate && <div>Expiry: {format(new Date(item.expiryDate), 'dd/MM/yy')}</div>}
+                        {item.expiryDate && <div>Expiry: {format(new Date(item.expiryDate), 'dd/M/yy')}</div>}
                     </div>
                 </div>
 
@@ -59,7 +60,7 @@ export const BarcodeLabel: React.FC<BarcodeLabelProps> = ({ item, shopName, isQu
             </div>
             
             <div className="w-full text-center">
-                <p className="text-base truncate max-w-full">{item.name}</p>
+                <p className="text-base truncate max-w-full font-bold">{item.name}</p>
             </div>
         </div>
     );
