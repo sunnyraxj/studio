@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -22,31 +21,31 @@ export const BarcodeLabel: React.FC<BarcodeLabelProps> = ({ item, shopName, isQu
 
     return (
         <div 
-            className="bg-white text-black flex flex-col items-center justify-between font-sans p-2 border border-black relative" 
+            className="bg-white text-black flex flex-col items-center justify-center font-sans p-1 border border-black relative font-bold" 
             style={{ width: '2.5in', height: '1.5in', boxSizing: 'border-box' }}
         >
             <div className="w-full flex justify-center items-center relative">
-                <p className="text-xs font-bold uppercase truncate">{shopName}</p>
+                <p className="text-xs uppercase truncate">{shopName}</p>
                 {isQuickBarcode && (
-                    <span className="absolute right-0 text-[8px] font-bold text-black uppercase">Quick</span>
+                    <span className="absolute right-0 text-[8px] uppercase">Quick</span>
                 )}
             </div>
             
-            <div className="w-full flex-grow flex flex-col justify-center items-center">
-                 <div className="w-full flex justify-between items-start -mb-1">
+            <div className="w-full flex-grow flex flex-col justify-center items-center gap-0">
+                 <div className="w-full flex justify-between items-start">
                     <div className="text-left">
-                         <p className="text-base font-bold flex items-center">
+                         <p className="text-lg flex items-center">
                             <IndianRupee className="h-4 w-4 mr-0.5" />
                             {(item.price || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </p>
                     </div>
                      <div className='text-right text-[10px] flex items-center gap-x-2'>
-                        {item.size && <div><strong>Size:</strong> {item.size}</div>}
-                        {item.expiryDate && <div><strong>Exp:</strong> {format(new Date(item.expiryDate), 'dd/MM/yy')}</div>}
+                        {item.size && <div>Size: {item.size}</div>}
+                        {item.expiryDate && <div>Expiry: {format(new Date(item.expiryDate), 'dd/MM/yy')}</div>}
                     </div>
                 </div>
 
-                <div className="flex flex-col items-center">
+                <div className="flex flex-col items-center -my-2">
                     <Barcode 
                         value={item.sku || 'N/A'}
                         width={1.2}
@@ -60,7 +59,7 @@ export const BarcodeLabel: React.FC<BarcodeLabelProps> = ({ item, shopName, isQu
             </div>
             
             <div className="w-full text-center">
-                <p className="text-base font-bold truncate max-w-full">{item.name}</p>
+                <p className="text-base truncate max-w-full">{item.name}</p>
             </div>
         </div>
     );
