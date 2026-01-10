@@ -26,7 +26,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { DataTablePagination } from '@/components/ui/data-table-pagination';
+import { DataTablePagination } from '@/components/data-table-pagination';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Search, PlusCircle, Pencil, Trash2, X, IndianRupee } from 'lucide-react';
@@ -490,3 +490,5 @@ export default function SuppliersPage() {
     </>
   );
 }
+
+    
