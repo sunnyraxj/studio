@@ -302,18 +302,13 @@ export default function DashboardPage() {
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     <Card>
                         <CardHeader className="pb-2">
-                            <div className="flex justify-between items-start">
-                                <CardTitle className="text-base font-medium">
-                                    Total Sales
-                                </CardTitle>
-                                <Button variant="ghost" size="icon" className="h-6 w-6 -mr-2 -mt-2" onClick={handleExport}>
-                                    <FileText className="h-4 w-4 text-muted-foreground" />
-                                </Button>
-                            </div>
+                            <CardTitle className="text-base font-medium">
+                                Total Sales
+                            </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-2">
                             {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold flex items-center gap-1"><IndianRupee className="h-6 w-6"/>{todaySales.toLocaleString('en-IN')}</div>}
-                             <Input 
+                            <Input 
                                 type="date" 
                                 value={format(selectedDate, 'yyyy-MM-dd')}
                                 onChange={(e) => {
@@ -324,6 +319,9 @@ export default function DashboardPage() {
                                 }}
                                 className="h-9"
                             />
+                            <Button variant="outline" size="sm" className="w-full" onClick={handleExport}>
+                                <FileText className="mr-2 h-4 w-4" /> Export Summary
+                            </Button>
                         </CardContent>
                     </Card>
                     <MarginOverviewCard salesData={salesData} isLoading={isLoading} />
