@@ -40,6 +40,7 @@ import { toast } from '@/hooks/use-toast.tsx';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 type Supplier = {
   id: string;
@@ -86,7 +87,12 @@ const SupplierDetails: React.FC<{ supplier: AggregatedSupplier, shopId: string |
     const { data: purchasesData, isLoading: isPurchasesLoading } = useCollection<Purchase>(purchasesQuery);
 
     const [isAddPurchaseOpen, setIsAddPurchaseOpen] = useState(false);
-    const [purchaseForm, setPurchaseForm] = useState<Partial<Purchase>>({ items: [{ itemName: '', quantity: 1, rate: 0 }], billDate: format(new Date(), 'yyyy-MM-dd') });
+    const [purchaseForm, setPurchaseForm] = useState<Partial<Purchase & { paymentMode: PurchasePayment['mode']}>>({ 
+      items: [{ itemName: '', quantity: 1, rate: 0 }], 
+      billDate: format(new Date(), 'yyyy-MM-dd'),
+      paidAmount: 0,
+      paymentMode: 'Bank Transfer'
+    });
 
     const handlePurchaseItemChange = (index: number, field: 'itemName' | 'quantity' | 'rate', value: string | number) => {
         const newItems = [...(purchaseForm.items || [])];
@@ -117,17 +123,45 @@ const SupplierDetails: React.FC<{ supplier: AggregatedSupplier, shopId: string |
             return;
         }
 
-        const purchaseData = {
-            ...purchaseForm,
+        const totalAmount = purchaseFormTotal;
+        const paidAmount = Number(purchaseForm.paidAmount) || 0;
+
+        if (paidAmount > totalAmount) {
+            toast({ variant: 'destructive', title: 'Invalid Payment', description: 'Paid amount cannot be greater than the total bill amount.'});
+            return;
+        }
+
+        const status = paidAmount === 0 ? 'Unpaid' : paidAmount < totalAmount ? 'Partially Paid' : 'Paid';
+
+        // Destructure to separate paymentMode from the purchase data
+        const { paymentMode, ...purchaseCoreData } = purchaseForm;
+        
+        const finalPurchaseData = {
+            ...purchaseCoreData,
             billDate: new Date(purchaseForm.billDate).toISOString(),
-            totalAmount: purchaseFormTotal,
-            paidAmount: 0,
-            status: 'Unpaid' as const,
+            totalAmount: totalAmount,
+            paidAmount: paidAmount,
+            status: status,
         };
         
         try {
-            const ref = collection(firestore, `shops/${shopId}/suppliers/${supplier.id}/purchases`);
-            await addDoc(ref, purchaseData);
+            const purchaseRef = doc(collection(firestore, `shops/${shopId}/suppliers/${supplier.id}/purchases`));
+            
+            await runTransaction(firestore, async (transaction) => {
+                transaction.set(purchaseRef, finalPurchaseData);
+                
+                // If an initial payment is made, create a payment subdocument
+                if (paidAmount > 0) {
+                    const paymentRef = doc(collection(purchaseRef, 'payments'));
+                    transaction.set(paymentRef, {
+                        paymentDate: new Date().toISOString(),
+                        amount: paidAmount,
+                        mode: paymentMode,
+                        notes: 'Initial payment with bill',
+                    });
+                }
+            });
+            
             toast({ title: 'Success', description: 'Purchase bill added.' });
             setIsAddPurchaseOpen(false);
             setPurchaseForm({ items: [{ itemName: '', quantity: 1, rate: 0 }], billDate: format(new Date(), 'yyyy-MM-dd') });
@@ -202,11 +236,10 @@ const SupplierDetails: React.FC<{ supplier: AggregatedSupplier, shopId: string |
                 </CardContent>
             </Card>
 
-            {/* Add Purchase Bill Dialog */}
             <Dialog open={isAddPurchaseOpen} onOpenChange={setIsAddPurchaseOpen}>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className="max-w-4xl">
                     <DialogHeader><DialogTitle>Add New Purchase Bill for {supplier.name}</DialogTitle></DialogHeader>
-                    <div className="max-h-[60vh] overflow-y-auto p-1">
+                    <div className="max-h-[70vh] overflow-y-auto p-1">
                         <div className="grid grid-cols-2 gap-4 py-4">
                             <div className="space-y-2"><Label>Bill Number (Optional)</Label><Input value={purchaseForm.billNumber || ''} onChange={e => setPurchaseForm(p => ({...p, billNumber: e.target.value}))}/></div>
                             <div className="space-y-2"><Label>Bill Date*</Label><Input type="date" value={purchaseForm.billDate} onChange={e => setPurchaseForm(p => ({...p, billDate: e.target.value}))}/></div>
@@ -217,16 +250,41 @@ const SupplierDetails: React.FC<{ supplier: AggregatedSupplier, shopId: string |
                            {purchaseForm.items?.map((item, index) => (
                                 <div key={index} className="flex gap-2 items-end">
                                     <div className="flex-grow space-y-1"><Label>Item Name</Label><Input value={item.itemName} onChange={e => handlePurchaseItemChange(index, 'itemName', e.target.value)} /></div>
-                                    <div className="w-24 space-y-1"><Label>Quantity</Label><Input type="number" value={item.quantity} onChange={e => handlePurchaseItemChange(index, 'quantity', e.target.value)} /></div>
-                                    <div className="w-32 space-y-1"><Label>Rate</Label><Input type="number" value={item.rate} onChange={e => handlePurchaseItemChange(index, 'rate', e.target.value)} /></div>
+                                    <div className="w-24 space-y-1"><Label>Quantity</Label><Input type="number" value={item.quantity} onChange={e => handlePurchaseItemChange(index, 'quantity', Number(e.target.value))} /></div>
+                                    <div className="w-32 space-y-1"><Label>Rate</Label><Input type="number" value={item.rate} onChange={e => handlePurchaseItemChange(index, 'rate', Number(e.target.value))} /></div>
+                                    <div className="w-32 space-y-1 text-right">
+                                        <Label>Item Total</Label>
+                                        <p className="font-semibold h-10 flex items-center justify-end pr-2"><span className="flex items-center gap-1"><IndianRupee className="h-4 w-4"/>{(Number(item.quantity) * Number(item.rate)).toLocaleString()}</span></p>
+                                    </div>
                                     <Button variant="destructive" size="icon" onClick={() => removePurchaseItem(index)}><Trash2 className="h-4 w-4"/></Button>
                                 </div>
                             ))}
                         </div>
                         <Button variant="outline" size="sm" onClick={addPurchaseItem} className="mt-2"><PlusCircle className="mr-2 h-4 w-4"/>Add Row</Button>
                          <Separator className="my-4" />
-                         <div className="text-right">
-                             <p className="text-lg font-bold">Total Bill Amount: <span className="flex items-center justify-end gap-1"><IndianRupee className="h-5 w-5" />{purchaseFormTotal.toLocaleString()}</span></p>
+                         <div className="flex justify-between items-end">
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label>Payment Mode</Label>
+                                    <RadioGroup value={purchaseForm.paymentMode} onValueChange={(v) => setPurchaseForm(p => ({ ...p, paymentMode: v as any }))} className="flex gap-4">
+                                        <div className="flex items-center space-x-2"><RadioGroupItem value="Bank Transfer" id="bank" /><Label htmlFor="bank">Bank Transfer</Label></div>
+                                        <div className="flex items-center space-x-2"><RadioGroupItem value="Cash" id="cash" /><Label htmlFor="cash">Cash</Label></div>
+                                        <div className="flex items-center space-x-2"><RadioGroupItem value="UPI" id="upi" /><Label htmlFor="upi">UPI</Label></div>
+                                        <div className="flex items-center space-x-2"><RadioGroupItem value="Cheque" id="cheque" /><Label htmlFor="cheque">Cheque</Label></div>
+                                    </RadioGroup>
+                                </div>
+                                 <div className="space-y-2">
+                                    <Label>Amount Paid Now (Optional)</Label>
+                                    <div className="relative w-48">
+                                        <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                        <Input type="number" value={purchaseForm.paidAmount || ''} onChange={e => setPurchaseForm(p => ({...p, paidAmount: Number(e.target.value)}))} className="pl-8" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="text-right space-y-2">
+                                <p className="text-2xl font-bold">Total Bill Amount: <span className="flex items-center justify-end gap-1"><IndianRupee className="h-6 w-6" />{purchaseFormTotal.toLocaleString()}</span></p>
+                                {Number(purchaseForm.paidAmount) > 0 && <p className="text-lg font-semibold text-destructive">Balance Due: <span className="flex items-center justify-end gap-1"><IndianRupee className="h-5 w-5" />{(purchaseFormTotal - (Number(purchaseForm.paidAmount) || 0)).toLocaleString()}</span></p>}
+                            </div>
                          </div>
                     </div>
                     <DialogFooter>
