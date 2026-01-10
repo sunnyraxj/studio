@@ -14,9 +14,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, doc, query, where } from 'firebase/firestore';
-import { IndianRupee, PartyPopper, Percent } from 'lucide-react';
+import { IndianRupee, PartyPopper, Percent, Calendar as CalendarIcon } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { subDays } from 'date-fns';
+import { subDays, format, startOfDay } from 'date-fns';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { PaymentBreakdownCard } from './components/payment-breakdown-card';
 import { MarginOverviewCard } from './components/margin-overview-card';
@@ -24,6 +24,8 @@ import { cn } from '@/lib/utils';
 import { MonthlySalesChart } from './components/monthly-sales-chart';
 import { TopProductsChart } from './components/top-products-chart';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 
 
 // Common Types
@@ -166,6 +168,8 @@ export default function DashboardPage() {
   // Centralized state for demo data
   const [demoSales, setDemoSales] = useState<Sale[]>(initialDemoSales);
   const [demoKhataEntries, setDemoKhataEntries] = useState<KhataEntry[]>(initialDemoKhata);
+  
+  const [selectedDate, setSelectedDate] = useState<Date>(startOfDay(new Date()));
 
 
   const userDocRef = useMemoFirebase(() => {
@@ -194,7 +198,7 @@ export default function DashboardPage() {
       yesterdayPaymentTotals,
       allTimePaymentTotals,
   } = useMemo(() => {
-      const todayStr = new Date().toDateString();
+      const selectedDateStr = selectedDate.toDateString();
       const yesterdayStr = subDays(new Date(), 1).toDateString();
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
@@ -212,7 +216,7 @@ export default function DashboardPage() {
           }, { cash: 0, card: 0, upi: 0 });
       };
 
-      const todaySalesData = originalData.filter(s => new Date(s.date).toDateString() === todayStr);
+      const todaySalesData = originalData.filter(s => new Date(s.date).toDateString() === selectedDateStr);
       const yesterdaySalesData = originalData.filter(s => new Date(s.date).toDateString() === yesterdayStr);
 
       return {
@@ -223,7 +227,7 @@ export default function DashboardPage() {
           yesterdayPaymentTotals: calculateTotals(yesterdaySalesData),
           allTimePaymentTotals: calculateTotals(originalData),
       };
-  }, [originalData]);
+  }, [originalData, selectedDate]);
 
 
   const isLoading = isOverviewLoading && !isDemoMode;
@@ -274,8 +278,24 @@ export default function DashboardPage() {
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-base font-medium">Today's Sales</CardTitle>
-                        <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                            <CardTitle className="text-base font-medium">
+                                Sales for {format(selectedDate, 'dd MMM')}
+                            </CardTitle>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                <Button variant="outline" size="icon" className="h-7 w-7">
+                                    <CalendarIcon className="h-4 w-4" />
+                                </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                    mode="single"
+                                    selected={selectedDate}
+                                    onSelect={(date) => date && setSelectedDate(startOfDay(date))}
+                                    initialFocus
+                                />
+                                </PopoverContent>
+                            </Popover>
                         </CardHeader>
                         <CardContent>
                         {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold flex items-center gap-1"><IndianRupee className="h-6 w-6"/>{todaySales.toLocaleString('en-IN')}</div>}
@@ -305,7 +325,7 @@ export default function DashboardPage() {
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <div onClick={() => setActiveTab('payments')} className="cursor-pointer">
-                                <PaymentBreakdownCard title="Today's Payments" totals={todayPaymentTotals} isLoading={isLoading} />
+                                <PaymentBreakdownCard title={`Today's Payments (${format(selectedDate, 'dd MMM')})`} totals={todayPaymentTotals} isLoading={isLoading} />
                             </div>
                         </TooltipTrigger>
                         <TooltipContent>
