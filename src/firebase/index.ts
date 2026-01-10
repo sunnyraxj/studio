@@ -1,3 +1,4 @@
+
 'use client';
 
 import { firebaseConfig } from '@/firebase/config';
@@ -53,3 +54,4 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
     }
     return memoized;
 }
+
