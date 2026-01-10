@@ -26,7 +26,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { DataTablePagination } from '@/components/data-table-pagination';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Search, PlusCircle, Pencil, Trash2, X, IndianRupee } from 'lucide-react';
@@ -206,12 +206,12 @@ const SupplierDetails: React.FC<{ supplier: AggregatedSupplier, shopId: string |
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Bill Date</TableHead>
-                                    <TableHead>Bill #</TableHead>
-                                    <TableHead className="text-right">Total Amount</TableHead>
-                                    <TableHead className="text-right">Amount Paid</TableHead>
-                                    <TableHead className="text-right">Due</TableHead>
-                                    <TableHead>Status</TableHead>
+                                    <TableHead className="py-2">Bill Date</TableHead>
+                                    <TableHead className="py-2">Bill #</TableHead>
+                                    <TableHead className="text-right py-2">Total</TableHead>
+                                    <TableHead className="text-right py-2">Paid</TableHead>
+                                    <TableHead className="text-right py-2">Due</TableHead>
+                                    <TableHead className="py-2">Status</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -220,12 +220,12 @@ const SupplierDetails: React.FC<{ supplier: AggregatedSupplier, shopId: string |
                                     const due = p.totalAmount - p.paidAmount;
                                     return (
                                         <TableRow key={p.id}>
-                                            <TableCell>{format(new Date(p.billDate), 'dd MMM, yyyy')}</TableCell>
-                                            <TableCell>{p.billNumber || 'N/A'}</TableCell>
-                                            <TableCell className="text-right font-medium flex items-center justify-end gap-1"><IndianRupee className="h-4 w-4"/>{p.totalAmount.toLocaleString()}</TableCell>
-                                            <TableCell className="text-right text-green-600 flex items-center justify-end gap-1"><IndianRupee className="h-4 w-4"/>{p.paidAmount.toLocaleString()}</TableCell>
-                                            <TableCell className="text-right text-destructive flex items-center justify-end gap-1"><IndianRupee className="h-4 w-4"/>{due.toLocaleString()}</TableCell>
-                                            <TableCell><Badge variant={p.status === 'Paid' ? 'default' : p.status === 'Unpaid' ? 'destructive' : 'secondary'}>{p.status}</Badge></TableCell>
+                                            <TableCell className="py-2 text-xs">{format(new Date(p.billDate), 'dd MMM, yy')}</TableCell>
+                                            <TableCell className="py-2 text-xs">{p.billNumber || 'N/A'}</TableCell>
+                                            <TableCell className="text-right py-2 font-medium flex items-center justify-end gap-1 text-xs"><IndianRupee className="h-3 w-3"/>{p.totalAmount.toLocaleString()}</TableCell>
+                                            <TableCell className="text-right py-2 text-green-600 flex items-center justify-end gap-1 text-xs"><IndianRupee className="h-3 w-3"/>{p.paidAmount.toLocaleString()}</TableCell>
+                                            <TableCell className="text-right py-2 text-destructive flex items-center justify-end gap-1 text-xs"><IndianRupee className="h-3 w-3"/>{due.toLocaleString()}</TableCell>
+                                            <TableCell className="py-2"><Badge variant={p.status === 'Paid' ? 'default' : p.status === 'Unpaid' ? 'destructive' : 'secondary'} className="text-[10px] py-0.5 px-1.5">{p.status}</Badge></TableCell>
                                         </TableRow>
                                     )
                                 })
