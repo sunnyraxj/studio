@@ -5,6 +5,8 @@ import React from 'react';
 import Barcode from 'react-barcode';
 import type { InventoryItem } from '../page';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 interface BarcodeLabelProps {
     item: Partial<InventoryItem>;
@@ -19,18 +21,23 @@ export const BarcodeLabel: React.FC<BarcodeLabelProps> = ({ item, shopName, isQu
 
     return (
         <div 
-            className="bg-white text-black flex flex-col items-center justify-between font-sans p-2 border border-black" 
+            className="bg-white text-black flex flex-col items-center justify-between font-sans p-2 border border-black relative" 
             style={{ width: '2.5in', height: '1.5in', boxSizing: 'border-box' }}
         >
-            <div className="relative w-full text-center">
+            <div className="w-full text-center">
                 <p className="text-xs font-bold uppercase truncate">{shopName}</p>
-                {isQuickBarcode && (
-                    <Badge variant="destructive" className="text-xs scale-75 origin-right absolute top-0 right-0">Quick</Badge>
-                )}
             </div>
+
+            {isQuickBarcode && (
+                <div className="absolute top-1/2 -right-6 transform -translate-y-1/2 rotate-90">
+                    <Badge variant="destructive" className="text-xs px-2 py-0.5 whitespace-nowrap">
+                        Quick
+                    </Badge>
+                </div>
+            )}
             
             <div className="flex flex-col items-center">
-                <p className="text-lg font-bold truncate max-w-full -mb-1">{item.name}</p>
+                <p className="text-base font-bold truncate max-w-full -mb-1">{item.name}</p>
                  <Barcode 
                     value={item.sku || 'N/A'}
                     width={1.2}
@@ -42,10 +49,16 @@ export const BarcodeLabel: React.FC<BarcodeLabelProps> = ({ item, shopName, isQu
                 />
             </div>
             
-            <div className="flex justify-center items-center w-full">
-              <p className="text-lg font-bold uppercase">
-                  MRP: {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(item.price || 0)}
-              </p>
+            <div className="flex justify-between items-end w-full">
+                <div className='text-left text-[10px] space-y-0.5'>
+                    {item.size && <div><strong>Size:</strong> {item.size}</div>}
+                    {item.expiryDate && <div><strong>Exp:</strong> {format(new Date(item.expiryDate), 'dd/MM/yy')}</div>}
+                </div>
+                <div className="text-center">
+                    <p className="text-lg font-bold uppercase">
+                        MRP: {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(item.price || 0)}
+                    </p>
+                </div>
             </div>
         </div>
     );
