@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
@@ -33,7 +34,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, orderBy, writeBatch, getDocs, where, runTransaction } from 'firebase/firestore';
+import { collection, query, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, orderBy, writeBatch, getDocs, where, runTransaction, limit } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast.tsx';
 import { cn } from '@/lib/utils';
@@ -97,6 +98,50 @@ const SupplierDetails: React.FC<{ supplier: AggregatedSupplier, shopId: string |
       paidAmount: 0,
       paymentMode: 'Bank Transfer'
     });
+    
+    useEffect(() => {
+        const generateNextBillNumber = async () => {
+            if (isDemoMode || !shopId || !firestore) {
+                setPurchaseForm(prev => ({...prev, billNumber: `SUP-${new Date().getFullYear()}-001`}));
+                return;
+            }
+
+            const currentYear = new Date().getFullYear();
+            const purchasesCollectionRef = collection(firestore, `shops/${shopId}/suppliers/${supplier.id}/purchases`);
+            
+            const q = query(
+                purchasesCollectionRef,
+                where('billDate', '>=', new Date(currentYear, 0, 1).toISOString()),
+                where('billDate', '<=', new Date(currentYear, 11, 31, 23, 59, 59).toISOString()),
+                orderBy('billDate', 'desc'),
+                limit(1)
+            );
+            
+            try {
+                const querySnapshot = await getDocs(q);
+                let lastBillNumber = 0;
+                if (!querySnapshot.empty) {
+                    const lastPurchase = querySnapshot.docs[0].data() as Purchase;
+                    const lastBill = lastPurchase.billNumber;
+                    
+                    const match = lastBill?.match(new RegExp(`SUP-${currentYear}-(\\d+)`));
+                    if (match) {
+                        lastBillNumber = parseInt(match[1], 10);
+                    }
+                }
+                const nextBillNumber = (lastBillNumber + 1).toString().padStart(3, '0');
+                setPurchaseForm(prev => ({...prev, billNumber: `SUP-${currentYear}-${nextBillNumber}`}));
+            } catch (error) {
+                console.error("Error generating bill number:", error);
+                setPurchaseForm(prev => ({...prev, billNumber: `SUP-${currentYear}-001`}));
+            }
+        };
+
+        if (isAddPurchaseOpen) {
+            generateNextBillNumber();
+        }
+    }, [isAddPurchaseOpen, shopId, firestore, isDemoMode, supplier.id]);
+
 
     const handlePurchaseItemChange = (index: number, field: 'itemName' | 'quantity' | 'rate', value: string | number) => {
         const newItems = [...(purchaseForm.items || [])];
@@ -273,7 +318,10 @@ const SupplierDetails: React.FC<{ supplier: AggregatedSupplier, shopId: string |
                     <DialogHeader><DialogTitle>Add New Purchase Bill for {supplier.name}</DialogTitle></DialogHeader>
                     <div className="max-h-[70vh] overflow-y-auto p-1">
                         <div className="grid grid-cols-2 gap-4 py-4">
-                            <div className="space-y-2"><Label>Bill Number (Optional)</Label><Input value={purchaseForm.billNumber || ''} onChange={e => setPurchaseForm(p => ({...p, billNumber: e.target.value}))}/></div>
+                            <div className="space-y-2">
+                                <Label>Bill Number (Auto-generated)</Label>
+                                <Input value={purchaseForm.billNumber || ''} readOnly disabled />
+                            </div>
                             <div className="space-y-2"><Label>Bill Date*</Label><Input type="date" value={purchaseForm.billDate} onChange={e => setPurchaseForm(p => ({...p, billDate: e.target.value}))}/></div>
                         </div>
                         <Separator className="my-4" />
