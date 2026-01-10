@@ -33,8 +33,8 @@ export const BarcodeLabel: React.FC<BarcodeLabelProps> = ({ item, shopName, isQu
             </div>
             
             <div className="w-full flex-grow flex flex-col justify-center items-center gap-0">
-                 <p className="text-base truncate max-w-full relative top-[-10%]">{item.name}</p>
-                <div className="flex flex-col items-center relative top-[-5%] pb-1">
+                 <p className="text-base truncate max-w-full relative top-[-20%]">{item.name}</p>
+                <div className="flex flex-col items-center relative top-[-10%] pb-1">
                     <Barcode 
                         value={item.sku || 'N/A'}
                         width={1.2}
@@ -46,13 +46,15 @@ export const BarcodeLabel: React.FC<BarcodeLabelProps> = ({ item, shopName, isQu
                     />
                 </div>
             </div>
-            <div className='text-[10px] flex items-center justify-between w-full px-1 relative top-[-5%]'>
-                <div className="flex items-center">
+            <div className='flex flex-col items-center w-full relative top-[-5%]'>
+                <div className="text-[10px] flex items-center">
                     MRP: <IndianRupee className="h-3 w-3 mx-0.5" />
                     {(item.price || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
-                {item.size && <div>Size: {item.size}</div>}
-                {item.expiryDate && <div>Expiry: {format(new Date(item.expiryDate), 'd/M/yy')}</div>}
+                <div className='text-[10px] flex items-center justify-between w-full px-1'>
+                    {item.size && <div>Size: {item.size}</div>}
+                    {item.expiryDate && <div>Expiry: {format(new Date(item.expiryDate), 'd/M/yy')}</div>}
+                </div>
             </div>
         </div>
     );
