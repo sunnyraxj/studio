@@ -40,7 +40,7 @@ export const BarcodeLabel: React.FC<BarcodeLabelProps> = ({ item, shopName, isQu
                             {(item.price || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </p>
                     </div>
-                     <div className='text-right text-[10px] space-y-0.5'>
+                     <div className='text-right text-[10px] flex items-center gap-x-2'>
                         {item.size && <div><strong>Size:</strong> {item.size}</div>}
                         {item.expiryDate && <div><strong>Exp:</strong> {format(new Date(item.expiryDate), 'dd/MM/yy')}</div>}
                     </div>
