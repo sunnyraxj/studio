@@ -222,9 +222,9 @@ const SupplierDetails: React.FC<{ supplier: AggregatedSupplier, shopId: string |
                                         <TableRow key={p.id}>
                                             <TableCell className="py-2 text-xs">{format(new Date(p.billDate), 'dd MMM, yy')}</TableCell>
                                             <TableCell className="py-2 text-xs">{p.billNumber || 'N/A'}</TableCell>
-                                            <TableCell className="text-right py-2 font-medium flex items-center justify-end gap-1 text-xs"><IndianRupee className="h-3 w-3"/>{p.totalAmount.toLocaleString()}</TableCell>
-                                            <TableCell className="text-right py-2 text-green-600 flex items-center justify-end gap-1 text-xs"><IndianRupee className="h-3 w-3"/>{p.paidAmount.toLocaleString()}</TableCell>
-                                            <TableCell className="text-right py-2 text-destructive flex items-center justify-end gap-1 text-xs"><IndianRupee className="h-3 w-3"/>{due.toLocaleString()}</TableCell>
+                                            <TableCell className="text-right py-2 font-medium text-xs">₹{p.totalAmount.toLocaleString()}</TableCell>
+                                            <TableCell className="text-right py-2 text-green-600 text-xs">₹{p.paidAmount.toLocaleString()}</TableCell>
+                                            <TableCell className="text-right py-2 text-destructive text-xs">₹{due.toLocaleString()}</TableCell>
                                             <TableCell className="py-2"><Badge variant={p.status === 'Paid' ? 'default' : p.status === 'Unpaid' ? 'destructive' : 'secondary'} className="text-[10px] py-0.5 px-1.5">{p.status}</Badge></TableCell>
                                         </TableRow>
                                     )
@@ -490,5 +490,3 @@ export default function SuppliersPage() {
     </>
   );
 }
-
-    
