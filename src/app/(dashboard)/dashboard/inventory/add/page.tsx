@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
@@ -74,32 +74,50 @@ export default function AddProductPage() {
   const [unit, setUnit] = useState('pcs');
   const [expiryDate, setExpiryDate] = useState<Date>();
   
-  const generateNextProductCode = async (prefix: string): Promise<string> => {
-    if (!firestore || !shopId) return `${prefix}-001`;
+  useEffect(() => {
+    const generateNextProductCode = async () => {
+      if (!firestore || !shopId) {
+        setProductCode(`${'SHOP'}-001`);
+        return;
+      }
+  
+      const shopName = settingsData?.companyName || 'SHOP';
+      const prefix = shopName.substring(0, 4).toUpperCase();
 
-    const productsCollectionRef = collection(firestore, `shops/${shopId}/products`);
-    const q = query(
-      productsCollectionRef,
-      orderBy('sku', 'desc'),
-      limit(1)
-    );
-
-    const querySnapshot = await getDocs(q);
-    let lastSkuNumber = 0;
-    if (!querySnapshot.empty) {
-        const lastProduct = querySnapshot.docs[0].data();
-        const lastSku = lastProduct.sku as string;
-        if (lastSku && lastSku.startsWith(prefix + '-')) {
-            const parts = lastSku.split('-');
-            const lastNum = parseInt(parts[parts.length - 1], 10);
-            if (!isNaN(lastNum)) {
-                lastSkuNumber = lastNum;
+      const productsCollectionRef = collection(firestore, `shops/${shopId}/products`);
+      const q = query(
+        productsCollectionRef,
+        orderBy('sku', 'desc'),
+        limit(1)
+      );
+  
+      try {
+        const querySnapshot = await getDocs(q);
+        let lastSkuNumber = 0;
+        if (!querySnapshot.empty) {
+            const lastProduct = querySnapshot.docs[0].data();
+            const lastSku = lastProduct.sku as string;
+            if (lastSku && lastSku.startsWith(prefix + '-')) {
+                const parts = lastSku.split('-');
+                const lastNum = parseInt(parts[parts.length - 1], 10);
+                if (!isNaN(lastNum)) {
+                    lastSkuNumber = lastNum;
+                }
             }
         }
+        const newSkuNumber = (lastSkuNumber + 1).toString().padStart(3, '0');
+        setProductCode(`${prefix}-${newSkuNumber}`);
+      } catch (e) {
+        console.error("Could not generate SKU", e);
+        setProductCode(`${prefix}-001`);
+      }
     }
-    const newSkuNumber = (lastSkuNumber + 1).toString().padStart(3, '0');
-    return `${prefix}-${newSkuNumber}`;
-  }
+    
+    // Only generate if productCode is not manually set.
+    if (!productCode) {
+      generateNextProductCode();
+    }
+  }, [firestore, shopId, settingsData, productCode]);
 
 
   const handleSaveProduct = async () => {
@@ -141,9 +159,12 @@ export default function AddProductPage() {
 
     let finalSku = productCode;
     if (!finalSku) {
-        const shopName = settingsData?.companyName || 'SHOP';
-        const prefix = shopName.substring(0, 2).toUpperCase();
-        finalSku = await generateNextProductCode(prefix);
+        toast({
+            variant: 'destructive',
+            title: 'SKU Generation Failed',
+            description: 'Could not generate an SKU. Please enter one manually or try again.',
+        });
+        return;
     }
 
     const productData = {
@@ -235,14 +256,8 @@ export default function AddProductPage() {
         const batch = writeBatch(firestore);
         const productsCollectionRef = collection(firestore, `shops/${shopId}/products`);
         
-        const shopName = settingsData?.companyName || 'SHOP';
-        const prefix = shopName.substring(0, 2).toUpperCase();
-
         for (const product of productsToImport) {
             let sku = product['Product Code / SKU'];
-            if (!sku) {
-                sku = await generateNextProductCode(prefix);
-            }
             
             const stock = parseInt(product['Opening Quantity']) || 0;
             const expiry = product['Expiry Date (YYYY-MM-DD)'];
@@ -343,7 +358,7 @@ export default function AddProductPage() {
             <Label htmlFor="product-code">Product Code / SKU (Optional)</Label>
             <Input
               id="product-code"
-              placeholder="e.g., TSHIRT-BLK-L"
+              placeholder="Auto-generated if left blank"
               value={productCode}
               onChange={(e) => setProductCode(e.target.value)}
             />
