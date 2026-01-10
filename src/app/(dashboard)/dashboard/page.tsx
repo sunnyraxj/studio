@@ -277,14 +277,24 @@ export default function DashboardPage() {
             <TabsContent value="overview" className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardHeader className="pb-2">
                             <CardTitle className="text-base font-medium">
-                                Sales for {format(selectedDate, 'dd MMM')}
+                                Total Sales
                             </CardTitle>
-                            <Popover>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                            {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold flex items-center gap-1"><IndianRupee className="h-6 w-6"/>{todaySales.toLocaleString('en-IN')}</div>}
+                             <Popover>
                                 <PopoverTrigger asChild>
-                                <Button variant="outline" size="icon" className="h-7 w-7">
-                                    <CalendarIcon className="h-4 w-4" />
+                                <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                    "w-full justify-start text-left font-normal",
+                                    !selectedDate && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
                                 </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0">
@@ -296,9 +306,6 @@ export default function DashboardPage() {
                                 />
                                 </PopoverContent>
                             </Popover>
-                        </CardHeader>
-                        <CardContent>
-                        {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold flex items-center gap-1"><IndianRupee className="h-6 w-6"/>{todaySales.toLocaleString('en-IN')}</div>}
                         </CardContent>
                     </Card>
                     <MarginOverviewCard salesData={salesData} isLoading={isLoading} />
