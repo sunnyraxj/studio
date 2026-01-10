@@ -151,10 +151,10 @@ export default function QuickBarcodePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 gap-6">
-            <div className="p-4 border rounded-lg bg-muted/50 relative space-y-2">
+             <div className="p-4 border rounded-lg bg-muted/50 relative space-y-2">
                 <Label htmlFor="search-inventory" className="font-semibold">Search Inventory</Label>
-                <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <div className="flex items-center gap-2">
+                    <Search className="h-5 w-5 text-muted-foreground" />
                     <Input
                         id="search-inventory"
                         placeholder="Search by name or SKU..."
@@ -164,7 +164,7 @@ export default function QuickBarcodePage() {
                     />
                 </div>
                 {filteredProducts.length > 0 && (
-                    <Card className="absolute z-10 w-full mt-1 shadow-lg left-0 right-0">
+                    <Card className="absolute z-10 w-[calc(100%-2rem)] mt-1 shadow-lg left-4 right-4">
                     <ScrollArea className="h-40">
                         <CardContent className="p-2">
                         {filteredProducts.map(p => (
