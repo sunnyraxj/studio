@@ -213,11 +213,11 @@ export default function POSPage() {
   };
   
 
-  const generateNextInvoiceNumber = async () => {
-      let isMounted = true;
+  useEffect(() => {
+    const generateNextInvoiceNumber = async () => {
       if (isDemoMode) {
         const currentYear = new Date().getFullYear();
-        if (isMounted) setInvoiceNumber(`INV-${currentYear}-0001`);
+        setInvoiceNumber(`INV-${currentYear}-0001`);
         return;
       }
       if (!firestore || !shopId) return;
@@ -229,8 +229,6 @@ export default function POSPage() {
 
       try {
         const querySnapshot = await getDocs(q);
-        if (!isMounted) return;
-
         let lastInvoiceNumber = 0;
         if (!querySnapshot.empty) {
             const lastSale = querySnapshot.docs[0].data() as Sale;
@@ -247,12 +245,7 @@ export default function POSPage() {
       } catch (error) {
         console.error("Error generating invoice number:", error);
       }
-      return () => {
-        isMounted = false;
-      };
-  };
-
-  useEffect(() => {
+    };
     generateNextInvoiceNumber();
   }, [shopId, isDemoMode, firestore]);
 
@@ -450,7 +443,7 @@ export default function POSPage() {
                   Sale Completed!
                 </p>
                 <p className="mt-1 text-sm text-gray-500">
-                  Sale {invoiceNumber} has been recorded.
+                  Sale ${invoiceNumber} has been recorded.
                 </p>
               </div>
             </div>

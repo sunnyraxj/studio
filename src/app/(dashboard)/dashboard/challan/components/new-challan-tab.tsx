@@ -203,12 +203,10 @@ export function NewChallanTab() {
   
 
   useEffect(() => {
-    let isMounted = true;
-
     const generateNextChallanNumber = async () => {
       if (isDemoMode) {
         const currentYear = new Date().getFullYear();
-        if (isMounted) setInvoiceNumber(`CHLN-${currentYear}-0001`);
+        setInvoiceNumber(`CHLN-${currentYear}-0001`);
         return;
       }
       if (!firestore || !shopId) return;
@@ -220,8 +218,7 @@ export function NewChallanTab() {
 
       try {
         const querySnapshot = await getDocs(q);
-        if (!isMounted) return;
-
+        
         let lastChallanNumber = 0;
         if (!querySnapshot.empty) {
             const lastChallan = querySnapshot.docs[0].data() as Sale;
@@ -241,10 +238,6 @@ export function NewChallanTab() {
     };
 
     generateNextChallanNumber();
-
-    return () => {
-      isMounted = false;
-    };
   }, [shopId, isDemoMode, firestore]);
 
   const addToCart = (productToAdd: Product) => {
@@ -401,7 +394,7 @@ export function NewChallanTab() {
                   Challan Generated!
                 </p>
                 <p className="mt-1 text-sm text-gray-500">
-                  Challan {invoiceNumber} has been recorded.
+                  Challan ${invoiceNumber} has been recorded.
                 </p>
               </div>
             </div>
@@ -834,4 +827,3 @@ export function NewChallanTab() {
     </>
   );
 }
-
