@@ -25,14 +25,10 @@ export const BarcodeLabel: React.FC<BarcodeLabelProps> = ({ item, shopName, isQu
             className="bg-white text-black flex flex-col items-center justify-between font-sans p-2 border border-black relative" 
             style={{ width: '2.5in', height: '1.5in', boxSizing: 'border-box' }}
         >
-            <div className="w-full flex justify-between items-center">
-                <div className="flex-1 text-center">
-                    <p className="text-xs font-bold uppercase truncate">{shopName}</p>
-                </div>
+            <div className="w-full flex justify-center items-center relative">
+                <p className="text-xs font-bold uppercase truncate">{shopName}</p>
                 {isQuickBarcode && (
-                    <Badge variant="destructive" className="text-[8px] px-1 py-0 ml-1 whitespace-nowrap">
-                        Quick
-                    </Badge>
+                    <span className="absolute right-0 text-[8px] font-bold text-black uppercase">Quick</span>
                 )}
             </div>
             
