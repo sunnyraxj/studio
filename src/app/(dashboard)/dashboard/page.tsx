@@ -14,7 +14,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, doc, query, where } from 'firebase/firestore';
-import { IndianRupee, PartyPopper, Percent, Calendar as CalendarIcon } from 'lucide-react';
+import { IndianRupee, PartyPopper, Percent, Calendar as CalendarIcon, FileText } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { subDays, format, startOfDay, parse } from 'date-fns';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
@@ -234,6 +234,29 @@ export default function DashboardPage() {
   const isLoading = isOverviewLoading && !isDemoMode;
   const isNewSubscriber = userData?.subscriptionType === 'New';
 
+  const handleExport = () => {
+    const formattedDate = format(selectedDate, 'dd-MMM-yyyy');
+    
+    let content = `Sales Report for: ${formattedDate}\n`;
+    content += `-----------------------------------\n`;
+    content += `Cash:    ₹${todayPaymentTotals.cash.toFixed(2)}\n`;
+    content += `Card:    ₹${todayPaymentTotals.card.toFixed(2)}\n`;
+    content += `UPI:     ₹${todayPaymentTotals.upi.toFixed(2)}\n`;
+    content += `-----------------------------------\n`;
+    content += `TOTAL:   ₹${todaySales.toFixed(2)}\n`;
+    
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `sales_summary_${format(selectedDate, 'yyyy-MM-dd')}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+
   return (
     <TooltipProvider>
     <div className="flex-1 space-y-6">
@@ -279,9 +302,14 @@ export default function DashboardPage() {
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     <Card>
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-base font-medium">
-                                Total Sales
-                            </CardTitle>
+                            <div className="flex justify-between items-start">
+                                <CardTitle className="text-base font-medium">
+                                    Total Sales
+                                </CardTitle>
+                                <Button variant="ghost" size="icon" className="h-6 w-6 -mr-2 -mt-2" onClick={handleExport}>
+                                    <FileText className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                            </div>
                         </CardHeader>
                         <CardContent className="space-y-2">
                             {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold flex items-center gap-1"><IndianRupee className="h-6 w-6"/>{todaySales.toLocaleString('en-IN')}</div>}
@@ -390,5 +418,3 @@ export default function DashboardPage() {
     </TooltipProvider>
   );
 }
-
-    
