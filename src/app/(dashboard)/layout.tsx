@@ -92,11 +92,6 @@ const navLinks = [
     label: 'Inventory',
   },
   {
-    href: '/dashboard/suppliers',
-    icon: Truck,
-    label: 'Suppliers',
-  },
-  {
     href: '/dashboard/employees',
     icon: Users,
     label: 'Employees',
