@@ -161,7 +161,7 @@ function AppSidebar({ shopName, isExpired }: { shopName: string, isExpired: bool
   }, {} as Record<string, typeof navLinks>);
 
   return (
-    <Sidebar onMouseEnter={() => {}} onMouseLeave={() => {}} className="hidden md:flex">
+    <Sidebar className="hidden md:flex">
         <SidebarContent>
             <SidebarHeader>
                 <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
@@ -169,7 +169,7 @@ function AppSidebar({ shopName, isExpired }: { shopName: string, isExpired: bool
                         <span className="transition-all duration-300 group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:invisible">{shopName}</span>
                     </Link>
                 </div>
-                 <div className="px-2 pt-2">
+                 <div className="px-2 pt-2 transition-all duration-300 group-data-[collapsible=icon]:-m-8 group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:invisible">
                     <SidebarInput 
                         placeholder="Search pages..."
                         value={searchTerm}
@@ -414,6 +414,11 @@ export default function DashboardLayout({
         <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
             <MobileSidebar shopName={shopName} isExpired={isUIBlocked} />
             <div className="w-full flex-1" />
+            <Link href="/dashboard/suppliers">
+              <Button>
+                  <Truck className="mr-2 h-4 w-4" /> Manage Suppliers
+              </Button>
+            </Link>
             <Link href="/dashboard/employees">
                 <Button>
                     <Users className="mr-2 h-4 w-4" /> Manage Employees
