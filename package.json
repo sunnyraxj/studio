@@ -56,7 +56,8 @@
     "react-hot-toast": "^2.4.1",
     "xlsx": "^0.18.5",
     "react-barcode": "^1.5.3",
-    "@zxing/library": "^0.21.0"
+    "@zxing/library": "^0.21.0",
+    "cmdk": "^1.0.0"
   },
   "devDependencies": {
     "@types/node": "^20",
@@ -69,4 +70,3 @@
     "@types/recharts": "^1.8.29"
   }
 }
-

@@ -25,6 +25,7 @@ import {
   FileText,
   ScanBarcode,
   Truck,
+  Search,
 } from 'lucide-react';
 
 import {
@@ -55,13 +56,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from '@/components/ui/card';
-import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
@@ -70,6 +64,7 @@ import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/fireb
 import { doc } from 'firebase/firestore';
 import { isAfter } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
+import { UniversalSearch } from './components/universal-search';
 
 const navLinks = [
   {
@@ -411,9 +406,9 @@ export default function DashboardLayout({
       <div className='grid min-h-screen w-full md:grid-cols-[auto_1fr]'>
       <AppSidebar shopName={shopName} isExpired={isUIBlocked} />
       <div className="flex flex-col min-h-screen">
-        <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+        <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
             <MobileSidebar shopName={shopName} isExpired={isUIBlocked} />
-            <div className="w-full flex-1" />
+            <UniversalSearch navLinks={navLinks} />
         </header>
         <main className={cn("flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6", isUIBlocked && "pointer-events-none opacity-50")}>
             {children}
