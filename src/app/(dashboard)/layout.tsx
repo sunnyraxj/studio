@@ -39,6 +39,7 @@ import {
     SidebarFooter,
     useSidebar,
     SidebarInput,
+    SidebarInset,
 } from '@/components/ui/sidebar'
 
 import { Button } from '@/components/ui/button';
@@ -403,9 +404,8 @@ export default function DashboardLayout({
 
   return (
     <SidebarProvider>
-      <div className='grid min-h-screen w-full md:grid-cols-[auto_1fr]'>
       <AppSidebar shopName={shopName} isExpired={isUIBlocked} />
-      <div className="flex flex-col">
+      <SidebarInset>
         <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
             <MobileSidebar shopName={shopName} isExpired={isUIBlocked} />
             <div className="w-full flex-1">
@@ -415,8 +415,7 @@ export default function DashboardLayout({
         <main className={cn("flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6", isUIBlocked && "pointer-events-none opacity-50")}>
             {children}
         </main>
-      </div>
-      </div>
+      </SidebarInset>
        <SubscriptionExpiredModal 
             open={isUIBlocked}
             onRenew={() => router.push('/dashboard/subscription')}
