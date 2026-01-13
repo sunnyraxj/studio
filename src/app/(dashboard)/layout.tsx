@@ -37,6 +37,7 @@ import {
     SidebarMenuButton,
     SidebarFooter,
     useSidebar,
+    SidebarInput,
 } from '@/components/ui/sidebar'
 
 import { Button } from '@/components/ui/button';
@@ -75,36 +76,49 @@ const navLinks = [
     href: '/dashboard',
     icon: Home,
     label: 'Dashboard',
+    category: 'Core Operations'
   },
   {
     href: '/dashboard/pos',
     icon: Printer,
     label: 'POS',
+    category: 'Core Operations'
   },
    {
     href: '/dashboard/challan',
     icon: FileText,
     label: 'Challan',
+    category: 'Core Operations'
   },
   {
     href: '/dashboard/inventory',
     icon: Package,
     label: 'Inventory',
+    category: 'Management'
+  },
+   {
+    href: '/dashboard/suppliers',
+    icon: Truck,
+    label: 'Suppliers',
+    category: 'Management'
   },
   {
     href: '/dashboard/employees',
     icon: Users,
     label: 'Employees',
+    category: 'Management'
   },
   {
     href: '/dashboard/quick-barcode',
     icon: ScanBarcode,
     label: 'Quick Barcode',
+    category: 'Utilities'
   },
   {
     href: '/dashboard/subscription',
     icon: CreditCard,
-    label: 'Subscription'
+    label: 'Subscription',
+    category: 'Utilities'
   }
 ];
 
@@ -124,6 +138,7 @@ function AppSidebar({ shopName, isExpired }: { shopName: string, isExpired: bool
   const auth = useAuth();
   const { user } = useUser();
   const router = useRouter();
+  const [searchTerm, setSearchTerm] = useState('');
 
   const handleLogout = () => {
     if (auth) {
@@ -131,6 +146,19 @@ function AppSidebar({ shopName, isExpired }: { shopName: string, isExpired: bool
     }
     router.push('/login');
   };
+  
+  const filteredNavLinks = navLinks.filter(link => 
+    link.label.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const groupedLinks = filteredNavLinks.reduce((acc, link) => {
+    const category = link.category || 'Other';
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(link);
+    return acc;
+  }, {} as Record<string, typeof navLinks>);
 
   return (
     <Sidebar onMouseEnter={() => {}} onMouseLeave={() => {}} className="hidden md:flex">
@@ -141,22 +169,34 @@ function AppSidebar({ shopName, isExpired }: { shopName: string, isExpired: bool
                         <span className="transition-all duration-300 group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:invisible">{shopName}</span>
                     </Link>
                 </div>
+                 <div className="px-2 pt-2">
+                    <SidebarInput 
+                        placeholder="Search pages..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
             </SidebarHeader>
 
             <SidebarMenu>
-                {navLinks.map((link) => (
-                    <SidebarMenuItem key={link.label}>
-                        <Link href={isExpired && link.href !== '/dashboard/subscription' ? '#' : link.href} passHref>
-                            <SidebarMenuButton
-                                isActive={pathname === link.href}
-                                disabled={isExpired && link.href !== '/dashboard/subscription'}
-                                tooltip={link.label}
-                            >
-                                <link.icon className="h-4 w-4" />
-                                <span>{link.label}</span>
-                            </SidebarMenuButton>
-                        </Link>
-                    </SidebarMenuItem>
+                 {Object.entries(groupedLinks).map(([category, links]) => (
+                    <React.Fragment key={category}>
+                        <Separator className="my-2" />
+                        {links.map((link) => (
+                            <SidebarMenuItem key={link.label}>
+                                <Link href={isExpired && link.href !== '/dashboard/subscription' ? '#' : link.href} passHref>
+                                    <SidebarMenuButton
+                                        isActive={pathname === link.href}
+                                        disabled={isExpired && link.href !== '/dashboard/subscription'}
+                                        tooltip={link.label}
+                                    >
+                                        <link.icon className="h-4 w-4" />
+                                        <span>{link.label}</span>
+                                    </SidebarMenuButton>
+                                </Link>
+                            </SidebarMenuItem>
+                        ))}
+                    </React.Fragment>
                 ))}
             </SidebarMenu>
         </SidebarContent>
@@ -374,11 +414,6 @@ export default function DashboardLayout({
         <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
             <MobileSidebar shopName={shopName} isExpired={isUIBlocked} />
             <div className="w-full flex-1" />
-            <Link href="/dashboard/suppliers">
-                <Button>
-                    <Truck className="mr-2 h-4 w-4" /> Manage Suppliers
-                </Button>
-            </Link>
             <Link href="/dashboard/employees">
                 <Button>
                     <Users className="mr-2 h-4 w-4" /> Manage Employees
@@ -397,3 +432,5 @@ export default function DashboardLayout({
     </SidebarProvider>
   );
 }
+
+    
