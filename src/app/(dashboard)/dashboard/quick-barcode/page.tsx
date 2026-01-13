@@ -131,7 +131,11 @@ export default function QuickBarcodePage() {
     }
 
     const printData: QuickPrint = {
-        ...product,
+        name: product.name || '',
+        price: product.price || 0,
+        sku: product.sku || null,
+        size: product.size || null,
+        expiryDate: product.expiryDate || null,
         printDate: new Date().toISOString()
     };
     
