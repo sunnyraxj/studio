@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -11,22 +11,32 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useFirestore, useUser, useDoc, useMemoFirebase, useCollection } from '@/firebase';
-import { doc, collection } from 'firebase/firestore';
-import { Printer, Calendar as CalendarIcon, Search } from 'lucide-react';
+import { doc, collection, addDoc, query, orderBy } from 'firebase/firestore';
+import { Printer, Search, IndianRupee, Trash2 } from 'lucide-react';
 import { BarcodeLabel } from '../inventory/components/barcode-label';
 import type { InventoryItem } from '../inventory/page';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { toast } from '@/hooks/use-toast.tsx';
 
 type ShopSettings = {
     companyName?: string;
+}
+
+type QuickPrint = Partial<InventoryItem> & {
+    printDate?: string;
 }
 
 export default function QuickBarcodePage() {
@@ -61,6 +71,7 @@ export default function QuickBarcodePage() {
   const printRef = useRef<HTMLDivElement>(null);
   
   const [inventorySearch, setInventorySearch] = useState('');
+  const [historySearchTerm, setHistorySearchTerm] = useState('');
 
   const productsCollectionRef = useMemoFirebase(() => {
     if (isDemoMode || !shopId || !firestore) return null;
@@ -69,11 +80,28 @@ export default function QuickBarcodePage() {
 
   const { data: productsData } = useCollection<InventoryItem>(productsCollectionRef);
   const products = isDemoMode ? [] : productsData || [];
+  
+  const quickPrintsQuery = useMemoFirebase(() => {
+      if (isDemoMode || !shopId || !firestore) return null;
+      return query(collection(firestore, `shops/${shopId}/quickPrints`), orderBy('printDate', 'desc'));
+  }, [shopId, firestore, isDemoMode]);
+  
+  const { data: printHistoryData, isLoading: isHistoryLoading } = useCollection<QuickPrint>(quickPrintsQuery);
+  const [demoPrintHistory, setDemoPrintHistory] = useState<QuickPrint[]>([]);
 
   const filteredProducts = useMemo(() => {
     if (!inventorySearch) return [];
     return products.filter(p => p.name.toLowerCase().includes(inventorySearch.toLowerCase()) || p.sku?.toLowerCase().includes(inventorySearch.toLowerCase()));
   }, [inventorySearch, products]);
+  
+  const filteredHistory = useMemo(() => {
+      const history = isDemoMode ? demoPrintHistory : (printHistoryData || []);
+      if (!historySearchTerm) return history;
+      return history.filter(p => 
+        (p.name && p.name.toLowerCase().includes(historySearchTerm.toLowerCase())) ||
+        (p.sku && p.sku.toLowerCase().includes(historySearchTerm.toLowerCase()))
+      );
+  }, [printHistoryData, demoPrintHistory, isDemoMode, historySearchTerm]);
 
   const handleSelectProduct = (selectedProduct: InventoryItem) => {
     setProduct({
@@ -94,6 +122,35 @@ export default function QuickBarcodePage() {
   
   const handleGenerate = () => {
     setShowBarcode(true);
+  }
+
+  const saveAndPrint = async () => {
+    if (!product.name || !product.price) {
+        toast({ variant: 'destructive', title: 'Missing Details', description: 'Product Name and MRP are required.' });
+        return;
+    }
+
+    const printData: QuickPrint = {
+        ...product,
+        printDate: new Date().toISOString()
+    };
+    
+    if (isDemoMode) {
+        setDemoPrintHistory(prev => [printData, ...prev]);
+        toast({ title: 'Print Saved (Demo)', description: `${product.name} added to history.` });
+    } else {
+        if (!firestore || !shopId) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Cannot save print history. Shop not found.' });
+            return;
+        }
+        try {
+            await addDoc(collection(firestore, `shops/${shopId}/quickPrints`), printData);
+        } catch(e: any) {
+            toast({ variant: 'destructive', title: 'Error', description: `Failed to save print history: ${e.message}` });
+        }
+    }
+
+    handlePrint();
   }
 
   const handlePrint = () => {
@@ -247,33 +304,87 @@ export default function QuickBarcodePage() {
           </CardFooter>
         </Card>
         
-        <Card>
-            <CardHeader>
-                <CardTitle>Barcode Preview</CardTitle>
-                <CardDescription>This is how your label will look.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex items-center justify-center">
-                {showBarcode && product.name ? (
-                    <div ref={printRef}>
-                       <div className="label-print-container">
-                         <BarcodeLabel item={product} shopName={shopName} isQuickBarcode={true} />
-                       </div>
-                    </div>
-                ) : (
-                    <div className="w-full h-[1.5in] flex items-center justify-center bg-muted/50 border-dashed border-2 rounded-md">
-                        <p className="text-muted-foreground">Fill details to see preview</p>
-                    </div>
+        <div className="space-y-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Barcode Preview</CardTitle>
+                    <CardDescription>This is how your label will look.</CardDescription>
+                </CardHeader>
+                <CardContent className="flex items-center justify-center">
+                    {showBarcode && product.name ? (
+                        <div ref={printRef}>
+                           <div className="label-print-container">
+                             <BarcodeLabel item={product} shopName={shopName} isQuickBarcode={true} />
+                           </div>
+                        </div>
+                    ) : (
+                        <div className="w-full h-[1.5in] flex items-center justify-center bg-muted/50 border-dashed border-2 rounded-md">
+                            <p className="text-muted-foreground">Fill details to see preview</p>
+                        </div>
+                    )}
+                </CardContent>
+                {showBarcode && (
+                    <CardFooter>
+                         <Button onClick={saveAndPrint} className="w-full">
+                            <Printer className="mr-2 h-4 w-4" /> Save & Print Label
+                        </Button>
+                    </CardFooter>
                 )}
-            </CardContent>
-            {showBarcode && (
-                <CardFooter>
-                     <Button onClick={handlePrint} className="w-full">
-                        <Printer className="mr-2 h-4 w-4" /> Print Label
-                    </Button>
-                </CardFooter>
-            )}
-        </Card>
+            </Card>
+        </div>
       </div>
+      <Card className="mt-8">
+          <CardHeader>
+              <CardTitle>Print History</CardTitle>
+              <CardDescription>A log of all barcodes generated via this page.</CardDescription>
+          </CardHeader>
+          <CardContent>
+              <div className="flex justify-end mb-4">
+                  <div className="relative">
+                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                          placeholder="Search history..."
+                          className="pl-8 w-64"
+                          value={historySearchTerm}
+                          onChange={(e) => setHistorySearchTerm(e.target.value)}
+                      />
+                  </div>
+              </div>
+              <div className="rounded-md border">
+                  <Table>
+                      <TableHeader>
+                          <TableRow>
+                              <TableHead>Printed On</TableHead>
+                              <TableHead>Name</TableHead>
+                              <TableHead>SKU</TableHead>
+                              <TableHead className="text-right">MRP</TableHead>
+                              <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                          {isHistoryLoading ? <TableRow><TableCell colSpan={5} className="text-center h-24">Loading history...</TableCell></TableRow>
+                          : filteredHistory.length > 0 ? (
+                              filteredHistory.map((item, index) => (
+                                  <TableRow key={item.id || index}>
+                                      <TableCell>{item.printDate ? format(new Date(item.printDate), 'dd MMM yyyy, hh:mm a') : 'N/A'}</TableCell>
+                                      <TableCell className="font-medium">{item.name}</TableCell>
+                                      <TableCell>{item.sku || 'N/A'}</TableCell>
+                                      <TableCell className="text-right flex items-center justify-end gap-1"><IndianRupee className="h-4 w-4"/>{item.price?.toLocaleString('en-IN')}</TableCell>
+                                      <TableCell className="text-right">
+                                          <Button variant="outline" size="sm" onClick={() => { setProduct(item); handleGenerate(); }}>
+                                              <Printer className="mr-2 h-4 w-4" /> Reprint
+                                          </Button>
+                                      </TableCell>
+                                  </TableRow>
+                              ))
+                          ) : (
+                              <TableRow><TableCell colSpan={5} className="text-center h-24">No print history found.</TableCell></TableRow>
+                          )}
+                      </TableBody>
+                  </Table>
+              </div>
+          </CardContent>
+      </Card>
     </div>
   );
 }

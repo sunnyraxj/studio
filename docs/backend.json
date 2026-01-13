@@ -463,6 +463,21 @@
         "notes": { "type": "string" }
       },
       "required": ["id", "paymentDate", "amount", "mode"]
+    },
+    "QuickPrint": {
+        "title": "Quick Print",
+        "type": "object",
+        "description": "Represents a record of a barcode printed from the Quick Barcode generator.",
+        "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" },
+            "price": { "type": "number" },
+            "sku": { "type": "string" },
+            "size": { "type": "string" },
+            "expiryDate": { "type": "string", "format": "date" },
+            "printDate": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "name", "price", "printDate"]
     }
   },
   "auth": {
@@ -597,6 +612,15 @@
             "$ref": "#/backend/entities/PurchasePayment"
           },
           "description": "Payments made for a specific purchase."
+        }
+      },
+      {
+        "path": "/shops/{shopId}/quickPrints/{quickPrintId}",
+        "definition": {
+            "schema": {
+                "$ref": "#/backend/entities/QuickPrint"
+            },
+            "description": "History of barcodes printed from the Quick Barcode generator."
         }
       }
     ]
