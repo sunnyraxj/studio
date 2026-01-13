@@ -23,7 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useFirestore, useUser, useDoc, useMemoFirebase, useCollection } from '@/firebase';
-import { doc, collection, addDoc, query, orderBy } from 'firebase/firestore';
+import { doc, collection, addDoc, query, orderBy, getDocs, where, limit } from 'firebase/firestore';
 import { Printer, Search, IndianRupee, Trash2 } from 'lucide-react';
 import { BarcodeLabel } from '../inventory/components/barcode-label';
 import type { InventoryItem } from '../inventory/page';
@@ -140,15 +140,38 @@ export default function QuickBarcodePage() {
     };
     
     if (isDemoMode) {
-        setDemoPrintHistory(prev => [printData, ...prev]);
-        toast({ title: 'Print Saved (Demo)', description: `${product.name} added to history.` });
+        const isDuplicate = demoPrintHistory.some(p => 
+            p.name === printData.name &&
+            p.price === printData.price &&
+            p.sku === printData.sku &&
+            p.size === printData.size &&
+            p.expiryDate === printData.expiryDate
+        );
+        if (!isDuplicate) {
+            setDemoPrintHistory(prev => [printData, ...prev]);
+            toast({ title: 'Print Saved (Demo)', description: `${product.name} added to history.` });
+        }
     } else {
         if (!firestore || !shopId) {
             toast({ variant: 'destructive', title: 'Error', description: 'Cannot save print history. Shop not found.' });
             return;
         }
+
+        const q = query(
+            collection(firestore, `shops/${shopId}/quickPrints`),
+            where('name', '==', printData.name),
+            where('price', '==', printData.price),
+            where('sku', '==', printData.sku),
+            where('size', '==', printData.size),
+            where('expiryDate', '==', printData.expiryDate),
+            limit(1)
+        );
+
         try {
-            await addDoc(collection(firestore, `shops/${shopId}/quickPrints`), printData);
+            const querySnapshot = await getDocs(q);
+            if (querySnapshot.empty) {
+                await addDoc(collection(firestore, `shops/${shopId}/quickPrints`), printData);
+            }
         } catch(e: any) {
             toast({ variant: 'destructive', title: 'Error', description: `Failed to save print history: ${e.message}` });
         }
