@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/command';
 import { Button } from '@/components/ui/button';
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, doc } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 
 type NavLink = {
