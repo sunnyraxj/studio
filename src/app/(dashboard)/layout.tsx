@@ -414,16 +414,6 @@ export default function DashboardLayout({
         <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
             <MobileSidebar shopName={shopName} isExpired={isUIBlocked} />
             <div className="w-full flex-1" />
-            <Link href="/dashboard/suppliers">
-              <Button>
-                  <Truck className="mr-2 h-4 w-4" /> Manage Suppliers
-              </Button>
-            </Link>
-            <Link href="/dashboard/employees">
-                <Button>
-                    <Users className="mr-2 h-4 w-4" /> Manage Employees
-                </Button>
-            </Link>
         </header>
         <main className={cn("flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6", isUIBlocked && "pointer-events-none opacity-50")}>
             {children}
@@ -437,5 +427,3 @@ export default function DashboardLayout({
     </SidebarProvider>
   );
 }
-
-    
