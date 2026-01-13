@@ -97,6 +97,11 @@ const navLinks = [
     label: 'Suppliers',
   },
   {
+    href: '/dashboard/employees',
+    icon: Users,
+    label: 'Employees',
+  },
+  {
     href: '/dashboard/quick-barcode',
     icon: ScanBarcode,
     label: 'Quick Barcode',
