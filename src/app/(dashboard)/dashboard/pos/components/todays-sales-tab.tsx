@@ -25,6 +25,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import { format, isAfter, subHours, startOfDay, endOfDay } from 'date-fns';
