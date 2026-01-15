@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -31,7 +32,7 @@ import { Button } from '@/components/ui/button';
 import { CaretSortIcon } from '@radix-ui/react-icons';
 import { IndianRupee, Pencil } from 'lucide-react';
 import { useFirestore, useUser, useDoc, useMemoFirebase, useCollection } from '@/firebase';
-import { collection, query, orderBy, where } from 'firebase/firestore';
+import { collection, query, orderBy, where, doc } from 'firebase/firestore';
 import type { Sale } from '../../page';
 import { Badge } from '@/components/ui/badge';
 
