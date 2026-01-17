@@ -14,9 +14,10 @@ interface KotProps {
     cart: CartItem[];
     invoiceNumber: string;
     customerName: string;
+    instructions?: string;
 }
 
-export const KOT: React.FC<KotProps> = ({ cart, invoiceNumber, customerName }) => {
+export const KOT: React.FC<KotProps> = ({ cart, invoiceNumber, customerName, instructions }) => {
     if (!cart || cart.length === 0) {
         return <div className="p-2 text-center text-xs">No items in order.</div>;
     }
@@ -53,6 +54,16 @@ export const KOT: React.FC<KotProps> = ({ cart, invoiceNumber, customerName }) =
                 </table>
             </main>
             
+            {instructions && (
+                <>
+                    <hr className="my-1 border-dashed border-black" />
+                    <div className="text-xs">
+                        <p className="font-bold uppercase">Instructions:</p>
+                        <p className="whitespace-pre-wrap">{instructions}</p>
+                    </div>
+                </>
+            )}
+
             <hr className="my-1 border-dashed border-black" />
         </div>
     );

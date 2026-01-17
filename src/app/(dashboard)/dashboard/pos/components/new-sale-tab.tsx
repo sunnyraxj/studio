@@ -176,6 +176,7 @@ export function NewSaleTab() {
 
   const [isKotOpen, setIsKotOpen] = useState(false);
   const kotPrintRef = useRef(null);
+  const [orderInstructions, setOrderInstructions] = useState('');
 
   useEffect(() => {
     mounted.current = true;
@@ -478,6 +479,7 @@ export function NewSaleTab() {
     setCustomerGstin('');
     setPaymentMode('cash');
     setPaymentDetails({ cash: 0, card: 0, upi: 0 });
+    setOrderInstructions('');
   };
   
   const showPrintToast = () => {
@@ -868,6 +870,15 @@ export function NewSaleTab() {
                                     </CollapsibleContent>
                                 </Collapsible>
                                 <div className="space-y-2">
+                                    <Label htmlFor="order-instructions">Order Instructions</Label>
+                                    <Textarea
+                                        id="order-instructions"
+                                        placeholder="e.g., Make it spicy, no onions, etc."
+                                        value={orderInstructions}
+                                        onChange={(e) => setOrderInstructions(e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
                                     <Label>Payment Mode</Label>
                                     <RadioGroup value={paymentMode} onValueChange={setPaymentMode} className="flex items-center flex-wrap gap-x-4 gap-y-2">
                                         <div className="flex items-center space-x-2"><RadioGroupItem value="cash" id="cash" /><Label htmlFor="cash">Cash</Label></div>
@@ -952,7 +963,7 @@ export function NewSaleTab() {
             </DialogHeader>
             <div className="p-4 flex justify-center">
                 <div ref={kotPrintRef}>
-                    <KOT cart={cart} invoiceNumber={invoiceNumber} customerName={customerName} />
+                    <KOT cart={cart} invoiceNumber={invoiceNumber} customerName={customerName} instructions={orderInstructions} />
                 </div>
             </div>
             <DialogFooter className="p-4 border-t">
