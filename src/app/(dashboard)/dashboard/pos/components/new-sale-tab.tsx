@@ -871,15 +871,6 @@ export function NewSaleTab() {
                                     </CollapsibleContent>
                                 </Collapsible>
                                 <div className="space-y-2">
-                                    <Label htmlFor="order-instructions">Order Instructions</Label>
-                                    <Textarea
-                                        id="order-instructions"
-                                        placeholder="e.g., Make it spicy, no onions, etc."
-                                        value={orderInstructions}
-                                        onChange={(e) => setOrderInstructions(e.target.value)}
-                                    />
-                                </div>
-                                <div className="space-y-2">
                                     <Label>Payment Mode</Label>
                                     <RadioGroup value={paymentMode} onValueChange={setPaymentMode} className="flex items-center flex-wrap gap-x-4 gap-y-2">
                                         <div className="flex items-center space-x-2"><RadioGroupItem value="cash" id="cash" /><Label htmlFor="cash">Cash</Label></div>
@@ -968,6 +959,15 @@ export function NewSaleTab() {
                 <div ref={kotPrintRef}>
                     <KOT cart={cart} invoiceNumber={invoiceNumber} customerName={customerName} instructions={orderInstructions} />
                 </div>
+            </div>
+            <div className="px-4 pb-4 space-y-2">
+                <Label htmlFor="kot-instructions" className="font-semibold">Instructions</Label>
+                <Textarea
+                    id="kot-instructions"
+                    placeholder="e.g., Make it spicy, no onions..."
+                    value={orderInstructions}
+                    onChange={(e) => setOrderInstructions(e.target.value)}
+                />
             </div>
             <DialogFooter className="p-4 border-t">
                 <Button variant="outline" onClick={() => setIsKotOpen(false)}>Close</Button>
