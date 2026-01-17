@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -380,7 +379,8 @@ export function NewSaleTab() {
     let cgst = 0;
     let sgst = 0;
     let igst = 0;
-    const isIntraState = !customerState || customerState?.trim().toLowerCase() === "assam";
+    const shopState = shopSettings?.companyState || 'Assam';
+    const isIntraState = !customerState || customerState?.trim().toLowerCase() === shopState.trim().toLowerCase();
     
     cart.forEach(item => {
         const itemMrp = item.product.price;
@@ -408,7 +408,7 @@ export function NewSaleTab() {
     }, 0);
     
     return { subtotal, cgst, sgst, igst, total };
-  }, [cart, customerState]);
+  }, [cart, customerState, shopSettings]);
 
 
   const totalPaid = (paymentDetails.cash || 0) + (paymentDetails.card || 0) + (paymentDetails.upi || 0);
