@@ -142,7 +142,7 @@ export default function InventoryPage() {
       cell: ({ row }) => (
         <div className="capitalize font-medium flex items-center gap-2">
           {row.getValue('name')}
-          {row.original.returnableToSupplier && <Badge variant="outline">FOR THIS TYPE FUL FOR BETTER UNDERSTANDING</Badge>}
+          {row.original.returnableToSupplier && <Badge variant="outline">Supplier Return ✔️</Badge>}
         </div>
       ),
     },
