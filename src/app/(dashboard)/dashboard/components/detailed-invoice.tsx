@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo } from 'react';
@@ -85,12 +84,8 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
         igst
     } = sale;
 
+    const hasGstin = !!settings.companyGstin;
     const amountInWords = numberToWords(total);
-
-    const taxRateForDisplay = items.length > 0 ? (items[0].gst || 0) : 0;
-    const igstRate = taxRateForDisplay;
-    const cgstRate = taxRateForDisplay / 2;
-    const sgstRate = taxRateForDisplay / 2;
 
     return (
         <div className="bg-white text-black p-8 font-sans w-full min-h-full" id="invoice-print">
@@ -101,7 +96,7 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
                             <Image src={settings.logoUrl} alt={`${settings.companyName} logo`} className="h-16 w-auto" width={64} height={64} />
                         )}
                         <div className="text-center flex-grow">
-                            <h2 className="text-3xl font-bold text-primary uppercase">Tax Invoice</h2>
+                            <h2 className="text-3xl font-bold text-primary uppercase">{hasGstin ? 'Tax Invoice' : 'Bill of Supply'}</h2>
                             <p className="text-sm font-bold text-gray-900"><strong>Invoice No:</strong> {invoiceNumber}</p>
                             <p className="text-sm font-bold text-gray-900"><strong>Date:</strong> {format(new Date(date), 'd/M/yyyy')}</p>
                         </div>
@@ -111,7 +106,7 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
                         <div className="space-y-1">
                             <h1 className="text-2xl font-bold text-gray-800">{settings.companyName}</h1>
                             <p className="text-sm text-gray-600 max-w-xs">{settings.companyAddress}</p>
-                            <p className="text-sm text-gray-600">GSTIN: {settings.companyGstin}</p>
+                            {hasGstin && <p className="text-sm text-gray-600">GSTIN: {settings.companyGstin}</p>}
                             <p className="text-sm text-gray-600">State: {settings.companyState}</p>
                             <p className="text-sm text-gray-600">Contact: {settings.companyPhone}</p>
                         </div>
@@ -123,7 +118,7 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
                                 <p className="text-sm text-gray-600">{customer.state} - {customer.pin}</p>
                             )}
                             {customer.phone && <p className="text-sm text-gray-600">Phone: {customer.phone}</p>}
-                            {customer.gstin && <p className="text-sm text-gray-600">GSTIN: {customer.gstin}</p>}
+                            {hasGstin && customer.gstin && <p className="text-sm text-gray-600">GSTIN: {customer.gstin}</p>}
                              {sale.paymentMode && sale.paymentMode !== 'both' && <p className="text-sm text-gray-600 mt-1"><strong>Payment Mode:</strong> <span className="capitalize">{sale.paymentMode}</span></p>}
                             {sale.paymentMode === 'both' && sale.paymentDetails && (
                                 <div className="text-sm text-gray-600 mt-1 text-right">
@@ -143,13 +138,13 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
                             <tr>
                                 <th className="text-left font-semibold p-2">#</th>
                                 <th className="text-left font-semibold p-2">Product</th>
-                                <th className="text-left font-semibold p-2">HSN</th>
+                                {hasGstin && <th className="text-left font-semibold p-2">HSN</th>}
                                 <th className="text-right font-semibold p-2">Qty</th>
                                 <th className="text-right font-semibold p-2">Rate</th>
-                                <th className="text-right font-semibold p-2">Taxable</th>
-                                {igst > 0 ? (
+                                {hasGstin && <th className="text-right font-semibold p-2">Taxable</th>}
+                                {hasGstin && igst > 0 ? (
                                     <th className="text-right font-semibold p-2">IGST</th>
-                                ) : (
+                                ) : hasGstin && (
                                     <>
                                         <th className="text-right font-semibold p-2">CGST</th>
                                         <th className="text-right font-semibold p-2">SGST</th>
@@ -172,13 +167,13 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
                                     <tr key={index} className="border-b border-gray-100">
                                         <td className="p-2">{index + 1}</td>
                                         <td className="p-2 font-medium text-gray-800">{item.name}</td>
-                                        <td className="p-2">{item.hsn}</td>
+                                        {hasGstin && <td className="p-2">{item.hsn}</td>}
                                         <td className="text-right p-2">{item.quantity}</td>
                                         <td className="text-right p-2">{item.price.toFixed(2)}</td>
-                                        <td className="text-right p-2 font-semibold">{taxableValue.toFixed(2)}</td>
-                                        {igst > 0 ? (
+                                        {hasGstin && <td className="text-right p-2 font-semibold">{taxableValue.toFixed(2)}</td>}
+                                        {hasGstin && igst > 0 ? (
                                             <td className="text-right p-2">{taxAmount.toFixed(2)}</td>
-                                        ) : (
+                                        ) : hasGstin && (
                                             <>
                                                 <td className="text-right p-2">{(taxAmount / 2).toFixed(2)}</td>
                                                 <td className="text-right p-2">{(taxAmount / 2).toFixed(2)}</td>
@@ -198,6 +193,7 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
                     </div>
 
                     <div className="w-full sm:w-2/3 md:w-1/2 max-w-sm ml-auto space-y-4">
+                        {hasGstin && (
                          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                             <span className="text-gray-600">Taxable Value:</span>
                             <span className="font-medium text-gray-800 text-right flex items-center justify-end gap-1"><IndianRupee className="h-3 w-3" />{subtotal.toFixed(2)}</span>
@@ -221,6 +217,7 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
                                 </>
                             )}
                         </div>
+                        )}
                         <div className="pt-2 border-t-2 border-gray-700">
                             <div className="flex justify-between items-center mb-2">
                                 <span className="text-xl font-bold text-gray-900">Total:</span>

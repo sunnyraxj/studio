@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -59,7 +58,7 @@ export const CompactReceipt: React.FC<CompactReceiptProps> = ({ sale, settings }
         paymentDetails
     } = sale;
 
-    const hasTax = cgst > 0 || sgst > 0 || igst > 0;
+    const hasGstin = !!settings.companyGstin;
     const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
     return (
@@ -68,7 +67,7 @@ export const CompactReceipt: React.FC<CompactReceiptProps> = ({ sale, settings }
                 <h1 className="text-base font-bold">{settings.companyName}</h1>
                 <p className="text-[9px] leading-tight">{settings.companyAddress}</p>
                 {settings.companyPhone && <p className="text-[9px]">Phone: {settings.companyPhone}</p>}
-                {settings.companyGstin && <p className="text-[9px]">GSTIN: {settings.companyGstin}</p>}
+                {hasGstin && settings.companyGstin && <p className="text-[9px]">GSTIN: {settings.companyGstin}</p>}
             </header>
             
             <Separator className="my-0.5 border-dashed" />
@@ -126,14 +125,14 @@ export const CompactReceipt: React.FC<CompactReceiptProps> = ({ sale, settings }
             <Separator className="my-0.5 border-dashed" />
 
             <div className="text-[9px] space-y-0.5">
-                 <div className="flex justify-between"><span>SUBTOTAL (Taxable)</span><span>{subtotal.toFixed(2)}</span></div>
-                {hasTax && (
+                 {hasGstin && (
                     <>
+                        <div className="flex justify-between"><span>SUBTOTAL (Taxable)</span><span>{subtotal.toFixed(2)}</span></div>
                         {cgst > 0 && <div className="flex justify-between"><span>CGST</span><span>{cgst.toFixed(2)}</span></div>}
                         {sgst > 0 && <div className="flex justify-between"><span>SGST</span><span>{sgst.toFixed(2)}</span></div>}
                         {igst > 0 && <div className="flex justify-between"><span>IGST</span><span>{igst.toFixed(2)}</span></div>}
                     </>
-                )}
+                 )}
                  <div className="flex justify-between font-bold text-xs border-t border-dashed pt-1 items-center">
                     <span>GRAND TOTAL</span>
                     <span className="flex items-center gap-1"><IndianRupee className="h-3 w-3" />{total.toFixed(2)}</span>

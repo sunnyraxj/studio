@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -60,12 +59,12 @@ export const Invoice: React.FC<InvoiceProps> = ({ sale, settings }) => {
         items,
         subtotal,
         total,
+        cgst,
+        sgst,
+        igst
     } = sale;
     
-    const isIntraState = sale.customer.state?.toLowerCase().trim() === settings.companyState?.toLowerCase().trim();
-    const cgst = isIntraState ? sale.cgst : 0;
-    const sgst = isIntraState ? sale.sgst : 0;
-    const igst = !isIntraState ? sale.igst : 0;
+    const hasGstin = !!settings.companyGstin;
 
     return (
         <div className="bg-white text-black p-2 font-mono text-[10px] w-full min-h-full">
@@ -73,7 +72,7 @@ export const Invoice: React.FC<InvoiceProps> = ({ sale, settings }) => {
                 <h1 className="text-base font-bold">{settings.companyName}</h1>
                 <p className="text-[9px] leading-tight">{settings.companyAddress}</p>
                 {settings.companyPhone && <p className="text-[9px]">Phone: {settings.companyPhone}</p>}
-                {settings.companyGstin && <p className="text-[9px]">GSTIN: {settings.companyGstin}</p>}
+                {hasGstin && settings.companyGstin && <p className="text-[9px]">GSTIN: {settings.companyGstin}</p>}
             </header>
             
             <Separator className="my-0.5 border-dashed" />
@@ -117,10 +116,14 @@ export const Invoice: React.FC<InvoiceProps> = ({ sale, settings }) => {
             <Separator className="my-0.5 border-dashed" />
 
             <div className="text-[9px] space-y-0.5">
-                <div className="flex justify-between"><span>SUBTOTAL</span><span>{subtotal.toFixed(2)}</span></div>
-                {cgst > 0 && <div className="flex justify-between"><span>CGST</span><span>{cgst.toFixed(2)}</span></div>}
-                {sgst > 0 && <div className="flex justify-between"><span>SGST</span><span>{sgst.toFixed(2)}</span></div>}
-                {igst > 0 && <div className="flex justify-between"><span>IGST</span><span>{igst.toFixed(2)}</span></div>}
+                {hasGstin && (
+                    <>
+                        <div className="flex justify-between"><span>SUBTOTAL</span><span>{subtotal.toFixed(2)}</span></div>
+                        {cgst > 0 && <div className="flex justify-between"><span>CGST</span><span>{cgst.toFixed(2)}</span></div>}
+                        {sgst > 0 && <div className="flex justify-between"><span>SGST</span><span>{sgst.toFixed(2)}</span></div>}
+                        {igst > 0 && <div className="flex justify-between"><span>IGST</span><span>{igst.toFixed(2)}</span></div>}
+                    </>
+                )}
 
                  <div className="flex justify-between font-bold text-xs border-t border-dashed pt-1">
                     <span>GRAND TOTAL</span>
@@ -138,5 +141,3 @@ export const Invoice: React.FC<InvoiceProps> = ({ sale, settings }) => {
         </div>
     );
 };
-
-    
