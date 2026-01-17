@@ -82,6 +82,7 @@ type ShopSettings = {
     ifscCode?: string;
     upiId?: string;
     companyState?: string;
+    enableKot?: boolean;
 }
 
 type Sale = {
@@ -922,9 +923,11 @@ export function NewSaleTab() {
                             <div className="flex justify-between font-semibold text-lg"><span>Total</span><span>₹{total.toFixed(2)}</span></div>
                         </div>
                         <div className="flex-col items-stretch space-y-2">
-                            <Button variant="outline" className="w-full" disabled={cart.length === 0} onClick={() => setIsKotOpen(true)}>
-                                <Printer className="mr-2 h-4 w-4" /> Print KOT
-                            </Button>
+                            {shopSettings?.enableKot && (
+                                <Button variant="outline" className="w-full" disabled={cart.length === 0} onClick={() => setIsKotOpen(true)}>
+                                    <Printer className="mr-2 h-4 w-4" /> Print KOT
+                                </Button>
+                            )}
                             <Button className="w-full" disabled={cart.length === 0 || (paymentMode === 'both' && remainingBalance.toFixed(2) !== '0.00') || isGenerating} onClick={completeSale}>
                                 {isGenerating ? (
                                     <>

@@ -21,6 +21,7 @@ import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { toast } from '@/hooks/use-toast.tsx';
 import { Upload, X } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 
 type ShopSettings = {
     companyName?: string;
@@ -34,6 +35,7 @@ type ShopSettings = {
     accountNumber?: string;
     ifscCode?: string;
     upiId?: string;
+    enableKot?: boolean;
 }
 
 type UserProfile = {
@@ -79,6 +81,9 @@ export default function SettingsPage() {
   // State for UPI Details
   const [upiId, setUpiId] = useState('demo@upi');
   
+  // State for POS settings
+  const [enableKot, setEnableKot] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -94,6 +99,7 @@ export default function SettingsPage() {
         setAccountNumber(settingsData.accountNumber || '');
         setIfscCode(settingsData.ifscCode || '');
         setUpiId(settingsData.upiId || '');
+        setEnableKot(settingsData.enableKot || false);
     }
   }, [settingsData]);
 
@@ -152,6 +158,7 @@ export default function SettingsPage() {
       accountNumber,
       ifscCode,
       upiId,
+      enableKot,
     };
     
     try {
@@ -184,6 +191,7 @@ export default function SettingsPage() {
           <TabsTrigger value="company">Company Details</TabsTrigger>
           <TabsTrigger value="bank">Bank Details</TabsTrigger>
           <TabsTrigger value="upi">UPI / QR Code</TabsTrigger>
+          <TabsTrigger value="pos">POS Settings</TabsTrigger>
         </TabsList>
         <TabsContent value="company" className="space-y-4">
           <Card>
@@ -325,6 +333,31 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+        <TabsContent value="pos" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Point of Sale Settings</CardTitle>
+              <CardDescription>
+                Customize features related to the POS screen.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <Label htmlFor="enable-kot" className="text-base">Enable KOT Feature</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Show the "Print KOT" button on the POS screen for restaurant orders.
+                  </p>
+                </div>
+                <Switch
+                  id="enable-kot"
+                  checked={enableKot}
+                  onCheckedChange={setEnableKot}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
       <div className="flex justify-end">
         <Button onClick={handleSave}>Save Changes</Button>
@@ -332,5 +365,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-    
