@@ -46,6 +46,16 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { CompactReceipt } from '../../components/compact-receipt';
 import { KOT } from './kot';
 
@@ -169,6 +179,8 @@ export function NewSaleTab() {
   const [lastSaleData, setLastSaleData] = useState<any>(null);
   const invoiceRef = useRef(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
   const [scanBuffer, setScanBuffer] = useState('');
 
@@ -416,6 +428,19 @@ export function NewSaleTab() {
 
   const removeItem = (productId: string) => {
     setCart((prevCart) => prevCart.filter((item) => item.product.id !== productId));
+  };
+
+  const openDeleteConfirm = (productId: string) => {
+    setItemToDelete(productId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmRemoveItem = () => {
+    if (itemToDelete) {
+        removeItem(itemToDelete);
+    }
+    setIsDeleteDialogOpen(false);
+    setItemToDelete(null);
   };
   
   const { subtotal, cgst, sgst, igst, total } = useMemo(() => {
@@ -780,11 +805,11 @@ export function NewSaleTab() {
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead className="w-[40px]">Sr.</TableHead>
+                                            <TableHead className="w-[50px] p-0 text-center"></TableHead>
                                             <TableHead>Item</TableHead>
                                             <TableHead className="text-center w-[100px]">Qty</TableHead>
                                             <TableHead className="text-center w-[80px]">Disc(%)</TableHead>
                                             <TableHead className="text-right">Amount</TableHead>
-                                            <TableHead className="w-[50px]"></TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -795,6 +820,11 @@ export function NewSaleTab() {
                                             return (
                                             <TableRow key={item.product.id}>
                                                 <TableCell className="py-2">{index + 1}</TableCell>
+                                                <TableCell className="py-2 px-2">
+                                                    <Button variant="ghost" size="icon" className='h-6 w-6 text-red-500 hover:text-red-700' onClick={() => openDeleteConfirm(item.product.id)}>
+                                                        <Trash2 className='h-4 w-4' />
+                                                    </Button>
+                                                </TableCell>
                                                 <TableCell className='font-medium py-2'>{item.product.name}</TableCell>
                                                 <TableCell className="text-center py-2">
                                                     <div className="flex items-center justify-center gap-1">
@@ -818,11 +848,6 @@ export function NewSaleTab() {
                                                     />
                                                 </TableCell>
                                                 <TableCell className="text-right py-2">₹{finalPrice.toFixed(2)}</TableCell>
-                                                <TableCell className="text-right py-2">
-                                                    <Button variant="ghost" size="icon" className='h-6 w-6 text-red-500 hover:text-red-700' onClick={() => removeItem(item.product.id)}>
-                                                        <Trash2 className='h-4 w-4' />
-                                                    </Button>
-                                                </TableCell>
                                             </TableRow>
                                             )
                                         })}
@@ -975,6 +1000,23 @@ export function NewSaleTab() {
             </DialogFooter>
         </DialogContent>
     </Dialog>
+
+    <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action will remove the item from the current sale. This cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => setItemToDelete(null)}>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={confirmRemoveItem} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            Yes, remove item
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     </>
   );
 }
