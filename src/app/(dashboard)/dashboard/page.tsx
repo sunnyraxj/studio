@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
+import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc, useShopSettings } from '@/firebase';
 import { collection, doc, query, where } from 'firebase/firestore';
 import { IndianRupee, PartyPopper, Percent, Calendar as CalendarIcon, FileText } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -195,6 +195,7 @@ export default function DashboardPage() {
   
   const [selectedDate, setSelectedDate] = useState<Date>(startOfDay(new Date()));
 
+  const { settings: shopSettings } = useShopSettings();
 
   const userDocRef = useMemoFirebase(() => {
     if (isDemoMode || !firestore) return null;
@@ -278,6 +279,11 @@ export default function DashboardPage() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
+  
+  const hasGstin = useMemo(() => {
+    if (isDemoMode) return true;
+    return !!shopSettings?.companyGstin;
+  }, [isDemoMode, shopSettings]);
 
 
   return (
@@ -318,7 +324,7 @@ export default function DashboardPage() {
                 <TabsTrigger value="reports">Reports</TabsTrigger>
                 <TabsTrigger value="payments">Payments</TabsTrigger>
                 <TabsTrigger value="customers">Customers</TabsTrigger>
-                <TabsTrigger value="gst">GST Reports</TabsTrigger>
+                <TabsTrigger value="gst" disabled={!hasGstin}>GST Reports</TabsTrigger>
                 <TabsTrigger value="khata">Khata Book</TabsTrigger>
             </TabsList>
             <TabsContent value="overview" className="space-y-4">
