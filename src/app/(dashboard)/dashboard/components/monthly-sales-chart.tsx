@@ -23,10 +23,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { subMonths, startOfMonth, endOfMonth, format, startOfYear, endOfYear, subYears, eachDayOfInterval, isValid } from 'date-fns';
-import type { Sale } from '../page';
+import type { Sale, CreditNote } from '../page';
 import { Skeleton } from '@/components/ui/skeleton';
 import { IndianRupee } from 'lucide-react';
-
+import { useFirestore, useUser, useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, doc } from 'firebase/firestore';
 
 const chartConfig = {
   sales: {
@@ -35,7 +36,18 @@ const chartConfig = {
   },
 };
 
-export function MonthlySalesChart({ salesData, isLoading }: { salesData: Sale[] | null, isLoading: boolean }) {
+export function MonthlySalesChart({ salesData, isLoading: isSalesLoading }: { salesData: Sale[] | null, isLoading: boolean }) {
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const isDemoMode = !user;
+  
+  const userDocRef = useMemoFirebase(() => (isDemoMode || !firestore || !user ? null : doc(firestore, `users/${user.uid}`)), [user, firestore, isDemoMode]);
+  const { data: userData } = useDoc(userDocRef);
+  const shopId = userData?.shopId;
+
+  const creditNotesQuery = useMemoFirebase(() => (isDemoMode || !shopId || !firestore ? null : query(collection(firestore, `shops/${shopId}/creditNotes`))), [shopId, firestore, isDemoMode]);
+  const { data: creditNotesData, isLoading: isCreditNotesLoading } = useCollection<CreditNote>(creditNotesQuery);
+  
   const [timeRange, setTimeRange] = useState('this-month');
 
   const chartData = useMemo(() => {
@@ -69,6 +81,11 @@ export function MonthlySalesChart({ salesData, isLoading }: { salesData: Sale[] 
         const saleDate = new Date(sale.date);
         return saleDate >= startDate && saleDate <= endDate;
     });
+    
+    const filteredCreditNotes = (creditNotesData || []).filter(cn => {
+        const cnDate = new Date(cn.date);
+        return cnDate >= startDate && cnDate <= endDate;
+    });
 
     const dailySales: { [key: string]: number } = {};
 
@@ -83,16 +100,14 @@ export function MonthlySalesChart({ salesData, isLoading }: { salesData: Sale[] 
     filteredSales.forEach(sale => {
       const dayKey = format(new Date(sale.date), 'yyyy-MM-dd');
       if (dailySales.hasOwnProperty(dayKey)) {
-          let netTotal = sale.total;
-          if (sale.returnedItems && sale.returnedItems.length > 0) {
-            const returnedValue = sale.returnedItems.reduce((sum, item) => {
-                const itemTotal = item.price * item.quantity;
-                const discountAmount = itemTotal * (item.discount / 100);
-                return sum + (itemTotal - discountAmount);
-            }, 0);
-            netTotal -= returnedValue;
-          }
-          dailySales[dayKey] += netTotal;
+          dailySales[dayKey] += sale.total;
+      }
+    });
+
+    filteredCreditNotes.forEach(cn => {
+      const dayKey = format(new Date(cn.date), 'yyyy-MM-dd');
+      if (dailySales.hasOwnProperty(dayKey)) {
+          dailySales[dayKey] += cn.totalAmount; // Add because it's already negative
       }
     });
 
@@ -100,7 +115,9 @@ export function MonthlySalesChart({ salesData, isLoading }: { salesData: Sale[] 
       date: date,
       sales: dailySales[date],
     }));
-  }, [salesData, timeRange]);
+  }, [salesData, creditNotesData, timeRange]);
+
+  const isLoading = isSalesLoading || isCreditNotesLoading;
 
   return (
     <Card>

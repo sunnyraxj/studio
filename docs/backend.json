@@ -249,14 +249,7 @@
         "status": {
             "type": "string",
             "description": "The current status of the sale.",
-            "enum": ["Completed", "Partially Returned", "Fully Returned"]
-        },
-        "returnedItems": {
-            "type": "array",
-            "description": "A list of items that have been returned from this sale.",
-            "items": {
-                "$ref": "#/entities/Sale/properties/items/items"
-            }
+            "enum": ["Completed", "Partially Returned", "Fully Returned", "Cancelled"]
         }
       },
       "required": [
@@ -491,38 +484,35 @@
         },
         "required": ["id", "name", "price", "printDate"]
     },
-    "SalesReturn": {
-      "title": "Sales Return",
+    "CreditNote": {
+      "title": "Credit Note",
       "type": "object",
-      "description": "Represents a sales return transaction.",
+      "description": "Represents a credit note issued for a sales return, reversing a previous sale.",
       "properties": {
         "id": { "type": "string" },
-        "originalSaleId": { "type": "string" },
+        "creditNoteNumber": { "type": "string" },
+        "originalInvoiceId": { "type": "string" },
         "originalInvoiceNumber": { "type": "string" },
-        "returnDate": { "type": "string", "format": "date-time" },
+        "date": { "type": "string", "format": "date-time" },
         "customer": {
           "type": "object",
           "properties": {
             "name": { "type": "string" },
-            "phone": { "type": "string" }
+            "phone": { "type": "string" },
+            "gstin": { "type": "string" }
           }
         },
-        "returnedItems": {
+        "items": {
           "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "productId": { "type": "string" },
-              "name": { "type": "string" },
-              "quantity": { "type": "number" },
-              "price": { "type": "number" }
-            },
-            "required": ["productId", "name", "quantity", "price"]
-          }
+          "items": { "$ref": "#/entities/Sale/properties/items/items" }
         },
-        "totalReturnValue": { "type": "number" }
+        "taxableValue": { "type": "number", "description": "The total taxable value of the returned items (negative)." },
+        "cgst": { "type": "number", "description": "The total CGST reversed (negative)." },
+        "sgst": { "type": "number", "description": "The total SGST reversed (negative)." },
+        "igst": { "type": "number", "description": "The total IGST reversed (negative)." },
+        "totalAmount": { "type": "number", "description": "The total value of the credit note (negative)." }
       },
-      "required": ["id", "originalSaleId", "originalInvoiceNumber", "returnDate", "customer", "returnedItems", "totalReturnValue"]
+      "required": ["id", "creditNoteNumber", "originalInvoiceId", "originalInvoiceNumber", "date", "customer", "items", "totalAmount"]
     }
   },
   "auth": {
@@ -669,12 +659,12 @@
         }
       },
       {
-        "path": "/shops/{shopId}/salesReturns/{returnId}",
+        "path": "/shops/{shopId}/creditNotes/{creditNoteId}",
         "definition": {
           "schema": {
-            "$ref": "#/backend/entities/SalesReturn"
+            "$ref": "#/backend/entities/CreditNote"
           },
-          "description": "Sales return records for a specific shop."
+          "description": "Credit Notes for returned sales in a specific shop."
         }
       }
     ]

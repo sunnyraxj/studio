@@ -66,8 +66,7 @@ export type Sale = {
     card?: number;
     upi?: number;
   };
-  status?: 'Completed' | 'Partially Returned' | 'Fully Returned';
-  returnedItems?: SaleItem[];
+  status?: 'Completed' | 'Partially Returned' | 'Fully Returned' | 'Cancelled';
 };
 
 export type ReportItem = SaleItem & {
@@ -93,24 +92,25 @@ export type KhataEntry = {
     type: 'credit' | 'payment';
 }
 
-export type SalesReturn = {
+export type CreditNote = {
   id: string;
-  originalSaleId: string;
+  creditNoteNumber: string;
+  originalInvoiceId: string;
   originalInvoiceNumber: string;
-  returnDate: string;
+  date: string;
   customer: {
     name: string;
     phone?: string;
+    gstin?: string;
   };
-  returnedItems: {
-    productId: string;
-    name: string;
-    quantity: number;
-    price: number;
-    discount: number;
-  }[];
-  totalReturnValue: number;
+  items: SaleItem[];
+  taxableValue: number; // should be negative
+  cgst: number; // should be negative
+  sgst: number; // should be negative
+  igst: number; // should be negative
+  totalAmount: number; // should be negative
 };
+
 
 type UserProfile = {
   shopId?: string;
@@ -233,7 +233,7 @@ export default function DashboardPage() {
                   acc.card += sale.paymentDetails.card || 0;
                   acc.upi += sale.paymentDetails.upi || 0;
               } else if (sale.paymentMode === 'cash' || sale.paymentMode === 'card' || sale.paymentMode === 'upi') {
-                  acc[sale.paymentMode] = (acc[sale.paymentMode] || 0) + sale.total;
+                 acc[sale.paymentMode] = (acc[sale.paymentMode] || 0) + sale.total;
               }
               return acc;
           }, { cash: 0, card: 0, upi: 0 });

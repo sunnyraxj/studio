@@ -23,8 +23,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { subMonths, startOfMonth, endOfMonth, startOfYear, endOfYear, subYears } from 'date-fns';
-import type { Sale } from '../page';
+import type { Sale, CreditNote } from '../page';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useFirestore, useUser, useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, doc } from 'firebase/firestore';
+
 
 const chartConfig = {
   quantity: {
@@ -33,7 +36,18 @@ const chartConfig = {
   },
 };
 
-export function TopProductsChart({ salesData, isLoading }: { salesData: Sale[] | null, isLoading: boolean }) {
+export function TopProductsChart({ salesData, isLoading: isSalesLoading }: { salesData: Sale[] | null, isLoading: boolean }) {
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const isDemoMode = !user;
+  
+  const userDocRef = useMemoFirebase(() => (isDemoMode || !firestore || !user ? null : doc(firestore, `users/${user.uid}`)), [user, firestore, isDemoMode]);
+  const { data: userData } = useDoc(userDocRef);
+  const shopId = userData?.shopId;
+
+  const creditNotesQuery = useMemoFirebase(() => (isDemoMode || !shopId || !firestore ? null : query(collection(firestore, `shops/${shopId}/creditNotes`))), [shopId, firestore, isDemoMode]);
+  const { data: creditNotesData, isLoading: isCreditNotesLoading } = useCollection<CreditNote>(creditNotesQuery);
+
   const [timeRange, setTimeRange] = useState('this-year');
 
   const chartData = useMemo(() => {
@@ -68,32 +82,38 @@ export function TopProductsChart({ salesData, isLoading }: { salesData: Sale[] |
         return saleDate >= startDate && saleDate <= endDate;
     });
 
+    const filteredCreditNotes = (creditNotesData || []).filter(cn => {
+        const cnDate = new Date(cn.date);
+        return cnDate >= startDate && cnDate <= endDate;
+    });
+
     const productQuantities: { [key: string]: number } = {};
 
     filteredSales.forEach(sale => {
-      // Add sold items
       sale.items.forEach(item => {
         if (!productQuantities[item.name]) {
           productQuantities[item.name] = 0;
         }
         productQuantities[item.name] += item.quantity;
       });
+    });
 
-      // Subtract returned items
-      if (sale.returnedItems) {
-          sale.returnedItems.forEach(item => {
-            if (productQuantities[item.name]) {
-              productQuantities[item.name] -= item.quantity;
-            }
-          });
-      }
+    filteredCreditNotes.forEach(cn => {
+      cn.items.forEach(item => {
+        if (productQuantities[item.name]) {
+          productQuantities[item.name] -= item.quantity;
+        }
+      });
     });
 
     return Object.entries(productQuantities)
       .map(([name, quantity]) => ({ name, quantity }))
+      .filter(p => p.quantity > 0)
       .sort((a, b) => b.quantity - a.quantity)
       .slice(0, 5); // Get top 5 products
-  }, [salesData, timeRange]);
+  }, [salesData, creditNotesData, timeRange]);
+
+  const isLoading = isSalesLoading || isCreditNotesLoading;
 
   return (
     <Card>

@@ -16,12 +16,25 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { subMonths, startOfMonth, endOfMonth, startOfYear, endOfYear, subYears, startOfWeek, endOfWeek } from 'date-fns';
-import type { Sale } from '../page';
+import type { Sale, CreditNote } from '../page';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Percent, IndianRupee } from 'lucide-react';
+import { IndianRupee } from 'lucide-react';
+import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, doc, query } from 'firebase/firestore';
 
 
-export function MarginOverviewCard({ salesData, isLoading }: { salesData: Sale[] | null, isLoading: boolean }) {
+export function MarginOverviewCard({ salesData, isLoading: isSalesLoading }: { salesData: Sale[] | null, isLoading: boolean }) {
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const isDemoMode = !user;
+  
+  const userDocRef = useMemoFirebase(() => (isDemoMode || !firestore || !user ? null : doc(firestore, `users/${user.uid}`)), [user, firestore, isDemoMode]);
+  const { data: userData } = useDoc(userDocRef);
+  const shopId = userData?.shopId;
+
+  const creditNotesQuery = useMemoFirebase(() => (isDemoMode || !shopId || !firestore ? null : query(collection(firestore, `shops/${shopId}/creditNotes`))), [shopId, firestore, isDemoMode]);
+  const { data: creditNotesData, isLoading: isCreditNotesLoading } = useCollection<CreditNote>(creditNotesQuery);
+
   const [timeRange, setTimeRange] = useState('today');
 
   const { totalProfit, totalRevenue } = useMemo(() => {
@@ -69,38 +82,44 @@ export function MarginOverviewCard({ salesData, isLoading }: { salesData: Sale[]
         return saleDate >= startDate && saleDate <= endDate;
     });
 
-    const { profit, revenue } = filteredSales.reduce((acc, sale) => {
-        // Add revenue/profit from original sale items
+    const filteredCreditNotes = (creditNotesData || []).filter(cn => {
+        const cnDate = new Date(cn.date);
+        return cnDate >= startDate && cnDate <= endDate;
+    });
+
+    let profit = 0;
+    let revenue = 0;
+
+    filteredSales.forEach(sale => {
         sale.items.forEach(item => {
             const itemTotal = item.price * item.quantity;
             const discountAmount = itemTotal * (item.discount / 100);
             const finalPrice = itemTotal - discountAmount;
             
             const itemProfit = finalPrice * (item.margin / 100);
-            acc.revenue += finalPrice;
-            acc.profit += itemProfit;
+            revenue += finalPrice;
+            profit += itemProfit;
         });
+    });
 
-        // Subtract revenue/profit from returned items
-        if (sale.returnedItems) {
-            sale.returnedItems.forEach(item => {
-                const itemTotal = item.price * item.quantity;
-                const discountAmount = itemTotal * (item.discount / 100);
-                const finalPrice = itemTotal - discountAmount;
+    filteredCreditNotes.forEach(cn => {
+        cn.items.forEach(item => {
+            const itemTotal = item.price * item.quantity;
+            const discountAmount = itemTotal * (item.discount / 100);
+            const finalPrice = itemTotal - discountAmount;
 
-                const itemProfit = finalPrice * (item.margin / 100);
-                acc.revenue -= finalPrice;
-                acc.profit -= itemProfit;
-            });
-        }
-        return acc;
-    }, { profit: 0, revenue: 0 });
+            const itemProfit = finalPrice * (item.margin / 100);
+            revenue -= finalPrice;
+            profit -= itemProfit;
+        });
+    });
 
     return { totalProfit: profit, totalRevenue: revenue };
 
-  }, [salesData, timeRange]);
+  }, [salesData, creditNotesData, timeRange]);
   
   const marginPercentage = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+  const isLoading = isSalesLoading || isCreditNotesLoading;
 
   return (
     <Card>

@@ -38,8 +38,8 @@ import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/comp
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import type { Sale, ReportItem } from '../page';
-import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
+import type { Sale, ReportItem, CreditNote } from '../page';
+import { useFirestore, useUser, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, query, where, orderBy, getDocs, limit, startAfter, getCountFromServer, Query, DocumentData, doc } from 'firebase/firestore';
 
 
@@ -80,8 +80,7 @@ export function ReportsTab({ isDemoMode, demoSales }: ReportsTabProps) {
 
   const [data, setData] = useState<ReportItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [pageCount, setPageCount] = useState(0);
-
+  
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({ hsn: false });
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 30 });
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -94,10 +93,9 @@ export function ReportsTab({ isDemoMode, demoSales }: ReportsTabProps) {
   const [endDay, setEndDay] = useState('');
   const [endMonth, setEndMonth] = useState('');
   const [endYear, setEndYear] = useState('');
-
-  const buildQuery = () => {
-    if (isDemoMode) return null;
-    if (!firestore || !shopId) return null;
+  
+  const salesQuery = useMemoFirebase(() => {
+    if (isDemoMode || !shopId || !firestore) return null;
     const baseRef = collection(firestore, `shops/${shopId}/sales`);
     let constraints = [orderBy('date', 'desc')];
     
@@ -111,36 +109,34 @@ export function ReportsTab({ isDemoMode, demoSales }: ReportsTabProps) {
     if (!isNaN(endDate.getTime()) && endDay && endMonth && endYear) constraints.push(where('date', '<=', endDate.toISOString()));
     
     return query(baseRef, ...constraints);
-  }
+  }, [shopId, firestore, isDemoMode, startDay, startMonth, startYear, endDay, endMonth, endYear]);
 
-  const fetchData = async () => {
-    const salesSource = isDemoMode ? demoSales : null;
+  const creditNotesQuery = useMemoFirebase(() => {
+    if (isDemoMode || !shopId || !firestore) return null;
+    const baseRef = collection(firestore, `shops/${shopId}/creditNotes`);
+    let constraints = [orderBy('date', 'desc')];
+
+    const startDateStr = `${startYear}-${startMonth.padStart(2, '0')}-${startDay.padStart(2, '0')}`;
+    const endDateStr = `${endYear}-${endMonth.padStart(2, '0')}-${endDay.padStart(2, '0')}`;
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+    endDate.setHours(23, 59, 59, 999);
     
-    if (salesSource) {
-      processSalesData(salesSource);
-      return;
-    }
-    
-    const q = buildQuery();
-    if (!q) {
-      setData([]);
-      setPageCount(0);
-      return;
-    };
+    if (!isNaN(startDate.getTime()) && startDay && startMonth && startYear) constraints.push(where('date', '>=', startDate.toISOString()));
+    if (!isNaN(endDate.getTime()) && endDay && endMonth && endYear) constraints.push(where('date', '<=', endDate.toISOString()));
 
-    setIsLoading(true);
-    try {
-      const querySnapshot = await getDocs(query(q)); 
-      const sales = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Sale));
-      processSalesData(sales);
-    } catch(e) {
-      console.error(e)
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    return query(baseRef, ...constraints);
+  }, [shopId, firestore, isDemoMode, startDay, startMonth, startYear, endDay, endMonth, endYear]);
 
-  const processSalesData = (sales: Sale[]) => {
+  const { data: salesData, isLoading: isSalesLoading } = useCollection<Sale>(salesQuery);
+  const { data: creditNotesData, isLoading: isCreditNotesLoading } = useCollection<CreditNote>(creditNotesQuery);
+  
+  useEffect(() => {
+      setIsLoading(isSalesLoading || isCreditNotesLoading);
+      if(isSalesLoading || isCreditNotesLoading) return;
+      
+      const sales = salesData || [];
+      const creditNotes = creditNotesData || [];
       const netItemsMap = new Map<string, ReportItem>();
 
       sales.forEach(sale => {
@@ -153,16 +149,16 @@ export function ReportsTab({ isDemoMode, demoSales }: ReportsTabProps) {
                   netItemsMap.set(key, { ...item, saleDate: sale.date });
               }
           });
-
-          if (sale.returnedItems) {
-              sale.returnedItems.forEach(returnedItem => {
-                  const key = returnedItem.sku || returnedItem.name;
-                  const existing = netItemsMap.get(key);
-                  if (existing) {
-                      existing.quantity -= returnedItem.quantity;
-                  }
-              });
-          }
+      });
+      
+      creditNotes.forEach(cn => {
+          cn.items.forEach(item => {
+              const key = item.sku || item.name;
+              const existing = netItemsMap.get(key);
+              if(existing) {
+                  existing.quantity -= item.quantity;
+              }
+          });
       });
 
       let reportItems = Array.from(netItemsMap.values()).filter(item => item.quantity > 0);
@@ -173,30 +169,21 @@ export function ReportsTab({ isDemoMode, demoSales }: ReportsTabProps) {
           (item.sku && item.sku.toLowerCase().includes(searchTerm.toLowerCase()))
         );
       }
+      setData(reportItems);
 
-      const paginatedItems = reportItems.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize);
-      setData(paginatedItems);
-      setPageCount(Math.ceil(reportItems.length / pageSize));
-  };
+  }, [salesData, creditNotesData, isSalesLoading, isCreditNotesLoading, searchTerm]);
 
-
-  useEffect(() => {
-    fetchData();
-  }, [shopId, pageIndex, pageSize, isFilterActive, searchTerm, isDemoMode, demoSales, startDay, startMonth, startYear, endDay, endMonth, endYear]);
 
   const handleFilter = () => {
-    setPageIndex(0);
-    setIsFilterActive(prev => !prev);
+    setPagination(p => ({...p, pageIndex: 0}));
+    // Re-fetching is handled by useEffect dependency change on dates
   };
   
   const handleClearFilter = () => {
     setStartDay(''); setStartMonth(''); setStartYear('');
     setEndDay(''); setEndMonth(''); setEndYear('');
     setSearchTerm('');
-    setPageIndex(0);
-    if (isFilterActive) {
-      setIsFilterActive(prev => !prev);
-    }
+    setPagination(p => ({...p, pageIndex: 0}));
   }
 
   const isAnyFilterApplied = !!(searchTerm || startDay || endDay);
@@ -208,7 +195,6 @@ export function ReportsTab({ isDemoMode, demoSales }: ReportsTabProps) {
   const table = useReactTable({
     data,
     columns: reportsColumns,
-    pageCount,
     state: {
         columnVisibility,
         pagination: { pageIndex, pageSize },
@@ -216,20 +202,22 @@ export function ReportsTab({ isDemoMode, demoSales }: ReportsTabProps) {
     onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
-    manualPagination: true,
   });
 
   const handleExport = () => {
-    const dataToExport = data.map(item => ({
-        'Product Name': item.name,
-        'Product Code': item.sku,
-        'Date Sold': format(new Date(item.saleDate), 'dd-MM-yyyy'),
-        'Quantity Sold': item.quantity,
-        'HSN Code': item.hsn,
-        'GST (%)': item.gst,
-        'Price per Item': item.price,
-        'Total': item.price * item.quantity
-    }));
+    const dataToExport = table.getRowModel().rows.map(row => {
+        const { expiryDate, ...rest } = row.original;
+        return {
+            'Product Name': rest.name,
+            'Product Code': rest.sku,
+            'Date Sold': format(new Date(rest.saleDate), 'dd-MM-yyyy'),
+            'Quantity Sold': rest.quantity,
+            'HSN Code': rest.hsn,
+            'GST (%)': rest.gst,
+            'Price per Item': rest.price,
+            'Total': rest.price * rest.quantity
+        }
+    });
 
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
@@ -335,7 +323,7 @@ export function ReportsTab({ isDemoMode, demoSales }: ReportsTabProps) {
             <Table>
               <TableHeader>{table.getHeaderGroups().map(hg => <TableRow key={hg.id}>{hg.headers.map(h => <TableHead key={h.id}>{h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}</TableHead>)}</TableRow>)}</TableHeader>
               <TableBody>
-                {isLoading && !isDemoMode ? <TableRow><TableCell colSpan={reportsColumns.length} className="h-24 text-center">Loading reports...</TableCell></TableRow>
+                {isLoading ? <TableRow><TableCell colSpan={reportsColumns.length} className="h-24 text-center">Loading reports...</TableCell></TableRow>
                   : table.getRowModel().rows?.length ? table.getRowModel().rows.map(row => (
                     <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>{row.getVisibleCells().map(cell => <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>)}</TableRow>
                   )) : <TableRow><TableCell colSpan={reportsColumns.length} className="h-24 text-center">No items found for the selected criteria.</TableCell></TableRow>}
