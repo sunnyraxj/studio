@@ -79,6 +79,7 @@ export type InventoryItem = {
   gst: number;
   hsn: string;
   unit: string;
+  returnableToSupplier?: boolean;
 };
 
 type UserProfile = {
@@ -138,7 +139,12 @@ export default function InventoryPage() {
     {
       accessorKey: 'name',
       header: 'Name',
-      cell: ({ row }) => <div className="capitalize font-medium">{row.getValue('name')}</div>,
+      cell: ({ row }) => (
+        <div className="capitalize font-medium flex items-center gap-2">
+          {row.getValue('name')}
+          {row.original.returnableToSupplier && <Badge variant="outline">Returnable</Badge>}
+        </div>
+      ),
     },
     {
       accessorKey: 'category',

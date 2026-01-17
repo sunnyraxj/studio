@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
@@ -73,6 +74,7 @@ export default function AddProductPage() {
   const [qty, setQty] = useState('');
   const [unit, setUnit] = useState('pcs');
   const [expiryDate, setExpiryDate] = useState<Date>();
+  const [returnableToSupplier, setReturnableToSupplier] = useState(false);
   
   useEffect(() => {
     const generateNextProductCode = async () => {
@@ -182,6 +184,7 @@ export default function AddProductPage() {
       dateAdded: new Date().toISOString(),
       status: (parseInt(qty) || 0) > 10 ? 'in stock' : (parseInt(qty) || 0) > 0 ? 'low stock' : 'out of stock',
       expiryDate: expiryDate ? format(expiryDate, 'yyyy-MM-dd') : null,
+      returnableToSupplier: returnableToSupplier,
     };
 
     try {
@@ -218,6 +221,7 @@ export default function AddProductPage() {
         'Opening Quantity': '',
         'Unit': 'pcs',
         'Expiry Date (YYYY-MM-DD)': '',
+        'Returnable to Supplier (Yes/No)': 'No',
       }
     ];
     const worksheet = XLSX.utils.json_to_sheet(templateData);
@@ -261,6 +265,7 @@ export default function AddProductPage() {
             
             const stock = parseInt(product['Opening Quantity']) || 0;
             const expiry = product['Expiry Date (YYYY-MM-DD)'];
+            const returnable = product['Returnable to Supplier (Yes/No)']?.toLowerCase() === 'yes';
             
             const productData = {
               name: product['Product Name'] || '',
@@ -277,6 +282,7 @@ export default function AddProductPage() {
               dateAdded: new Date().toISOString(),
               status: stock > 10 ? 'in stock' : stock > 0 ? 'low stock' : 'out of stock',
               expiryDate: expiry ? format(new Date(expiry), 'yyyy-MM-dd') : null,
+              returnableToSupplier: returnable,
             };
             
             if (!productData.name || !productData.margin) {
@@ -482,6 +488,10 @@ export default function AddProductPage() {
                 />
               </PopoverContent>
             </Popover>
+          </div>
+          <div className="lg:col-span-4 flex items-center space-x-2 pt-2">
+            <Switch id="returnable-to-supplier" checked={returnableToSupplier} onCheckedChange={setReturnableToSupplier} />
+            <Label htmlFor="returnable-to-supplier">Returnable to Supplier</Label>
           </div>
         </CardContent>
         <CardFooter className="flex justify-end gap-2">

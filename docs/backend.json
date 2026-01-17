@@ -163,6 +163,10 @@
             "type": "string",
             "format": "date",
             "description": "The expiration date of the product."
+        },
+        "returnableToSupplier": {
+          "type": "boolean",
+          "description": "Indicates if the product can be returned to the supplier."
         }
       },
       "required": [
