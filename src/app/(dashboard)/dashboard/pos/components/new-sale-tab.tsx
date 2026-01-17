@@ -22,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { PlusCircle, Search, Trash2, MinusCircle, IndianRupee, ChevronDown, Loader2 } from 'lucide-react';
+import { PlusCircle, Search, Trash2, MinusCircle, IndianRupee, ChevronDown, Loader2, Printer } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import {
   RadioGroup,
@@ -45,8 +45,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { CompactReceipt } from '../../components/compact-receipt';
+import { KOT } from './kot';
 
 
 type Product = {
@@ -173,6 +174,9 @@ export function NewSaleTab() {
   const mounted = useRef(false);
   const timeouts = useRef<NodeJS.Timeout[]>([]);
 
+  const [isKotOpen, setIsKotOpen] = useState(false);
+  const kotPrintRef = useRef(null);
+
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -219,6 +223,44 @@ export function NewSaleTab() {
                 }
             }, 500);
             timeouts.current.push(timeoutId);
+        }
+    }
+  };
+
+  const handlePrintKOT = () => {
+    const printContent = kotPrintRef.current;
+    if (printContent) {
+        const newWindow = window.open('', '_blank', 'width=300,height=600');
+        if (newWindow) {
+            const printableContent = (printContent as HTMLDivElement).innerHTML;
+            
+            newWindow.document.write('<html><head><title>Print KOT</title>');
+            const styles = Array.from(document.styleSheets)
+              .map(styleSheet => {
+                  try {
+                      return Array.from(styleSheet.cssRules)
+                          .map(rule => rule.cssText)
+                          .join('');
+                  } catch (e) {
+                      console.log('Access to stylesheet %s is denied. Skipping.', styleSheet.href);
+                      return '';
+                  }
+              })
+              .join('');
+            
+            newWindow.document.write(`<style>${styles}</style>`);
+            newWindow.document.write('</head><body>');
+            newWindow.document.write(printableContent);
+            newWindow.document.write('</body></html>');
+            newWindow.document.close();
+            newWindow.focus();
+            setTimeout(() => {
+                newWindow.print();
+                newWindow.close();
+                if (mounted.current) {
+                  setIsKotOpen(false);
+                }
+            }, 500);
         }
     }
   };
@@ -869,6 +911,9 @@ export function NewSaleTab() {
                             <div className="flex justify-between font-semibold text-lg"><span>Total</span><span>₹{total.toFixed(2)}</span></div>
                         </div>
                         <div className="flex-col items-stretch space-y-2">
+                            <Button variant="outline" className="w-full" disabled={cart.length === 0} onClick={() => setIsKotOpen(true)}>
+                                <Printer className="mr-2 h-4 w-4" /> Print KOT
+                            </Button>
                             <Button className="w-full" disabled={cart.length === 0 || (paymentMode === 'both' && remainingBalance.toFixed(2) !== '0.00') || isGenerating} onClick={completeSale}>
                                 {isGenerating ? (
                                     <>
@@ -894,6 +939,26 @@ export function NewSaleTab() {
              <div ref={invoiceRef}>
                  <CompactReceipt sale={lastSaleData} settings={shopSettings} />
              </div>
+        </DialogContent>
+    </Dialog>
+
+    <Dialog open={isKotOpen} onOpenChange={setIsKotOpen}>
+        <DialogContent className="max-w-sm p-0 border-0">
+            <DialogHeader className="p-4 border-b">
+                <DialogTitle>KOT Preview</DialogTitle>
+                <DialogDescription>
+                    Kitchen Order Ticket for Invoice #{invoiceNumber}
+                </DialogDescription>
+            </DialogHeader>
+            <div className="p-4 flex justify-center">
+                <div ref={kotPrintRef}>
+                    <KOT cart={cart} invoiceNumber={invoiceNumber} customerName={customerName} />
+                </div>
+            </div>
+            <DialogFooter className="p-4 border-t">
+                <Button variant="outline" onClick={() => setIsKotOpen(false)}>Close</Button>
+                <Button onClick={handlePrintKOT}><Printer className="mr-2 h-4 w-4" /> Print</Button>
+            </DialogFooter>
         </DialogContent>
     </Dialog>
     </>
