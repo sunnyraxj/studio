@@ -19,7 +19,7 @@ import { subMonths, startOfMonth, endOfMonth, startOfYear, endOfYear, subYears, 
 import type { Sale, CreditNote } from '../page';
 import { Skeleton } from '@/components/ui/skeleton';
 import { IndianRupee } from 'lucide-react';
-import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useUser, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, doc, query } from 'firebase/firestore';
 
 
