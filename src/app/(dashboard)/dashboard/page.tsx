@@ -90,6 +90,25 @@ export type KhataEntry = {
     type: 'credit' | 'payment';
 }
 
+export type SalesReturn = {
+  id: string;
+  originalSaleId: string;
+  originalInvoiceNumber: string;
+  returnDate: string;
+  customer: {
+    name: string;
+    phone?: string;
+  };
+  returnedItems: {
+    productId: string;
+    name: string;
+    quantity: number;
+    price: number;
+    discount: number;
+  }[];
+  totalReturnValue: number;
+};
+
 type UserProfile = {
   shopId?: string;
   subscriptionType?: 'New' | 'Renew';

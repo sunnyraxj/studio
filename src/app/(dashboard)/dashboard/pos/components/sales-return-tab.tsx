@@ -6,9 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Loader2, IndianRupee } from 'lucide-react';
-import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, query, where, getDocs, limit, doc } from 'firebase/firestore';
-import type { Sale, SaleItem } from '../../page';
+import { useFirestore, useUser, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { collection, query, where, getDocs, limit, doc, addDoc, orderBy } from 'firebase/firestore';
+import type { Sale, SaleItem, SalesReturn } from '../../page';
 import { toast } from '@/hooks/use-toast.tsx';
 import {
   Table,
@@ -20,10 +20,37 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { Separator } from '@/components/ui/separator';
+import { DataTablePagination } from '@/components/data-table-pagination';
+import type { ColumnDef } from '@tanstack/react-table';
+import { useReactTable, getCoreRowModel } from '@tanstack/react-table';
 
 type ReturnItem = SaleItem & {
     returnQuantity: number;
 };
+
+const returnHistoryColumns: ColumnDef<SalesReturn>[] = [
+  {
+    accessorKey: 'returnDate',
+    header: 'Return Date',
+    cell: ({ row }) => format(new Date(row.getValue('returnDate')), 'dd MMM, yyyy'),
+  },
+  {
+    accessorKey: 'originalInvoiceNumber',
+    header: 'Original Invoice #',
+    cell: ({ row }) => <Badge variant="outline">{row.getValue('originalInvoiceNumber')}</Badge>,
+  },
+  {
+    accessorKey: 'customer.name',
+    header: 'Customer Name',
+  },
+  {
+    accessorKey: 'totalReturnValue',
+    header: () => <div className="text-right">Return Value</div>,
+    cell: ({ row }) => <div className="text-right font-semibold flex items-center justify-end gap-1"><IndianRupee className="h-4 w-4" />{row.original.totalReturnValue.toLocaleString('en-IN')}</div>
+  }
+];
+
 
 export function SalesReturnTab() {
   const [invoiceNumber, setInvoiceNumber] = useState('');
@@ -42,6 +69,22 @@ export function SalesReturnTab() {
   }, [user, firestore, isDemoMode]);
   const { data: userData } = useDoc(userDocRef);
   const shopId = userData?.shopId;
+
+  const salesReturnsQuery = useMemoFirebase(() => {
+    if (isDemoMode || !shopId || !firestore) return null;
+    return query(collection(firestore, `shops/${shopId}/salesReturns`), orderBy('returnDate', 'desc'));
+  }, [shopId, firestore, isDemoMode]);
+
+  const { data: salesReturnsData, isLoading: isReturnsLoading } = useCollection<SalesReturn>(salesReturnsQuery);
+  const [demoSalesReturns, setDemoSalesReturns] = useState<SalesReturn[]>([]);
+
+  const returnsHistory = isDemoMode ? demoSalesReturns : (salesReturnsData || []);
+
+  const historyTable = useReactTable({
+      data: returnsHistory,
+      columns: returnHistoryColumns,
+      getCoreRowModel: getCoreRowModel(),
+  });
 
   const handleSearch = async () => {
     if (!invoiceNumber.trim()) {
@@ -109,17 +152,54 @@ export function SalesReturnTab() {
   }, [returnItems]);
 
 
-  const handleProcessReturn = () => {
-    // This is where you would handle the logic for the return:
-    // 1. Create a sales return document.
-    // 2. Adjust inventory stock for returned items.
-    // 3. Issue a credit note or refund.
-    toast({
-        title: "Return Processed (Placeholder)",
-        description: `A return for ${totalReturnValue.toFixed(2)} has been recorded.`
-    })
+  const handleProcessReturn = async () => {
+    if (!foundSale || returnItems.length === 0 || totalReturnValue === 0) {
+      toast({ variant: 'destructive', title: 'Nothing to return' });
+      return;
+    }
     
-    // Reset state after processing
+    const returnedItemsList = returnItems
+        .filter(item => item.returnQuantity > 0)
+        .map(item => ({
+            productId: item.productId,
+            name: item.name,
+            quantity: item.returnQuantity,
+            price: item.price,
+            discount: item.discount,
+        }));
+    
+    const returnData: Omit<SalesReturn, 'id'> = {
+      originalSaleId: foundSale.id,
+      originalInvoiceNumber: foundSale.invoiceNumber,
+      returnDate: new Date().toISOString(),
+      customer: {
+        name: foundSale.customer.name,
+        phone: foundSale.customer.phone
+      },
+      returnedItems: returnedItemsList,
+      totalReturnValue,
+    };
+
+    if (isDemoMode) {
+      setDemoSalesReturns(prev => [{...returnData, id: `demo-return-${Date.now()}`}, ...prev]);
+      toast({
+        title: 'Return Processed (Demo)',
+        description: `A return for ${totalReturnValue.toFixed(2)} has been recorded in memory.`
+      });
+    } else {
+        if (!shopId || !firestore) return;
+        try {
+            const returnsCollection = collection(firestore, `shops/${shopId}/salesReturns`);
+            await addDoc(returnsCollection, returnData);
+            toast({
+                title: 'Return Processed',
+                description: `Return for invoice ${foundSale.invoiceNumber} has been recorded.`
+            });
+        } catch(e: any) {
+            toast({ variant: 'destructive', title: 'Error processing return', description: e.message });
+        }
+    }
+    
     setInvoiceNumber('');
     setFoundSale(null);
     setReturnItems([]);
@@ -127,85 +207,122 @@ export function SalesReturnTab() {
   }
 
   return (
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle>Process a Sales Return</CardTitle>
-        <CardDescription>
-          Enter an invoice number to find the sale and process a return or exchange.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex w-full max-w-sm items-center space-x-2 mx-auto mt-8">
-          <Input
-            type="text"
-            placeholder="Enter Invoice #"
-            value={invoiceNumber}
-            onChange={(e) => setInvoiceNumber(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-          />
-          <Button type="submit" onClick={handleSearch} disabled={isLoading}>
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />} Search
-          </Button>
-        </div>
+    <div className="h-full space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Process a Sales Return</CardTitle>
+          <CardDescription>
+            Enter an invoice number to find the sale and process a return or exchange.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex w-full max-w-sm items-center space-x-2 mx-auto mt-8">
+            <Input
+              type="text"
+              placeholder="Enter Invoice #"
+              value={invoiceNumber}
+              onChange={(e) => setInvoiceNumber(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            />
+            <Button type="submit" onClick={handleSearch} disabled={isLoading}>
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />} Search
+            </Button>
+          </div>
 
-        {error && <p className="text-destructive text-center mt-4 text-sm">{error}</p>}
+          {error && <p className="text-destructive text-center mt-4 text-sm">{error}</p>}
 
-        {foundSale && (
-          <Card className="mt-8">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                 <div>
-                    <CardTitle>Invoice Found: {foundSale.invoiceNumber}</CardTitle>
-                    <CardDescription>
-                      Customer: {foundSale.customer.name} | Date: {format(new Date(foundSale.date), 'dd MMM, yyyy')}
-                    </CardDescription>
-                 </div>
-                 <Badge>Total: <IndianRupee className="h-3 w-3 mx-1" />{foundSale.total.toLocaleString()}</Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm font-medium mb-2">Select items and quantities to return:</p>
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Product</TableHead>
-                      <TableHead className="text-center">Original Qty</TableHead>
-                      <TableHead className="text-center">Price</TableHead>
-                      <TableHead className="w-[150px] text-center">Return Qty</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {returnItems.map(item => (
-                      <TableRow key={item.productId}>
-                        <TableCell className="font-medium">{item.name}</TableCell>
-                        <TableCell className="text-center">{item.quantity}</TableCell>
-                        <TableCell className="text-center flex items-center justify-center gap-1"><IndianRupee className="h-3 w-3" />{item.price.toFixed(2)}</TableCell>
-                        <TableCell className="text-center">
-                           <Input 
-                                type="number" 
-                                value={item.returnQuantity}
-                                onChange={(e) => handleQuantityChange(item.productId, parseInt(e.target.value) || 0)}
-                                max={item.quantity}
-                                min={0}
-                                className="h-8 text-center"
-                            />
-                        </TableCell>
+          {foundSale && (
+            <Card className="mt-8">
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                   <div>
+                      <CardTitle>Invoice Found: {foundSale.invoiceNumber}</CardTitle>
+                      <CardDescription>
+                        Customer: {foundSale.customer.name} | Date: {format(new Date(foundSale.date), 'dd MMM, yyyy')}
+                      </CardDescription>
+                   </div>
+                   <Badge>Total: <IndianRupee className="h-3 w-3 mx-1" />{foundSale.total.toLocaleString()}</Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm font-medium mb-2">Select items and quantities to return:</p>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Product</TableHead>
+                        <TableHead className="text-center">Original Qty</TableHead>
+                        <TableHead className="text-center">Price</TableHead>
+                        <TableHead className="w-[150px] text-center">Return Qty</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
+                    </TableHeader>
+                    <TableBody>
+                      {returnItems.map(item => (
+                        <TableRow key={item.productId}>
+                          <TableCell className="font-medium">{item.name}</TableCell>
+                          <TableCell className="text-center">{item.quantity}</TableCell>
+                          <TableCell className="text-center flex items-center justify-center gap-1"><IndianRupee className="h-3 w-3" />{item.price.toFixed(2)}</TableCell>
+                          <TableCell className="text-center">
+                             <Input 
+                                  type="number" 
+                                  value={item.returnQuantity === 0 ? "" : item.returnQuantity}
+                                  onChange={(e) => handleQuantityChange(item.productId, parseInt(e.target.value) || 0)}
+                                  max={item.quantity}
+                                  min={0}
+                                  className="h-8 text-center"
+                              />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                <div className="mt-4 text-right">
+                    <p className="text-lg font-bold flex items-center justify-end gap-1">Total Return Value: <IndianRupee className="h-5 w-5" />{totalReturnValue.toFixed(2)}</p>
+                    <Button onClick={handleProcessReturn} disabled={totalReturnValue === 0} className="mt-2">
+                      Process Return
+                    </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+            <CardTitle>Return History</CardTitle>
+            <CardDescription>A log of all processed sales returns.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <div className="rounded-md border">
+                <Table>
+                    <TableHeader>
+                        {historyTable.getHeaderGroups().map(hg => (
+                            <TableRow key={hg.id}>
+                                {hg.headers.map(h => <TableHead key={h.id}>{h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}</TableHead>)}
+                            </TableRow>
+                        ))}
+                    </TableHeader>
+                    <TableBody>
+                        {isReturnsLoading ? <TableRow><TableCell colSpan={returnHistoryColumns.length} className="h-24 text-center">Loading history...</TableCell></TableRow>
+                        : historyTable.getRowModel().rows?.length ? historyTable.getRowModel().rows.map(row => (
+                            <TableRow key={row.id}>
+                                {row.getVisibleCells().map(cell => (
+                                    <TableCell key={cell.id}>
+                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                    </TableCell>
+                                ))}
+                            </TableRow>
+                        )) : <TableRow><TableCell colSpan={returnHistoryColumns.length} className="h-24 text-center">No returns recorded yet.</TableCell></TableRow>}
+                    </TableBody>
                 </Table>
-              </div>
-              <div className="mt-4 text-right">
-                  <p className="text-lg font-bold flex items-center justify-end gap-1">Total Return Value: <IndianRupee className="h-5 w-5" />{totalReturnValue.toFixed(2)}</p>
-                  <Button onClick={handleProcessReturn} disabled={totalReturnValue === 0} className="mt-2">
-                    Process Return
-                  </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </CardContent>
-    </Card>
+            </div>
+             <div className="py-4">
+                <DataTablePagination table={historyTable} />
+            </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

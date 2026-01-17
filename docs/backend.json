@@ -478,6 +478,39 @@
             "printDate": { "type": "string", "format": "date-time" }
         },
         "required": ["id", "name", "price", "printDate"]
+    },
+    "SalesReturn": {
+      "title": "Sales Return",
+      "type": "object",
+      "description": "Represents a sales return transaction.",
+      "properties": {
+        "id": { "type": "string" },
+        "originalSaleId": { "type": "string" },
+        "originalInvoiceNumber": { "type": "string" },
+        "returnDate": { "type": "string", "format": "date-time" },
+        "customer": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "phone": { "type": "string" }
+          }
+        },
+        "returnedItems": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "productId": { "type": "string" },
+              "name": { "type": "string" },
+              "quantity": { "type": "number" },
+              "price": { "type": "number" }
+            },
+            "required": ["productId", "name", "quantity", "price"]
+          }
+        },
+        "totalReturnValue": { "type": "number" }
+      },
+      "required": ["id", "originalSaleId", "originalInvoiceNumber", "returnDate", "customer", "returnedItems", "totalReturnValue"]
     }
   },
   "auth": {
@@ -621,6 +654,15 @@
                 "$ref": "#/backend/entities/QuickPrint"
             },
             "description": "History of barcodes printed from the Quick Barcode generator."
+        }
+      },
+      {
+        "path": "/shops/{shopId}/salesReturns/{returnId}",
+        "definition": {
+          "schema": {
+            "$ref": "#/backend/entities/SalesReturn"
+          },
+          "description": "Sales return records for a specific shop."
         }
       }
     ]
