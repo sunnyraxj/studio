@@ -23,7 +23,7 @@ import { format } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import type { ColumnDef } from '@tanstack/react-table';
-import { useReactTable, getCoreRowModel } from '@tanstack/react-table';
+import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table';
 
 type ReturnItem = SaleItem & {
     returnQuantity: number;
