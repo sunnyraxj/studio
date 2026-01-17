@@ -67,6 +67,7 @@ export type Sale = {
     upi?: number;
   };
   status?: 'Completed' | 'Partially Returned' | 'Fully Returned' | 'Cancelled';
+  isGstInvoice?: boolean;
 };
 
 export type ReportItem = SaleItem & {
@@ -119,10 +120,10 @@ type UserProfile = {
 
 // Demo Data
 const initialDemoSales: Sale[] = [
-    { id: '1', invoiceNumber: 'D-INV-001', customer: { name: 'Ravi Kumar', phone: '9876543210', state: 'Assam', gstin: '18ABCDE1234F1Z5' }, date: new Date().toISOString(), total: 2625, subtotal: 2500, cgst: 62.5, sgst: 62.5, igst: 0, items: [{ productId: '1', name: 'T-Shirt', quantity: 2, price: 500, margin: 25, sku: 'TS-01', hsn: '6109', gst: 5, discount: 0 }, { productId: '2', name: 'Jeans', quantity: 1, price: 1500, margin: 30, sku: 'JN-01', hsn: '6203', gst: 5, discount: 0 }], paymentMode: 'cash', status: 'Completed' },
-    { id: '2', invoiceNumber: 'D-INV-002', date: new Date(Date.now() - 86400000).toISOString(), customer: { name: 'Priya Sharma', phone: '9876543211', state: 'Delhi' }, total: 1416, subtotal: 1200, cgst: 0, sgst: 0, igst: 216, items: [{ productId: '3', name: 'Sneakers', quantity: 1, price: 1200, margin: 40, sku: 'SH-01', hsn: '6404', gst: 18, discount: 0 }], paymentMode: 'card', status: 'Completed' },
-    { id: '3', invoiceNumber: 'D-INV-003', date: new Date(Date.now() - 172800000).toISOString(), customer: { name: 'Amit Singh', phone: '9876543212', state: 'Assam' }, total: 4130, subtotal: 3500, cgst: 315, sgst: 315, igst: 0, items: [{ productId: '4', name: 'Watch', quantity: 1, price: 3500, margin: 50, sku: 'WT-01', hsn: '9102', gst: 18, discount: 0 }], paymentMode: 'upi', status: 'Completed' },
-    { id: '4', invoiceNumber: 'D-INV-004', date: new Date().toISOString(), customer: { name: 'Sunita Gupta', state: 'Assam' }, total: 5000, subtotal: 5000, cgst: 0, sgst: 0, igst: 0, paymentMode: 'both', items: [], paymentDetails: { cash: 2000, card: 3000 }, status: 'Completed' },
+    { id: '1', invoiceNumber: 'D-INV-001', customer: { name: 'Ravi Kumar', phone: '9876543210', state: 'Assam', gstin: '18ABCDE1234F1Z5' }, date: new Date().toISOString(), total: 2625, subtotal: 2500, cgst: 62.5, sgst: 62.5, igst: 0, items: [{ productId: '1', name: 'T-Shirt', quantity: 2, price: 500, margin: 25, sku: 'TS-01', hsn: '6109', gst: 5, discount: 0 }, { productId: '2', name: 'Jeans', quantity: 1, price: 1500, margin: 30, sku: 'JN-01', hsn: '6203', gst: 5, discount: 0 }], paymentMode: 'cash', status: 'Completed', isGstInvoice: true },
+    { id: '2', invoiceNumber: 'D-BILL-001', date: new Date(Date.now() - 86400000).toISOString(), customer: { name: 'Priya Sharma', phone: '9876543211', state: 'Delhi' }, total: 1416, subtotal: 1200, cgst: 0, sgst: 0, igst: 216, items: [{ productId: '3', name: 'Sneakers', quantity: 1, price: 1200, margin: 40, sku: 'SH-01', hsn: '6404', gst: 18, discount: 0 }], paymentMode: 'card', status: 'Completed', isGstInvoice: false },
+    { id: '3', invoiceNumber: 'D-BILL-002', date: new Date(Date.now() - 172800000).toISOString(), customer: { name: 'Amit Singh', phone: '9876543212', state: 'Assam' }, total: 4130, subtotal: 3500, cgst: 315, sgst: 315, igst: 0, items: [{ productId: '4', name: 'Watch', quantity: 1, price: 3500, margin: 50, sku: 'WT-01', hsn: '9102', gst: 18, discount: 0 }], paymentMode: 'upi', status: 'Completed', isGstInvoice: false },
+    { id: '4', invoiceNumber: 'D-BILL-003', date: new Date().toISOString(), customer: { name: 'Sunita Gupta', state: 'Assam' }, total: 5000, subtotal: 5000, cgst: 0, sgst: 0, igst: 0, paymentMode: 'both', items: [], paymentDetails: { cash: 2000, card: 3000 }, status: 'Completed', isGstInvoice: false },
 ];
 
 export const demoCustomers: Customer[] = [

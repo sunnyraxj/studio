@@ -114,6 +114,9 @@ export function GstTab({ isDemoMode, demoSales }: GstTabProps) {
     const { gstReportData, totals } = useMemo(() => {
         let sourceData = isDemoMode ? demoSales : (salesData || []);
         
+        // This is the main change: only include invoices that were created as GST invoices.
+        sourceData = sourceData.filter(sale => sale.isGstInvoice);
+
         sourceData = sourceData.filter(sale => {
             const saleDate = new Date(sale.date);
             return saleDate.getFullYear().toString() === year && (saleDate.getMonth() + 1).toString() === month;

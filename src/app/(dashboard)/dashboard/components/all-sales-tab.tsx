@@ -154,9 +154,11 @@ export function AllSalesTab({ isDemoMode, demoSales, setDemoSales }: AllSalesTab
       header: 'Invoice #',
       cell: ({ row }) => {
         const status = row.original.status;
+        const isGst = row.original.isGstInvoice;
         return (
           <div className="flex items-center gap-2">
             <Badge variant="outline">{row.getValue('invoiceNumber')}</Badge>
+            {isGst && <Badge variant="secondary">GST</Badge>}
             {status === 'Partially Returned' && <Badge variant="secondary">Partial Return</Badge>}
             {status === 'Fully Returned' && <Badge variant="destructive">Returned</Badge>}
             {status === 'Cancelled' && <Badge variant="destructive">Cancelled</Badge>}

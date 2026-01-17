@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -38,7 +39,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc, useShopSettings } from '@/firebase';
-import { collection, doc, addDoc, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { collection, doc, addDoc, query, orderBy, limit, getDocs, where } from 'firebase/firestore';
 import { toast as hotToast } from 'react-hot-toast';
 import {
   Collapsible,
@@ -277,39 +278,48 @@ export function NewSaleTab() {
   
   useEffect(() => {
     const generateNextInvoiceNumber = async () => {
+      const prefix = shopSettings?.companyGstin ? 'INV' : 'BILL';
+      const currentYear = new Date().getFullYear();
+
       if (isDemoMode) {
-        const currentYear = new Date().getFullYear();
-        setInvoiceNumber(`INV-${currentYear}-0001`);
+        setInvoiceNumber(`${prefix}-${currentYear}-0001`);
         return;
       }
       if (!firestore || !shopId) return;
 
-      const currentYear = new Date().getFullYear();
       const salesCollectionRef = collection(firestore, `shops/${shopId}/sales`);
       
-      const q = query(salesCollectionRef, orderBy('date', 'desc'), limit(1));
+      const q = query(
+          salesCollectionRef, 
+          where('invoiceNumber', '>=', `${prefix}-${currentYear}-`),
+          where('invoiceNumber', '<', `${prefix}-${currentYear}-~`),
+          orderBy('invoiceNumber', 'desc'), 
+          limit(1)
+      );
 
       try {
         const querySnapshot = await getDocs(q);
-        let lastInvoiceNumber = 0;
+        
+        let lastNumber = 0;
         if (!querySnapshot.empty) {
             const lastSale = querySnapshot.docs[0].data() as Sale;
             const lastInvoice = lastSale.invoiceNumber;
             
-            const match = lastInvoice.match(/(?:INV|CHLN)-(\d{4})-(\d+)$/);
+            const match = lastInvoice.match(new RegExp(`${prefix}-${currentYear}-(\\d+)`));
             if (match) {
-                lastInvoiceNumber = parseInt(match[2], 10);
+                lastNumber = parseInt(match[1], 10);
             }
         }
         
-        const nextInvoiceNumber = (lastInvoiceNumber + 1).toString().padStart(4, '0');
-        setInvoiceNumber(`INV-${currentYear}-${nextInvoiceNumber}`);
+        const nextNumber = (lastNumber + 1).toString().padStart(4, '0');
+        setInvoiceNumber(`${prefix}-${currentYear}-${nextNumber}`);
       } catch (error) {
         console.error("Error generating invoice number:", error);
+        setInvoiceNumber(`${prefix}-${currentYear}-0001`); // Fallback
       }
     };
     generateNextInvoiceNumber();
-  }, [shopId, isDemoMode, firestore]);
+  }, [shopId, isDemoMode, firestore, shopSettings]);
 
   const addToCart = (productToAdd: Product) => {
     setCart((prevCart) => {
@@ -555,6 +565,7 @@ export function NewSaleTab() {
       cgst,
       sgst,
       igst,
+      isGstInvoice: !!shopSettings?.companyGstin,
       items: cart.map(item => ({
         productId: item.product.id,
         name: item.product.name,

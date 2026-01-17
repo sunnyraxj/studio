@@ -186,6 +186,14 @@
         "id": {
           "type": "string"
         },
+        "invoiceNumber": {
+          "type": "string",
+          "description": "The unique identifier for the invoice (e.g., INV-2024-0001 or BILL-2024-0001)."
+        },
+        "isGstInvoice": {
+            "type": "boolean",
+            "description": "True if the sale was made with a company GSTIN and is a tax invoice."
+        },
         "date": {
           "type": "string",
           "format": "date-time"
@@ -271,6 +279,10 @@
       "properties": {
         "id": {
           "type": "string"
+        },
+        "invoiceNumber": {
+          "type": "string",
+          "description": "The unique identifier for the challan (e.g., CHLN-2024-0001)."
         },
         "date": {
           "type": "string",
