@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Loader2, IndianRupee } from 'lucide-react';
 import { useFirestore, useUser, useDoc, useMemoFirebase, useCollection } from '@/firebase';
-import { collection, query, where, getDocs, limit, doc, addDoc, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, doc, addDoc, orderBy, runTransaction } from 'firebase/firestore';
 import type { Sale, SaleItem, SalesReturn } from '../../page';
 import { toast } from '@/hooks/use-toast.tsx';
 import {
@@ -157,54 +157,94 @@ export function SalesReturnTab() {
       toast({ variant: 'destructive', title: 'Nothing to return' });
       return;
     }
-    
-    const returnedItemsList = returnItems
-        .filter(item => item.returnQuantity > 0)
-        .map(item => ({
-            productId: item.productId,
-            name: item.name,
-            quantity: item.returnQuantity,
-            price: item.price,
-            discount: item.discount,
-        }));
-    
-    const returnData: Omit<SalesReturn, 'id'> = {
-      originalSaleId: foundSale.id,
-      originalInvoiceNumber: foundSale.invoiceNumber,
-      returnDate: new Date().toISOString(),
-      customer: {
-        name: foundSale.customer.name,
-        phone: foundSale.customer.phone
-      },
-      returnedItems: returnedItemsList,
-      totalReturnValue,
-    };
 
     if (isDemoMode) {
-      setDemoSalesReturns(prev => [{...returnData, id: `demo-return-${Date.now()}`}, ...prev]);
-      toast({
-        title: 'Return Processed (Demo)',
-        description: `A return for ${totalReturnValue.toFixed(2)} has been recorded in memory.`
-      });
-    } else {
-        if (!shopId || !firestore) return;
-        try {
-            const returnsCollection = collection(firestore, `shops/${shopId}/salesReturns`);
-            await addDoc(returnsCollection, returnData);
-            toast({
-                title: 'Return Processed',
-                description: `Return for invoice ${foundSale.invoiceNumber} has been recorded.`
-            });
-        } catch(e: any) {
-            toast({ variant: 'destructive', title: 'Error processing return', description: e.message });
-        }
+      toast({ title: 'Demo mode', description: 'Cannot process returns in demo.' });
+      return;
     }
-    
-    setInvoiceNumber('');
-    setFoundSale(null);
-    setReturnItems([]);
-    setError(null);
+
+    if (!shopId || !firestore) return;
+
+    try {
+        await runTransaction(firestore, async (transaction) => {
+            const saleDocRef = doc(firestore, `shops/${shopId}/sales`, foundSale.id);
+            const returnDocRef = doc(collection(firestore, `shops/${shopId}/salesReturns`));
+
+            // 1. Get the original sale document
+            const saleDoc = await transaction.get(saleDocRef);
+            if (!saleDoc.exists()) {
+                throw "Original sale document not found!";
+            }
+            const originalSaleData = saleDoc.data() as Sale;
+
+            // 2. Prepare the new SalesReturn document's items
+            const newReturnedItemsList = returnItems
+                .filter(item => item.returnQuantity > 0)
+                .map(item => ({
+                    productId: item.productId,
+                    name: item.name,
+                    quantity: item.returnQuantity,
+                    price: item.price,
+                    discount: item.discount,
+                    margin: item.margin,
+                    sku: item.sku,
+                    hsn: item.hsn,
+                    gst: item.gst,
+                }));
+            
+            // Prepare the new SalesReturn document
+            const newReturnData: Omit<SalesReturn, 'id'> = {
+              originalSaleId: foundSale.id,
+              originalInvoiceNumber: foundSale.invoiceNumber,
+              returnDate: new Date().toISOString(),
+              customer: { name: foundSale.customer.name, phone: foundSale.customer.phone },
+              returnedItems: newReturnedItemsList,
+              totalReturnValue,
+            };
+
+            // 3. Create the new SalesReturn document
+            transaction.set(returnDocRef, newReturnData);
+
+            // 4. Update the original Sale document
+            const allReturnedItems = [...(originalSaleData.returnedItems || []), ...newReturnedItemsList];
+
+            const originalQuantities: Record<string, number> = {};
+            originalSaleData.items.forEach(item => {
+                originalQuantities[item.productId] = (originalQuantities[item.productId] || 0) + item.quantity;
+            });
+
+            const returnedQuantities: Record<string, number> = {};
+            allReturnedItems.forEach(item => {
+                returnedQuantities[item.productId] = (returnedQuantities[item.productId] || 0) + item.quantity;
+            });
+
+            const isFullyReturned = Object.keys(originalQuantities).every(
+                productId => (returnedQuantities[productId] || 0) >= originalQuantities[productId]
+            );
+
+            const newStatus = isFullyReturned ? 'Fully Returned' : 'Partially Returned';
+            
+            transaction.update(saleDocRef, {
+                status: newStatus,
+                returnedItems: allReturnedItems,
+            });
+        });
+
+        toast({
+            title: 'Return Processed',
+            description: `Return for invoice ${foundSale.invoiceNumber} has been recorded.`
+        });
+
+        setInvoiceNumber('');
+        setFoundSale(null);
+        setReturnItems([]);
+        setError(null);
+
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: 'Error processing return', description: e.message });
+    }
   }
+
 
   return (
     <div className="h-full space-y-4">
@@ -265,7 +305,7 @@ export function SalesReturnTab() {
                           <TableCell className="text-center">
                              <Input 
                                   type="number" 
-                                  value={item.returnQuantity === 0 ? "" : item.returnQuantity}
+                                  value={item.returnQuantity === 0 ? '' : item.returnQuantity}
                                   onChange={(e) => handleQuantityChange(item.productId, parseInt(e.target.value) || 0)}
                                   max={item.quantity}
                                   min={0}

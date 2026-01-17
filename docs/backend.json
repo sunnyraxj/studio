@@ -245,6 +245,18 @@
         "challanId": {
             "type": "string",
             "description": "The ID of the challan this sale is associated with."
+        },
+        "status": {
+            "type": "string",
+            "description": "The current status of the sale.",
+            "enum": ["Completed", "Partially Returned", "Fully Returned"]
+        },
+        "returnedItems": {
+            "type": "array",
+            "description": "A list of items that have been returned from this sale.",
+            "items": {
+                "$ref": "#/entities/Sale/properties/items/items"
+            }
         }
       },
       "required": [

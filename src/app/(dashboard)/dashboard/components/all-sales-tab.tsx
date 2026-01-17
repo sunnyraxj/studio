@@ -152,7 +152,16 @@ export function AllSalesTab({ isDemoMode, demoSales, setDemoSales }: AllSalesTab
     {
       accessorKey: 'invoiceNumber',
       header: 'Invoice #',
-      cell: ({ row }) => <Badge variant="outline">{row.getValue('invoiceNumber')}</Badge>,
+      cell: ({ row }) => {
+        const status = row.original.status;
+        return (
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">{row.getValue('invoiceNumber')}</Badge>
+            {status === 'Partially Returned' && <Badge variant="secondary">Partial Return</Badge>}
+            {status === 'Fully Returned' && <Badge variant="destructive">Returned</Badge>}
+          </div>
+        )
+      },
     },
     {
       accessorKey: 'customer.name',
@@ -399,26 +408,51 @@ export function AllSalesTab({ isDemoMode, demoSales, setDemoSales }: AllSalesTab
                     {row.getIsExpanded() && (
                       <TableRow>
                         <TableCell colSpan={salesColumns.length} className="p-0">
-                          <div className="p-4 bg-muted/50">
-                            <h4 className="font-bold mb-2">Items in Invoice #{row.original.invoiceNumber}</h4>
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead>Product</TableHead>
-                                  <TableHead className="text-center">Quantity</TableHead>
-                                  <TableHead className="text-right">Price</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {row.original.items.map((item, index) => (
-                                  <TableRow key={index}>
-                                    <TableCell>{item.name}</TableCell>
-                                    <TableCell className="text-center">{item.quantity}</TableCell>
-                                    <TableCell className="text-right flex items-center justify-end gap-1"><IndianRupee className="h-3 w-3" />{item.price.toLocaleString('en-IN')}</TableCell>
+                          <div className="p-4 bg-muted/50 space-y-4">
+                            <div>
+                              <h4 className="font-bold mb-2">Items in Invoice #{row.original.invoiceNumber}</h4>
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>Product</TableHead>
+                                    <TableHead className="text-center">Quantity</TableHead>
+                                    <TableHead className="text-right">Price</TableHead>
                                   </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
+                                </TableHeader>
+                                <TableBody>
+                                  {row.original.items.map((item, index) => (
+                                    <TableRow key={index}>
+                                      <TableCell>{item.name}</TableCell>
+                                      <TableCell className="text-center">{item.quantity}</TableCell>
+                                      <TableCell className="text-right flex items-center justify-end gap-1"><IndianRupee className="h-3 w-3" />{item.price.toLocaleString('en-IN')}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                            {row.original.returnedItems && row.original.returnedItems.length > 0 && (
+                                <div>
+                                    <h4 className="font-bold mb-2 text-destructive">Returned Items</h4>
+                                    <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                        <TableHead>Product</TableHead>
+                                        <TableHead className="text-center">Quantity</TableHead>
+                                        <TableHead className="text-right">Price</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {row.original.returnedItems.map((item, index) => (
+                                        <TableRow key={index}>
+                                            <TableCell>{item.name}</TableCell>
+                                            <TableCell className="text-center">{item.quantity}</TableCell>
+                                            <TableCell className="text-right flex items-center justify-end gap-1"><IndianRupee className="h-3 w-3" />{item.price.toLocaleString('en-IN')}</TableCell>
+                                        </TableRow>
+                                        ))}
+                                    </TableBody>
+                                    </Table>
+                                </div>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>

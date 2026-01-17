@@ -114,41 +114,58 @@ export function ReportsTab({ isDemoMode, demoSales }: ReportsTabProps) {
   }
 
   const fetchData = async () => {
-    if (isDemoMode) {
-        let reportItems = demoSales.flatMap(sale => sale.items.map(item => ({ ...item, saleDate: sale.date })));
-        
-        if (searchTerm) {
-          reportItems = reportItems.filter(item =>
-            item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (item.sku && item.sku.toLowerCase().includes(searchTerm.toLowerCase()))
-          );
-        }
-        
-        const startDate = new Date(`${startYear}-${startMonth.padStart(2, '0')}-${startDay.padStart(2, '0')}`);
-        const endDate = new Date(`${endYear}-${endMonth.padStart(2, '0')}-${endDay.padStart(2, '0')}`);
-        endDate.setHours(23, 59, 59, 999);
-        
-        const isValidStartDate = !isNaN(startDate.getTime()) && startDay && startMonth && startYear;
-        const isValidEndDate = !isNaN(endDate.getTime()) && endDay && endMonth && endYear;
-        
-        if (isValidStartDate) reportItems = reportItems.filter(i => new Date(i.saleDate) >= startDate);
-        if (isValidEndDate) reportItems = reportItems.filter(i => new Date(i.saleDate) <= endDate);
-
-        const paginatedItems = reportItems.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize);
-        setData(paginatedItems);
-        setPageCount(Math.ceil(reportItems.length / pageSize));
-        return;
+    const salesSource = isDemoMode ? demoSales : null;
+    
+    if (salesSource) {
+      processSalesData(salesSource);
+      return;
     }
     
     const q = buildQuery();
-    if (!q) return;
+    if (!q) {
+      setData([]);
+      setPageCount(0);
+      return;
+    };
 
     setIsLoading(true);
     try {
-      const querySnapshot = await getDocs(query(q, limit(100))); 
+      const querySnapshot = await getDocs(query(q)); 
       const sales = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Sale));
-      
-      let reportItems = sales.flatMap(sale => sale.items.map(item => ({ ...item, saleDate: sale.date })));
+      processSalesData(sales);
+    } catch(e) {
+      console.error(e)
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const processSalesData = (sales: Sale[]) => {
+      const netItemsMap = new Map<string, ReportItem>();
+
+      sales.forEach(sale => {
+          sale.items.forEach(item => {
+              const key = item.sku || item.name;
+              const existing = netItemsMap.get(key);
+              if (existing) {
+                  existing.quantity += item.quantity;
+              } else {
+                  netItemsMap.set(key, { ...item, saleDate: sale.date });
+              }
+          });
+
+          if (sale.returnedItems) {
+              sale.returnedItems.forEach(returnedItem => {
+                  const key = returnedItem.sku || returnedItem.name;
+                  const existing = netItemsMap.get(key);
+                  if (existing) {
+                      existing.quantity -= returnedItem.quantity;
+                  }
+              });
+          }
+      });
+
+      let reportItems = Array.from(netItemsMap.values()).filter(item => item.quantity > 0);
       
       if (searchTerm) {
         reportItems = reportItems.filter(item =>
@@ -156,16 +173,12 @@ export function ReportsTab({ isDemoMode, demoSales }: ReportsTabProps) {
           (item.sku && item.sku.toLowerCase().includes(searchTerm.toLowerCase()))
         );
       }
-      
+
       const paginatedItems = reportItems.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize);
       setData(paginatedItems);
       setPageCount(Math.ceil(reportItems.length / pageSize));
-    } catch(e) {
-      console.error(e)
-    } finally {
-      setIsLoading(false);
-    }
   };
+
 
   useEffect(() => {
     fetchData();

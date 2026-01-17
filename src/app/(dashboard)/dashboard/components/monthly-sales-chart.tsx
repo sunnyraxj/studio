@@ -83,7 +83,16 @@ export function MonthlySalesChart({ salesData, isLoading }: { salesData: Sale[] 
     filteredSales.forEach(sale => {
       const dayKey = format(new Date(sale.date), 'yyyy-MM-dd');
       if (dailySales.hasOwnProperty(dayKey)) {
-          dailySales[dayKey] += sale.total;
+          let netTotal = sale.total;
+          if (sale.returnedItems && sale.returnedItems.length > 0) {
+            const returnedValue = sale.returnedItems.reduce((sum, item) => {
+                const itemTotal = item.price * item.quantity;
+                const discountAmount = itemTotal * (item.discount / 100);
+                return sum + (itemTotal - discountAmount);
+            }, 0);
+            netTotal -= returnedValue;
+          }
+          dailySales[dayKey] += netTotal;
       }
     });
 

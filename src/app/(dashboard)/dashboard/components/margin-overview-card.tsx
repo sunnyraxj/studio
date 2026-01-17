@@ -70,12 +70,29 @@ export function MarginOverviewCard({ salesData, isLoading }: { salesData: Sale[]
     });
 
     const { profit, revenue } = filteredSales.reduce((acc, sale) => {
+        // Add revenue/profit from original sale items
         sale.items.forEach(item => {
-            const itemRevenue = item.price * item.quantity;
-            const itemProfit = itemRevenue * (item.margin / 100);
-            acc.revenue += itemRevenue;
+            const itemTotal = item.price * item.quantity;
+            const discountAmount = itemTotal * (item.discount / 100);
+            const finalPrice = itemTotal - discountAmount;
+            
+            const itemProfit = finalPrice * (item.margin / 100);
+            acc.revenue += finalPrice;
             acc.profit += itemProfit;
         });
+
+        // Subtract revenue/profit from returned items
+        if (sale.returnedItems) {
+            sale.returnedItems.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                const discountAmount = itemTotal * (item.discount / 100);
+                const finalPrice = itemTotal - discountAmount;
+
+                const itemProfit = finalPrice * (item.margin / 100);
+                acc.revenue -= finalPrice;
+                acc.profit -= itemProfit;
+            });
+        }
         return acc;
     }, { profit: 0, revenue: 0 });
 

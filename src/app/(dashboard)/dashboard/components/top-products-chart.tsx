@@ -71,12 +71,22 @@ export function TopProductsChart({ salesData, isLoading }: { salesData: Sale[] |
     const productQuantities: { [key: string]: number } = {};
 
     filteredSales.forEach(sale => {
+      // Add sold items
       sale.items.forEach(item => {
         if (!productQuantities[item.name]) {
           productQuantities[item.name] = 0;
         }
         productQuantities[item.name] += item.quantity;
       });
+
+      // Subtract returned items
+      if (sale.returnedItems) {
+          sale.returnedItems.forEach(item => {
+            if (productQuantities[item.name]) {
+              productQuantities[item.name] -= item.quantity;
+            }
+          });
+      }
     });
 
     return Object.entries(productQuantities)

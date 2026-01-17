@@ -128,17 +128,56 @@ export function GstTab({ isDemoMode, demoSales }: GstTabProps) {
         }
 
         const reportItems: GstReportItem[] = filteredSales.map(sale => {
+            let effectiveSubtotal = sale.subtotal;
+            let effectiveCgst = sale.cgst;
+            let effectiveSgst = sale.sgst;
+            let effectiveIgst = sale.igst;
+            let effectiveTotal = sale.total;
+
+            if (sale.returnedItems && sale.returnedItems.length > 0) {
+                const isIntraState = !sale.customer.state || sale.customer.state?.trim().toLowerCase() === shopState?.toLowerCase().trim();
+                let returnedSubtotal = 0;
+                let returnedCgst = 0;
+                let returnedSgst = 0;
+                let returnedIgst = 0;
+
+                sale.returnedItems.forEach(item => {
+                    const itemMrp = item.price;
+                    const discountAmount = itemMrp * (item.discount / 100);
+                    const priceAfterDiscount = itemMrp - discountAmount;
+                    
+                    const gstRate = (item.gst || 0) / 100;
+                    const taxableValue = priceAfterDiscount / (1 + gstRate);
+                    const gstAmount = priceAfterDiscount - taxableValue;
+
+                    returnedSubtotal += (taxableValue * item.quantity);
+                    
+                    if (isIntraState) {
+                        returnedCgst += (gstAmount / 2) * item.quantity;
+                        returnedSgst += (gstAmount / 2) * item.quantity;
+                    } else {
+                        returnedIgst += gstAmount * item.quantity;
+                    }
+                });
+
+                effectiveSubtotal -= returnedSubtotal;
+                effectiveCgst -= returnedCgst;
+                effectiveSgst -= returnedSgst;
+                effectiveIgst -= returnedIgst;
+                effectiveTotal -= (returnedSubtotal + returnedCgst + returnedSgst + returnedIgst);
+            }
+
             return {
                 invoiceDate: sale.date,
                 invoiceNumber: sale.invoiceNumber,
                 customerName: sale.customer.name,
                 customerGstin: sale.customer.gstin,
-                taxableAmount: sale.subtotal,
-                cgstAmount: sale.cgst,
-                sgstAmount: sale.sgst,
-                igstAmount: sale.igst,
-                totalGst: sale.cgst + sale.sgst + sale.igst,
-                invoiceTotal: sale.total,
+                taxableAmount: effectiveSubtotal,
+                cgstAmount: effectiveCgst,
+                sgstAmount: effectiveSgst,
+                igstAmount: effectiveIgst,
+                totalGst: effectiveCgst + effectiveSgst + effectiveIgst,
+                invoiceTotal: effectiveTotal,
             };
         });
         
