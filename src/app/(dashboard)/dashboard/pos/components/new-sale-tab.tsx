@@ -37,7 +37,7 @@ import {
 } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
+import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc, useShopSettings } from '@/firebase';
 import { collection, doc, addDoc, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { toast as hotToast } from 'react-hot-toast';
 import {
@@ -133,11 +133,7 @@ export function NewSaleTab() {
   const { data: userData } = useDoc<UserProfile>(userDocRef);
   const shopId = userData?.shopId;
   
-  const settingsDocRef = useMemoFirebase(() => {
-    if (isDemoMode || !shopId || !firestore) return null;
-    return doc(firestore, `shops/${shopId}/settings`, 'details');
-  }, [firestore, shopId, isDemoMode]);
-  const { data: shopSettings } = useDoc<ShopSettings>(settingsDocRef);
+  const { settings: shopSettings } = useShopSettings();
 
   const productsCollectionRef = useMemoFirebase(() => {
     if (isDemoMode || !shopId || !firestore) return null;

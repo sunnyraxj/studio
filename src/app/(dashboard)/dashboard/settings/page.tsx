@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useFirestore, useUser, useDoc, useMemoFirebase, useFirebaseApp } from '@/firebase';
+import { useFirestore, useUser, useDoc, useMemoFirebase, useFirebaseApp, useShopSettings } from '@/firebase';
 import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { toast } from '@/hooks/use-toast.tsx';
@@ -61,7 +61,7 @@ export default function SettingsPage() {
     return doc(firestore, `shops/${shopId}/settings`, 'details');
   }, [firestore, shopId, isDemoMode]);
 
-  const { data: settingsData, isLoading } = useDoc<ShopSettings>(settingsDocRef);
+  const { settings: settingsData, isLoading } = useShopSettings();
 
   // State for Company Details
   const [companyName, setCompanyName] = useState('Demo Company');

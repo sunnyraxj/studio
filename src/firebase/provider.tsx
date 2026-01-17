@@ -1,10 +1,30 @@
 'use client';
 
-import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
+import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
 import { FirebaseApp } from 'firebase/app';
-import { Firestore } from 'firebase/firestore';
+import { Firestore, doc } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener'
+import { useDoc } from './firestore/use-doc';
+
+type ShopSettings = {
+    companyName?: string;
+    companyAddress?: string;
+    companyState?: string;
+    companyPin?: string;
+    companyGstin?: string;
+    companyPhone?: string;
+    logoUrl?: string;
+    bankName?: string;
+    accountNumber?: string;
+    ifscCode?: string;
+    upiId?: string;
+    enableKot?: boolean;
+}
+
+type UserProfile = {
+  shopId?: string;
+}
 
 interface FirebaseProviderProps {
   children: ReactNode;
@@ -30,6 +50,8 @@ export interface FirebaseContextState {
   user: User | null;
   isUserLoading: boolean; // True during initial auth check
   userError: Error | null; // Error from auth listener
+  shopSettings: ShopSettings | null;
+  isShopSettingsLoading: boolean;
 }
 
 // Return type for useFirebase()
@@ -89,6 +111,21 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     return () => unsubscribe(); // Cleanup
   }, [auth]); // Depends on the auth instance
 
+  // Fetch user profile and then shop settings
+  const { user } = userAuthState;
+  const userDocRef = useMemo(() => {
+    if (!user || !firestore) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [user, firestore]);
+  const { data: userData } = useDoc<UserProfile>(userDocRef);
+
+  const shopId = userData?.shopId;
+  const settingsDocRef = useMemo(() => {
+      if (!shopId || !firestore) return null;
+      return doc(firestore, `shops/${shopId}/settings`, 'details');
+  }, [shopId, firestore]);
+  const { data: shopSettings, isLoading: isShopSettingsLoading } = useDoc<ShopSettings>(settingsDocRef);
+
   // Memoize the context value
   const contextValue = useMemo((): FirebaseContextState => {
     const servicesAvailable = !!(firebaseApp && firestore && auth);
@@ -100,8 +137,10 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       user: userAuthState.user,
       isUserLoading: userAuthState.isUserLoading,
       userError: userAuthState.userError,
+      shopSettings,
+      isShopSettingsLoading,
     };
-  }, [firebaseApp, firestore, auth, userAuthState]);
+  }, [firebaseApp, firestore, auth, userAuthState, shopSettings, isShopSettingsLoading]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>
@@ -162,4 +201,17 @@ export const useFirebaseApp = (): FirebaseApp => {
 export const useUser = (): UserHookResult => {
   const { user, isUserLoading, userError } = useFirebase();
   return { user, isUserLoading, userError };
+};
+
+export interface ShopSettingsHookResult {
+    settings: ShopSettings | null;
+    isLoading: boolean;
+}
+
+export const useShopSettings = (): ShopSettingsHookResult => {
+  const context = useContext(FirebaseContext);
+  if (context === undefined) {
+    throw new Error('useShopSettings must be used within a FirebaseProvider.');
+  }
+  return { settings: context.shopSettings, isLoading: context.isShopSettingsLoading };
 };
