@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -184,7 +185,7 @@ export function SalesReturnTab() {
                            <Input 
                                 type="number" 
                                 value={item.returnQuantity}
-                                onChange={(e) => handleQuantityChange(item.productId, parseInt(e.target.value))}
+                                onChange={(e) => handleQuantityChange(item.productId, parseInt(e.target.value) || 0)}
                                 max={item.quantity}
                                 min={0}
                                 className="h-8 text-center"
