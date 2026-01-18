@@ -59,6 +59,7 @@ import {
 import { CompactReceipt } from '../../components/compact-receipt';
 import { KOT } from './kot';
 import type { KOT as KOTType } from '../../page';
+import { useTranslation } from '@/hooks/use-translation';
 
 
 type Product = {
@@ -116,6 +117,7 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
   const firestore = useFirestore();
   const { user } = useUser();
   const isDemoMode = !user;
+  const { t } = useTranslation();
 
   const userDocRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -282,13 +284,13 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
   
   const handleSaveAndPrintKOT = async () => {
     if (cart.length === 0) {
-        hotToast.error('Add items to the cart first.');
+        hotToast.error(t('Add items to the cart first.'));
         return;
     }
     setIsSavingKot(true);
     const kotData = {
         tableNumber,
-        customerName: customerName || 'Walk-in Customer',
+        customerName: customerName || t('Walk-in Customer'),
         instructions: orderInstructions,
         items: cart.map(item => ({
             productId: item.product.id,
@@ -306,7 +308,7 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
     };
 
     if (isDemoMode) {
-        hotToast.success('KOT sent to kitchen (Demo)');
+        hotToast.success(t('KOT sent to kitchen (Demo)'));
         handlePrintKOT();
         setIsKotOpen(false);
         clearSale();
@@ -315,7 +317,7 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
     }
 
     if (!shopId || !firestore) {
-        hotToast.error('Shop not found.');
+        hotToast.error(t('Shop not found.'));
         setIsSavingKot(false);
         return;
     }
@@ -323,12 +325,12 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
     try {
         const kotsCollectionRef = collection(firestore, `shops/${shopId}/kots`);
         await addDoc(kotsCollectionRef, kotData);
-        hotToast.success('KOT saved and sent to kitchen!');
+        hotToast.success(t('KOT saved and sent to kitchen!'));
         handlePrintKOT();
         setIsKotOpen(false);
         clearSale();
     } catch(e: any) {
-        hotToast.error(`Could not save KOT: ${e.message}`);
+        hotToast.error(`${t('Could not save KOT:')} ${e.message}`);
     } finally {
         setIsSavingKot(false);
     }
@@ -401,9 +403,9 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
       const foundProduct = products.find(p => p.sku === code);
       if (foundProduct) {
         addToCart(foundProduct);
-        hotToast.success(`Added ${foundProduct.name} to cart.`);
+        hotToast.success(`${t('Added')} ${foundProduct.name} ${t('to cart.')}`);
       } else {
-        hotToast.error(`Product with code "${code}" not found.`);
+        hotToast.error(`${t('Product with code')} "${code}" ${t('not found.')}`);
       }
     }
   };
@@ -437,7 +439,7 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
 
   const addQuickItemToCart = () => {
     if (!quickItemName || !quickItemQty || !quickItemPrice) {
-      hotToast.error('Please enter item name, quantity, and MRP.');
+      hotToast.error(t('Please enter item name, quantity, and MRP.'));
       return;
     }
 
@@ -589,10 +591,10 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
             <div className="flex items-start">
               <div className="ml-3 flex-1">
                 <p className="text-sm font-medium text-gray-900">
-                  Sale Completed!
+                  {t('Sale Completed!')}
                 </p>
                 <p className="mt-1 text-sm text-gray-500">
-                  Sale ${invoiceNumber} has been recorded.
+                  {t('Sale')} ${invoiceNumber} {t('has been recorded.')}
                 </p>
               </div>
             </div>
@@ -605,7 +607,7 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
               }}
               className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-indigo-600 hover:text-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
-              View & Print
+              {t('View & Print')}
             </button>
           </div>
         </div>
@@ -616,7 +618,7 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
 
   const completeSale = async () => {
     if (paymentMode === 'both' && remainingBalance.toFixed(2) !== '0.00') {
-        hotToast.error('The total paid amount does not match the total sale amount.');
+        hotToast.error(t('The total paid amount does not match the total sale amount.'));
         return;
     }
 
@@ -642,7 +644,7 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
         gst: item.product.gst || 0,
       })),
       customer: {
-        name: customerName || 'Walk-in Customer',
+        name: customerName || t('Walk-in Customer'),
         phone: customerPhone,
         address: customerAddress,
         pin: customerPin,
@@ -676,7 +678,7 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
     }
 
     if (!firestore || !shopId) {
-      hotToast.error('Cannot find your shop. Please ensure you are subscribed.');
+      hotToast.error(t('Cannot find your shop. Please ensure you are subscribed.'));
       setIsGenerating(false);
       return;
     }
@@ -693,7 +695,7 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
         });
         showPrintToast();
     } catch(error: any) {
-      hotToast.error(`Error completing sale: ${error.message}`);
+      hotToast.error(`${t('Error completing sale:')} ${error.message}`);
     } finally {
         if (mounted.current) {
           setIsGenerating(false);
@@ -726,13 +728,13 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
                 <CardHeader>
                     <div className="space-y-4">
                         <div className="p-4 border rounded-lg bg-muted/50 space-y-4">
-                            <Label className="text-sm font-medium">Quick Item Entry</Label>
+                            <Label className="text-sm font-medium">{t('Quick Item Entry')}</Label>
                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
                                 <div className="space-y-1">
-                                    <Label htmlFor="quick-name" className="text-xs">Item Name</Label>
+                                    <Label htmlFor="quick-name" className="text-xs">{t('Item Name')}</Label>
                                     <Input
                                         id="quick-name"
-                                        placeholder="Item Name"
+                                        placeholder={t('Item Name')}
                                         value={quickItemName}
                                         onChange={(e) => setQuickItemName(e.target.value)}
                                         onKeyDown={handleQuickItemKeyDown}
@@ -741,11 +743,11 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
                                 </div>
                                 <div className="grid grid-cols-3 gap-2">
                                      <div className="space-y-1">
-                                        <Label htmlFor="quick-mrp" className="text-xs">MRP</Label>
+                                        <Label htmlFor="quick-mrp" className="text-xs">{t('MRP')}</Label>
                                         <Input
                                             id="quick-mrp"
                                             type="number"
-                                            placeholder="MRP"
+                                            placeholder={t('MRP')}
                                             value={quickItemPrice}
                                             onChange={(e) => setQuickItemPrice(e.target.value)}
                                             onKeyDown={handleQuickItemKeyDown}
@@ -753,11 +755,11 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
                                         />
                                     </div>
                                     <div className="space-y-1">
-                                        <Label htmlFor="quick-qty" className="text-xs">Qty</Label>
+                                        <Label htmlFor="quick-qty" className="text-xs">{t('Qty')}</Label>
                                         <Input
                                             id="quick-qty"
                                             type="number"
-                                            placeholder="Qty"
+                                            placeholder={t('Qty')}
                                             value={quickItemQty}
                                             onChange={(e) => setQuickItemQty(e.target.value)}
                                             onKeyDown={handleQuickItemKeyDown}
@@ -766,7 +768,7 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
                                         />
                                     </div>
                                      <div className="space-y-1">
-                                        <Label htmlFor="quick-gst" className="text-xs">GST (%)</Label>
+                                        <Label htmlFor="quick-gst" className="text-xs">{t('GST (%)')}</Label>
                                         <Input
                                             id="quick-gst"
                                             type="number"
@@ -780,7 +782,7 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
                                 </div>
                                 <div className="sm:col-span-2">
                                     <Button size="sm" onClick={addQuickItemToCart} className="h-8 w-full">
-                                        <PlusCircle className="h-4 w-4 mr-2" /> Add Item
+                                        <PlusCircle className="h-4 w-4 mr-2" /> {t('Add Item')}
                                     </Button>
                                 </div>
                             </div>
@@ -790,7 +792,7 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
                            <div className="relative flex-grow w-full">
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
-                                    placeholder="Search products... or scan barcode"
+                                    placeholder={t('Search products... or scan barcode')}
                                     className="pl-8 w-full sm:w-auto"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -799,7 +801,7 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
                              <div className='flex items-center gap-2 w-full sm:w-auto'>
                                 <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
                                     <SelectTrigger className="w-auto flex-1">
-                                        <SelectValue placeholder="Material Filter" />
+                                        <SelectValue placeholder={t('Material Filter')} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {uniqueMaterials.map(material => (
@@ -815,11 +817,11 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
                                     >
                                         <div className="flex items-center space-x-1">
                                             <RadioGroupItem value="name" id="name" />
-                                            <Label htmlFor="name" className="text-sm">Name/Code</Label>
+                                            <Label htmlFor="name" className="text-sm">{t('Name/Code')}</Label>
                                         </div>
                                         <div className="flex items-center space-x-1">
                                             <RadioGroupItem value="mrp" id="mrp" />
-                                            <Label htmlFor="mrp" className="text-sm">MRP</Label>
+                                            <Label htmlFor="mrp" className="text-sm">{t('MRP')}</Label>
                                         </div>
                                     </RadioGroup>
                                 </div>
@@ -850,7 +852,7 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
                                             {product.name}
                                         </div>
                                         <div className="text-xs text-foreground font-semibold mt-1">
-                                        MRP: ₹{product.price.toFixed(2)}
+                                        {t('MRP')}: ₹{product.price.toFixed(2)}
                                         </div>
                                     </Card>
                                 )
@@ -865,9 +867,9 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
         <div className="lg:col-span-5 flex flex-col h-full">
             <Card className="h-full flex flex-col rounded-lg">
                 <CardHeader>
-                    <CardTitle>Current Sale</CardTitle>
+                    <CardTitle>{t('Current Sale')}</CardTitle>
                     <CardDescription>
-                        {invoiceNumber ? `Invoice #${invoiceNumber}` : '...'}
+                        {invoiceNumber ? `${t('Invoice #')}${invoiceNumber}` : '...'}
                     </CardDescription>
                 </CardHeader>
                 <div className="flex-grow overflow-hidden">
@@ -877,18 +879,18 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
                             <div className="py-2">
                                 {cart.length === 0 ? (
                                      <div className="text-center text-muted-foreground py-10">
-                                        No items in sale
+                                        {t('No items in sale')}
                                      </div>
                                 ) : (
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead className="w-[40px]">Sr.</TableHead>
+                                            <TableHead className="w-[40px]">{t('Sr.')}</TableHead>
                                             <TableHead className="w-[50px] p-0 text-center"></TableHead>
-                                            <TableHead>Item</TableHead>
-                                            <TableHead className="text-center w-[100px]">Qty</TableHead>
-                                            <TableHead className="text-center w-[80px]">Disc(%)</TableHead>
-                                            <TableHead className="text-right">Amount</TableHead>
+                                            <TableHead>{t('Item')}</TableHead>
+                                            <TableHead className="text-center w-[100px]">{t('Qty')}</TableHead>
+                                            <TableHead className="text-center w-[80px]">{t('Disc(%)')}</TableHead>
+                                            <TableHead className="text-right">{t('Amount')}</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -938,69 +940,69 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
                             <div className="p-4 space-y-4">
                                <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <Label htmlFor="customer-name">Customer Name</Label>
-                                        <Input id="customer-name" placeholder="Walk-in Customer" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+                                        <Label htmlFor="customer-name">{t('Customer Name')}</Label>
+                                        <Input id="customer-name" placeholder={t('Walk-in Customer')} value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
                                     </div>
                                     <div className="space-y-2">
-                                         <Label htmlFor="customer-state">State</Label>
-                                         <Input id="customer-state" placeholder="e.g. Assam" value={customerState} onChange={(e) => setCustomerState(e.target.value)} />
+                                         <Label htmlFor="customer-state">{t('State')}</Label>
+                                         <Input id="customer-state" placeholder={t('e.g. Assam')} value={customerState} onChange={(e) => setCustomerState(e.target.value)} />
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                      <div className="space-y-2">
-                                        <Label htmlFor="customer-phone">Customer Phone</Label>
-                                        <Input id="customer-phone" placeholder="Enter phone number" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
+                                        <Label htmlFor="customer-phone">{t('Customer Phone')}</Label>
+                                        <Input id="customer-phone" placeholder={t('Enter phone number')} value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="customer-pin">PIN Code</Label>
-                                        <Input id="customer-pin" placeholder="e.g. 110001" value={customerPin} onChange={(e) => setCustomerPin(e.target.value)} />
+                                        <Label htmlFor="customer-pin">{t('PIN Code')}</Label>
+                                        <Input id="customer-pin" placeholder={t('e.g. 110001')} value={customerPin} onChange={(e) => setCustomerPin(e.target.value)} />
                                     </div>
                                 </div>
                                 <Collapsible>
                                     <CollapsibleTrigger asChild>
                                         <Button variant="outline" size="sm" className="w-full">
-                                            More Customer Details
+                                            {t('More Customer Details')}
                                             <ChevronDown className="h-4 w-4 ml-2" />
                                         </Button>
                                     </CollapsibleTrigger>
                                     <CollapsibleContent className="space-y-4 mt-4">
                                         <div className="space-y-2">
-                                            <Label htmlFor="customer-address">Address</Label>
-                                            <Textarea id="customer-address" placeholder="Enter full address" value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} />
+                                            <Label htmlFor="customer-address">{t('Address')}</Label>
+                                            <Textarea id="customer-address" placeholder={t('Enter full address')} value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="customer-gstin">Customer GSTIN</Label>
-                                            <Input id="customer-gstin" placeholder="Enter GSTIN" value={customerGstin} onChange={(e) => setCustomerGstin(e.target.value)} />
+                                            <Label htmlFor="customer-gstin">{t('Customer GSTIN')}</Label>
+                                            <Input id="customer-gstin" placeholder={t('Enter GSTIN')} value={customerGstin} onChange={(e) => setCustomerGstin(e.target.value)} />
                                         </div>
                                     </CollapsibleContent>
                                 </Collapsible>
                                 <div className="space-y-2">
-                                    <Label>Payment Mode</Label>
+                                    <Label>{t('Payment Mode')}</Label>
                                     <RadioGroup value={paymentMode} onValueChange={setPaymentMode} className="flex items-center flex-wrap gap-x-4 gap-y-2">
-                                        <div className="flex items-center space-x-2"><RadioGroupItem value="cash" id="cash" /><Label htmlFor="cash">Cash</Label></div>
-                                        <div className="flex items-center space-x-2"><RadioGroupItem value="card" id="card" /><Label htmlFor="card">Card</Label></div>
-                                        <div className="flex items-center space-x-2"><RadioGroupItem value="upi" id="upi" /><Label htmlFor="upi">UPI</Label></div>
-                                        <div className="flex items-center space-x-2"><RadioGroupItem value="both" id="both" /><Label htmlFor="both">Both</Label></div>
+                                        <div className="flex items-center space-x-2"><RadioGroupItem value="cash" id="cash" /><Label htmlFor="cash">{t('Cash')}</Label></div>
+                                        <div className="flex items-center space-x-2"><RadioGroupItem value="card" id="card" /><Label htmlFor="card">{t('Card')}</Label></div>
+                                        <div className="flex items-center space-x-2"><RadioGroupItem value="upi" id="upi" /><Label htmlFor="upi">{t('UPI')}</Label></div>
+                                        <div className="flex items-center space-x-2"><RadioGroupItem value="both" id="both" /><Label htmlFor="both">{t('Both')}</Label></div>
                                     </RadioGroup>
                                 </div>
                                 {paymentMode === 'both' && (
                                     <Card className="p-4 bg-muted/50">
-                                        <h4 className="text-sm font-medium mb-2">Mixed Payment Details</h4>
+                                        <h4 className="text-sm font-medium mb-2">{t('Mixed Payment Details')}</h4>
                                         <div className="space-y-2">
                                             <div className="flex items-center gap-2">
-                                                <Label htmlFor="cash-amount" className="w-16">Cash</Label>
+                                                <Label htmlFor="cash-amount" className="w-16">{t('Cash')}</Label>
                                                 <div className="relative flex-1"><IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input id="cash-amount" type="number" placeholder="0.00" className="pl-8" value={paymentDetails.cash || ''} onChange={(e) => handlePaymentDetailChange('cash', e.target.value)} /></div>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <Label htmlFor="card-amount" className="w-16">Card</Label>
+                                                <Label htmlFor="card-amount" className="w-16">{t('Card')}</Label>
                                                 <div className="relative flex-1"><IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input id="card-amount" type="number" placeholder="0.00" className="pl-8" value={paymentDetails.card || ''} onChange={(e) => handlePaymentDetailChange('card', e.target.value)} /></div>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <Label htmlFor="upi-amount" className="w-16">UPI</Label>
+                                                <Label htmlFor="upi-amount" className="w-16">{t('UPI')}</Label>
                                                 <div className="relative flex-1"><IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input id="upi-amount" type="number" placeholder="0.00" className="pl-8" value={paymentDetails.upi || ''} onChange={(e) => handlePaymentDetailChange('upi', e.target.value)} /></div>
                                             </div>
                                         </div>
-                                        <div className="mt-2 text-right text-sm font-medium">Remaining: <span className={remainingBalance !== 0 ? 'text-destructive' : 'text-green-600'}>₹{remainingBalance.toFixed(2)}</span></div>
+                                        <div className="mt-2 text-right text-sm font-medium">{t('Remaining:')} <span className={remainingBalance !== 0 ? 'text-destructive' : 'text-green-600'}>₹{remainingBalance.toFixed(2)}</span></div>
                                     </Card>
                                 )}
                             </div>
@@ -1010,28 +1012,28 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
                 <CardFooter className="mt-auto flex-none">
                     <div className='w-full space-y-4'>
                         <div className="space-y-1 text-sm">
-                            <div className="flex justify-between"><span>Taxable Value</span><span>₹{subtotal.toFixed(2)}</span></div>
-                            {cgst > 0 && <div className="flex justify-between"><span>CGST</span><span>₹{cgst.toFixed(2)}</span></div>}
-                            {sgst > 0 && <div className="flex justify-between"><span>SGST</span><span>₹{sgst.toFixed(2)}</span></div>}
-                            {igst > 0 && <div className="flex justify-between"><span>IGST</span><span>₹{igst.toFixed(2)}</span></div>}
+                            <div className="flex justify-between"><span>{t('Taxable Value')}</span><span>₹{subtotal.toFixed(2)}</span></div>
+                            {cgst > 0 && <div className="flex justify-between"><span>{t('CGST')}</span><span>₹{cgst.toFixed(2)}</span></div>}
+                            {sgst > 0 && <div className="flex justify-between"><span>{t('SGST')}</span><span>₹{sgst.toFixed(2)}</span></div>}
+                            {igst > 0 && <div className="flex justify-between"><span>{t('IGST')}</span><span>₹{igst.toFixed(2)}</span></div>}
                             <Separator />
-                            <div className="flex justify-between font-semibold text-lg"><span>Total</span><span>₹{total.toFixed(2)}</span></div>
+                            <div className="flex justify-between font-semibold text-lg"><span>{t('Total')}</span><span>₹{total.toFixed(2)}</span></div>
                         </div>
                         <div className="flex-col items-stretch space-y-2">
                             {shopSettings?.enableKot && (
                                 <Button variant="outline" className="w-full" disabled={cart.length === 0} onClick={() => setIsKotOpen(true)}>
-                                    <Printer className="mr-2 h-4 w-4" /> Prepare KOT
+                                    <Printer className="mr-2 h-4 w-4" /> {t('Prepare KOT')}
                                 </Button>
                             )}
                             <Button className="w-full" disabled={cart.length === 0 || (paymentMode === 'both' && remainingBalance.toFixed(2) !== '0.00') || isGenerating} onClick={completeSale}>
                                 {isGenerating ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Generating...
+                                        {t('Generating...')}
                                     </>
-                                ) : 'Generate Invoice'}
+                                ) : t('Generate Invoice')}
                             </Button>
-                            <Button variant="destructive" className="w-full" onClick={clearSale} disabled={cart.length === 0}><Trash2 className="mr-2 h-4 w-4" /> Clear Sale</Button>
+                            <Button variant="destructive" className="w-full" onClick={() => clearSale()} disabled={cart.length === 0}><Trash2 className="mr-2 h-4 w-4" /> {t('Clear Sale')}</Button>
                         </div>
                     </div>
                 </CardFooter>
@@ -1042,8 +1044,8 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
     <Dialog open={isInvoiceOpen} onOpenChange={(open) => { if (!open) { setIsInvoiceOpen(false); setLastSaleData(null); }}}>
         <DialogContent className="max-w-sm p-0 border-0">
              <DialogHeader className="sr-only">
-                <DialogTitle>Receipt</DialogTitle>
-                <DialogDescription>A preview of the receipt for printing.</DialogDescription>
+                <DialogTitle>{t('Receipt')}</DialogTitle>
+                <DialogDescription>{t('A preview of the receipt for printing.')}</DialogDescription>
              </DialogHeader>
              <div ref={invoiceRef}>
                  <CompactReceipt sale={lastSaleData} settings={shopSettings} />
@@ -1054,9 +1056,9 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
     <Dialog open={isKotOpen} onOpenChange={setIsKotOpen}>
         <DialogContent className="max-w-sm p-0 border-0">
             <DialogHeader className="p-4 border-b">
-                <DialogTitle>Prepare Kitchen Order Ticket</DialogTitle>
+                <DialogTitle>{t('Prepare Kitchen Order Ticket')}</DialogTitle>
                 <DialogDescription>
-                    Add table number and instructions before saving and printing the KOT.
+                    {t('Add table number and instructions before saving and printing the KOT.')}
                 </DialogDescription>
             </DialogHeader>
             <div className="p-4 flex justify-center">
@@ -1066,30 +1068,30 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
             </div>
             <div className="grid grid-cols-[100px_1fr] items-center gap-x-4 gap-y-3 px-4 pb-4">
                 <Label htmlFor="table-number" className="text-right whitespace-nowrap">
-                    Table Number
+                    {t('Table Number')}
                 </Label>
                 <Input
                     id="table-number"
-                    placeholder="e.g., 5"
+                    placeholder={t('e.g., 5')}
                     value={tableNumber}
                     onChange={(e) => setTableNumber(e.target.value)}
                 />
                 <Label htmlFor="kot-instructions" className="text-right self-start pt-2">
-                    Instructions
+                    {t('Instructions')}
                 </Label>
                 <Textarea
                     id="kot-instructions"
-                    placeholder="e.g., Make it spicy..."
+                    placeholder={t('e.g., Make it spicy...')}
                     value={orderInstructions}
                     onChange={(e) => setOrderInstructions(e.target.value)}
                     rows={2}
                 />
             </div>
             <DialogFooter className="p-4 border-t">
-                <Button variant="outline" onClick={() => setIsKotOpen(false)}>Cancel</Button>
+                <Button variant="outline" onClick={() => setIsKotOpen(false)}>{t('Cancel')}</Button>
                 <Button onClick={handleSaveAndPrintKOT} disabled={isSavingKot}>
                     {isSavingKot && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Save & Print KOT
+                    {t('Save & Print KOT')}
                 </Button>
             </DialogFooter>
         </DialogContent>
@@ -1098,15 +1100,15 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
     <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+          <AlertDialogTitle>{t('Are you absolutely sure?')}</AlertDialogTitle>
           <AlertDialogDescription>
-            This action will remove the item from the current sale. This cannot be undone.
+            {t('This action will remove the item from the current sale. This cannot be undone.')}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={() => setItemToDelete(null)}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel onClick={() => setItemToDelete(null)}>{t('Cancel')}</AlertDialogCancel>
           <AlertDialogAction onClick={confirmRemoveItem} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-            Yes, remove item
+            {t('Yes, remove item')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

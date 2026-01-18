@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useRef } from 'react';
@@ -14,6 +13,7 @@ import { KOT as KOTPrintable } from './kot';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
+import { useTranslation } from '@/hooks/use-translation';
 
 
 interface KotListTabProps {
@@ -23,6 +23,7 @@ interface KotListTabProps {
 export function KotListTab({ onBillFromKot }: KotListTabProps) {
     const { user } = useUser();
     const firestore = useFirestore();
+    const { t } = useTranslation();
     
     const userDocRef = useMemoFirebase(() => (user && firestore ? doc(firestore, `users/${user.uid}`) : null), [user, firestore]);
     const { data: userData } = useDoc(userDocRef);
@@ -43,7 +44,7 @@ export function KotListTab({ onBillFromKot }: KotListTabProps) {
         const kotDocRef = doc(firestore, `shops/${shopId}/kots`, kotId);
         try {
             await updateDoc(kotDocRef, { status: 'Cancelled' });
-            toast({ title: 'KOT Cancelled', description: 'The order has been cancelled.' });
+            toast({ title: t('KOT Cancelled'), description: t('The order has been cancelled.') });
         } catch(e: any) {
             toast({ variant: 'destructive', title: 'Error', description: e.message });
         }
@@ -56,7 +57,7 @@ export function KotListTab({ onBillFromKot }: KotListTabProps) {
             if (newWindow) {
                 const printableContent = (printContent as HTMLDivElement).innerHTML;
                 
-                newWindow.document.write('<html><head><title>Reprint KOT</title>');
+                newWindow.document.write(`<html><head><title>${t('Reprint KOT')}</title>`);
                 const styles = Array.from(document.styleSheets)
                   .map(styleSheet => {
                       try {
@@ -86,16 +87,16 @@ export function KotListTab({ onBillFromKot }: KotListTabProps) {
 
 
     if(isLoading) {
-        return <div className="flex items-center justify-center h-full"><p>Loading Active KOTs...</p></div>
+        return <div className="flex items-center justify-center h-full"><p>{t('Loading Active KOTs...')}</p></div>
     }
 
     return (
         <>
         <ScrollArea className="h-full">
-            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {!activeKots || activeKots.length === 0 ? (
                     <div className="col-span-full text-center text-muted-foreground py-20">
-                        <p>No active KOTs found.</p>
+                        <p>{t('No active KOTs found.')}</p>
                     </div>
                 ) : (
                     activeKots.map(kot => (
@@ -103,13 +104,13 @@ export function KotListTab({ onBillFromKot }: KotListTabProps) {
                             <CardHeader className="p-3">
                                 <div className="flex justify-between items-start">
                                     <div>
-                                        <CardTitle className="text-sm font-bold flex items-center gap-1.5">
-                                            <Hash className="h-3.5 w-3.5"/> Table: {kot.tableNumber || 'N/A'}
+                                        <CardTitle className="text-lg font-bold flex items-center gap-1.5">
+                                            <Hash className="h-4 w-4"/> {t('Table:')} {kot.tableNumber || 'N/A'}
                                         </CardTitle>
-                                        <CardDescription className="text-xs pt-1">
+                                        <CardDescription className="text-sm pt-1">
                                             {kot.customerName}
                                         </CardDescription>
-                                        <div className="text-sm pt-1 text-blue-600 font-bold">
+                                        <div className="text-xs pt-2 text-blue-600 font-bold">
                                             {formatDistanceToNow(new Date(kot.createdAt), { addSuffix: true })}
                                         </div>
                                     </div>
@@ -124,7 +125,7 @@ export function KotListTab({ onBillFromKot }: KotListTabProps) {
                                 </div>
                             </CardHeader>
                             <CardContent className="flex-grow space-y-2 p-3 pt-0">
-                                <ScrollArea className="h-16 border-t border-b py-2">
+                                <ScrollArea className="h-20 border-t border-b py-2">
                                     <ul className="text-xs space-y-1 pr-3">
                                         {kot.items.map((item, index) => (
                                             <li key={index} className="flex justify-between items-center">
@@ -136,14 +137,14 @@ export function KotListTab({ onBillFromKot }: KotListTabProps) {
                                 </ScrollArea>
                                 {kot.instructions && (
                                      <div className="text-xs text-muted-foreground pt-1">
-                                        <p className="font-semibold flex items-center gap-1"><MessageSquare className="h-3 w-3"/>Note:</p>
+                                        <p className="font-semibold flex items-center gap-1"><MessageSquare className="h-3 w-3"/>{t('Note:')}</p>
                                         <p className="pl-1 text-xs whitespace-pre-wrap">{kot.instructions}</p>
                                      </div>
                                 )}
                             </CardContent>
                             <CardFooter className="p-2 pt-0">
                                 <Button className="w-full" size="sm" onClick={() => onBillFromKot(kot)}>
-                                    Bill Order
+                                    {t('Bill Order')}
                                 </Button>
                             </CardFooter>
                         </Card>
@@ -154,9 +155,9 @@ export function KotListTab({ onBillFromKot }: KotListTabProps) {
         <Dialog open={!!kotToReprint} onOpenChange={(open) => !open && setKotToReprint(null)}>
             <DialogContent className="max-w-sm p-0 border-0">
                 <DialogHeader className="p-4">
-                    <DialogTitle>Reprint KOT</DialogTitle>
+                    <DialogTitle>{t('Reprint KOT')}</DialogTitle>
                     <DialogDescription>
-                        A preview of the KOT for Table {kotToReprint?.tableNumber}.
+                        {t('A preview of the KOT for Table')} {kotToReprint?.tableNumber}.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="p-4 flex justify-center">
@@ -173,13 +174,11 @@ export function KotListTab({ onBillFromKot }: KotListTabProps) {
                     </div>
                 </div>
                 <DialogFooter className="p-4 border-t">
-                    <Button variant="outline" onClick={() => setKotToReprint(null)}>Close</Button>
-                    <Button onClick={handleReprint}><Printer className="mr-2 h-4 w-4" /> Print</Button>
+                    <Button variant="outline" onClick={() => setKotToReprint(null)}>{t('Close')}</Button>
+                    <Button onClick={handleReprint}><Printer className="mr-2 h-4 w-4" /> {t('Print')}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
         </>
     )
 }
-
-    

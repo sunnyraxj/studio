@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -23,38 +22,11 @@ import { format } from 'date-fns';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import type { ColumnDef } from '@tanstack/react-table';
 import { useReactTable, getCoreRowModel, flexRender, getPaginationRowModel } from '@tanstack/react-table';
+import { useTranslation } from '@/hooks/use-translation';
 
 type ReturnItem = SaleItem & {
     returnQuantity: number;
 };
-
-const returnHistoryColumns: ColumnDef<CreditNote>[] = [
-  {
-    accessorKey: 'date',
-    header: 'Date',
-    cell: ({ row }) => format(new Date(row.getValue('date')), 'dd MMM, yyyy'),
-  },
-  {
-    accessorKey: 'creditNoteNumber',
-    header: 'Credit Note #',
-    cell: ({ row }) => <Badge variant="secondary">{row.getValue('creditNoteNumber')}</Badge>,
-  },
-  {
-    accessorKey: 'originalInvoiceNumber',
-    header: 'Original Invoice #',
-    cell: ({ row }) => <Badge variant="outline">{row.getValue('originalInvoiceNumber')}</Badge>,
-  },
-  {
-    accessorKey: 'customer.name',
-    header: 'Customer Name',
-  },
-  {
-    accessorKey: 'totalAmount',
-    header: () => <div className="text-right">Return Value</div>,
-    cell: ({ row }) => <div className="text-right font-semibold flex items-center justify-end gap-1"><IndianRupee className="h-4 w-4" />{Math.abs(row.original.totalAmount).toLocaleString('en-IN')}</div>
-  }
-];
-
 
 export function SalesReturnTab() {
   const [invoiceNumber, setInvoiceNumber] = useState('');
@@ -62,6 +34,7 @@ export function SalesReturnTab() {
   const [foundSale, setFoundSale] = useState<Sale | null>(null);
   const [returnItems, setReturnItems] = useState<ReturnItem[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation();
   
   const { user } = useUser();
   const firestore = useFirestore();
@@ -90,6 +63,33 @@ export function SalesReturnTab() {
 
   const returnsHistory = isDemoMode ? demoCreditNotes : (creditNotesData || []);
 
+  const returnHistoryColumns: ColumnDef<CreditNote>[] = [
+    {
+      accessorKey: 'date',
+      header: t('Date'),
+      cell: ({ row }) => format(new Date(row.getValue('date')), 'dd MMM, yyyy'),
+    },
+    {
+      accessorKey: 'creditNoteNumber',
+      header: t('Credit Note #'),
+      cell: ({ row }) => <Badge variant="secondary">{row.getValue('creditNoteNumber')}</Badge>,
+    },
+    {
+      accessorKey: 'originalInvoiceNumber',
+      header: t('Original Invoice #'),
+      cell: ({ row }) => <Badge variant="outline">{row.getValue('originalInvoiceNumber')}</Badge>,
+    },
+    {
+      accessorKey: 'customer.name',
+      header: t('Customer Name'),
+    },
+    {
+      accessorKey: 'totalAmount',
+      header: () => <div className="text-right">{t('Return Value')}</div>,
+      cell: ({ row }) => <div className="text-right font-semibold flex items-center justify-end gap-1"><IndianRupee className="h-4 w-4" />{Math.abs(row.original.totalAmount).toLocaleString('en-IN')}</div>
+    }
+  ];
+
   const historyTable = useReactTable({
       data: returnsHistory,
       columns: returnHistoryColumns,
@@ -99,7 +99,7 @@ export function SalesReturnTab() {
 
   const handleSearch = async () => {
     if (!invoiceNumber.trim()) {
-      setError('Please enter an invoice number.');
+      setError(t('Please enter an invoice number.'));
       return;
     }
 
@@ -115,7 +115,7 @@ export function SalesReturnTab() {
     }
 
     if (!shopId || !firestore) {
-      setError('Shop information not found.');
+      setError(t('Shop not found.'));
       setIsLoading(false);
       return;
     }
@@ -126,19 +126,19 @@ export function SalesReturnTab() {
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
-        setError(`Invoice "${invoiceNumber.trim()}" not found.`);
+        setError(`${t('Invoice')} "${invoiceNumber.trim()}" ${t('not found.')}`);
       } else {
         const saleData = { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() } as Sale;
         if(saleData.status === "Fully Returned" || saleData.status === "Cancelled") {
-            setError(`Invoice "${invoiceNumber.trim()}" has already been fully returned or cancelled.`);
+            setError(`${t('Invoice')} "${invoiceNumber.trim()}" ${t('has already been fully returned or cancelled.')}`);
             return;
         }
         setFoundSale(saleData);
         setReturnItems(saleData.items.map(item => ({ ...item, returnQuantity: 0 })));
       }
     } catch (e: any) {
-      setError(`An error occurred: ${e.message}`);
-      toast({ variant: 'destructive', title: 'Search Failed', description: e.message });
+      setError(`${t('An error occurred:')} ${e.message}`);
+      toast({ variant: 'destructive', title: t('Search Failed'), description: e.message });
     } finally {
       setIsLoading(false);
     }
@@ -191,12 +191,12 @@ export function SalesReturnTab() {
 
   const handleProcessReturn = async () => {
     if (!foundSale || returnItems.length === 0 || totalReturnValue === 0) {
-      toast({ variant: 'destructive', title: 'Nothing to return' });
+      toast({ variant: 'destructive', title: t('Nothing to return') });
       return;
     }
 
     if (isDemoMode) {
-      toast({ title: 'Demo mode', description: 'Cannot process returns in demo.' });
+      toast({ title: t('Demo mode'), description: t('Cannot process returns in demo.') });
       return;
     }
 
@@ -252,8 +252,8 @@ export function SalesReturnTab() {
         });
 
         toast({
-            title: 'Credit Note Generated',
-            description: `Return for invoice ${foundSale.invoiceNumber} has been recorded.`
+            title: t('Credit Note Generated'),
+            description: `${t('Return for invoice')} ${foundSale.invoiceNumber} ${t('has been recorded.')}`
         });
 
         setInvoiceNumber('');
@@ -262,7 +262,7 @@ export function SalesReturnTab() {
         setError(null);
 
     } catch (e: any) {
-        toast({ variant: 'destructive', title: 'Error processing return', description: e.message });
+        toast({ variant: 'destructive', title: t('Error processing return'), description: e.message });
     }
   }
 
@@ -271,22 +271,22 @@ export function SalesReturnTab() {
     <div className="h-full space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Create Credit Note</CardTitle>
+          <CardTitle>{t('Create Credit Note')}</CardTitle>
           <CardDescription>
-            Enter an invoice number to find the sale and process a return.
+            {t('Enter an invoice number to find the sale and process a return.')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex w-full max-w-sm items-center space-x-2 mx-auto mt-8">
             <Input
               type="text"
-              placeholder="Enter Invoice #"
+              placeholder={t('Enter Invoice #')}
               value={invoiceNumber}
               onChange={(e) => setInvoiceNumber(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             />
             <Button type="submit" onClick={handleSearch} disabled={isLoading}>
-              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />} Search
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />} {t('Search')}
             </Button>
           </div>
 
@@ -297,24 +297,24 @@ export function SalesReturnTab() {
               <CardHeader>
                 <div className="flex justify-between items-start">
                    <div>
-                      <CardTitle>Invoice Found: {foundSale.invoiceNumber}</CardTitle>
+                      <CardTitle>{t('Invoice Found:')} {foundSale.invoiceNumber}</CardTitle>
                       <CardDescription>
-                        Customer: {foundSale.customer.name} | Date: {format(new Date(foundSale.date), 'dd MMM, yyyy')}
+                        {t('Customer:')} {foundSale.customer.name} | {t('Date:')} {format(new Date(foundSale.date), 'dd MMM, yyyy')}
                       </CardDescription>
                    </div>
-                   <Badge>Total: <IndianRupee className="h-3 w-3 mx-1" />{foundSale.total.toLocaleString()}</Badge>
+                   <Badge>{t('Total:')} <IndianRupee className="h-3 w-3 mx-1" />{foundSale.total.toLocaleString()}</Badge>
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-sm font-medium mb-2">Select items and quantities to return:</p>
+                <p className="text-sm font-medium mb-2">{t('Select items and quantities to return:')}</p>
                 <div className="rounded-md border">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Product</TableHead>
-                        <TableHead className="text-center">Original Qty</TableHead>
-                        <TableHead className="text-center">Price</TableHead>
-                        <TableHead className="w-[150px] text-center">Return Qty</TableHead>
+                        <TableHead>{t('Product')}</TableHead>
+                        <TableHead className="text-center">{t('Original Qty')}</TableHead>
+                        <TableHead className="text-center">{t('Price')}</TableHead>
+                        <TableHead className="w-[150px] text-center">{t('Return Qty')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -339,9 +339,9 @@ export function SalesReturnTab() {
                   </Table>
                 </div>
                 <div className="mt-4 text-right">
-                    <p className="text-lg font-bold flex items-center justify-end gap-1">Total Return Value: <IndianRupee className="h-5 w-5" />{totalReturnValue.toFixed(2)}</p>
+                    <p className="text-lg font-bold flex items-center justify-end gap-1">{t('Total Return Value:')} <IndianRupee className="h-5 w-5" />{totalReturnValue.toFixed(2)}</p>
                     <Button onClick={handleProcessReturn} disabled={totalReturnValue === 0} className="mt-2">
-                      <RotateCcw className="mr-2 h-4 w-4" /> Process Return
+                      <RotateCcw className="mr-2 h-4 w-4" /> {t('Process Return')}
                     </Button>
                 </div>
               </CardContent>
@@ -352,8 +352,8 @@ export function SalesReturnTab() {
       
       <Card>
         <CardHeader>
-            <CardTitle>Credit Note History</CardTitle>
-            <CardDescription>A log of all processed sales returns.</CardDescription>
+            <CardTitle>{t('Credit Note History')}</CardTitle>
+            <CardDescription>{t('A log of all processed sales returns.')}</CardDescription>
         </CardHeader>
         <CardContent>
             <div className="rounded-md border">
@@ -366,7 +366,7 @@ export function SalesReturnTab() {
                         ))}
                     </TableHeader>
                     <TableBody>
-                        {isHistoryLoading ? <TableRow><TableCell colSpan={returnHistoryColumns.length} className="h-24 text-center">Loading history...</TableCell></TableRow>
+                        {isHistoryLoading ? <TableRow><TableCell colSpan={returnHistoryColumns.length} className="h-24 text-center">{t('Loading history...')}</TableCell></TableRow>
                         : historyTable.getRowModel().rows?.length ? historyTable.getRowModel().rows.map(row => (
                             <TableRow key={row.id}>
                                 {row.getVisibleCells().map(cell => (
@@ -375,7 +375,7 @@ export function SalesReturnTab() {
                                     </TableCell>
                                 ))}
                             </TableRow>
-                        )) : <TableRow><TableCell colSpan={returnHistoryColumns.length} className="h-24 text-center">No credit notes recorded yet.</TableCell></TableRow>}
+                        )) : <TableRow><TableCell colSpan={returnHistoryColumns.length} className="h-24 text-center">{t('No credit notes recorded yet.')}</TableCell></TableRow>}
                     </TableBody>
                 </Table>
             </div>

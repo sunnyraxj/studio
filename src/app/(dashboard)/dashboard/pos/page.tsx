@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -10,12 +9,14 @@ import { FileText, RotateCcw, History, ClipboardList } from 'lucide-react';
 import { useShopSettings } from '@/firebase';
 import type { KOT } from '../page';
 import { KotListTab } from './components/kot-list-tab';
+import { useTranslation } from '@/hooks/use-translation';
 
 
 export default function POSPage() {
   const [activeTab, setActiveTab] = useState('new-sale');
   const { settings: shopSettings } = useShopSettings();
   const [kotToBill, setKotToBill] = useState<KOT | null>(null);
+  const { t } = useTranslation();
 
   const handleBillFromKot = (kot: KOT) => {
     setKotToBill(kot);
@@ -31,18 +32,18 @@ export default function POSPage() {
        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-grow flex flex-col">
         <TabsList className={`grid w-full ${shopSettings?.enableKot ? 'grid-cols-4' : 'grid-cols-3'}`}>
           <TabsTrigger value="new-sale">
-             <FileText className="mr-2 h-4 w-4" /> New Sale
+             <FileText className="mr-2 h-4 w-4" /> {t('New Sale')}
           </TabsTrigger>
           {shopSettings?.enableKot && (
              <TabsTrigger value="kot-list">
-                <ClipboardList className="mr-2 h-4 w-4" /> Active KOTs
+                <ClipboardList className="mr-2 h-4 w-4" /> {t('Active KOTs')}
             </TabsTrigger>
           )}
           <TabsTrigger value="sales-return">
-              <RotateCcw className="mr-2 h-4 w-4" /> Sales Return
+              <RotateCcw className="mr-2 h-4 w-4" /> {t('Sales Return')}
           </TabsTrigger>
           <TabsTrigger value="todays-sales">
-              <History className="mr-2 h-4 w-4" /> Today's Sales
+              <History className="mr-2 h-4 w-4" /> {t("Today's Sales")}
           </TabsTrigger>
         </TabsList>
         <TabsContent value="new-sale" className="flex-grow">

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -36,6 +35,7 @@ import { useFirestore, useUser, useDoc, useMemoFirebase, useCollection } from '@
 import { collection, query, orderBy, where, doc } from 'firebase/firestore';
 import type { Sale } from '../../page';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from '@/hooks/use-translation';
 
 
 interface TodaysSalesTabProps {
@@ -47,6 +47,7 @@ export function TodaysSalesTab({ setPosTab }: TodaysSalesTabProps) {
   const { user } = useUser();
   const firestore = useFirestore();
   const isDemoMode = !user;
+  const { t } = useTranslation();
 
   const userDocRef = useMemoFirebase(() => {
     if (isDemoMode || !firestore || !user) return null;
@@ -85,35 +86,35 @@ export function TodaysSalesTab({ setPosTab }: TodaysSalesTabProps) {
   const salesColumns: ColumnDef<Sale>[] = [
     {
       accessorKey: 'invoiceNumber',
-      header: 'Invoice #',
+      header: t('Invoice #'),
       cell: ({ row }) => <Badge variant="outline">{row.getValue('invoiceNumber')}</Badge>,
     },
     {
       accessorKey: 'date',
       header: ({ column }) => (
         <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
-          Time <CaretSortIcon className="ml-2 h-4 w-4" />
+          {t('Time')} <CaretSortIcon className="ml-2 h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => format(new Date(row.getValue('date')), 'hh:mm a'),
     },
     {
       accessorKey: 'customer.name',
-      header: 'Customer',
+      header: t('Customer'),
       cell: ({ row }) => <div className="font-medium">{row.original.customer.name}</div>,
     },
     {
       accessorKey: 'total',
       header: ({ column }) => (
         <Button variant="ghost" className='w-full justify-end' onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
-          Amount <CaretSortIcon className="ml-2 h-4 w-4" />
+          {t('Amount')} <CaretSortIcon className="ml-2 h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => <div className="text-right font-semibold flex items-center justify-end gap-1"><IndianRupee className="h-4 w-4" />{row.original.total.toLocaleString('en-IN')}</div>,
     },
     {
         id: 'actions',
-        header: () => <div className="text-right">Actions</div>,
+        header: () => <div className="text-right">{t('Actions')}</div>,
         cell: ({ row }) => {
           const saleDate = new Date(row.original.date);
           const twelveHoursAgo = subHours(new Date(), 12);
@@ -122,7 +123,7 @@ export function TodaysSalesTab({ setPosTab }: TodaysSalesTabProps) {
           return (
             <div className="text-right">
                 <Button variant="outline" size="sm" onClick={() => handleEdit(row.original.id)} disabled={!isEditable}>
-                    <Pencil className="h-4 w-4 mr-2"/> Edit
+                    <Pencil className="h-4 w-4 mr-2"/> {t('Edit')}
                 </Button>
             </div>
           );
@@ -150,15 +151,15 @@ export function TodaysSalesTab({ setPosTab }: TodaysSalesTabProps) {
   return (
     <Card className="h-full flex flex-col">
       <CardHeader>
-        <CardTitle>Today's Sales</CardTitle>
-        <CardDescription>A list of all sales recorded today. You can edit an invoice up to 12 hours after it was created.</CardDescription>
+        <CardTitle>{t("Today's Sales")}</CardTitle>
+        <CardDescription>{t("A list of all sales recorded today. You can edit an invoice up to 12 hours after it was created.")}</CardDescription>
       </CardHeader>
       <CardContent className="flex-grow">
         <div className="rounded-md border">
           <Table>
             <TableHeader>{table.getHeaderGroups().map(hg => <TableRow key={hg.id}>{hg.headers.map(h => <TableHead key={h.id}>{h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}</TableHead>)}</TableRow>)}</TableHeader>
             <TableBody>
-              {isLoading ? <TableRow><TableCell colSpan={salesColumns.length} className="h-24 text-center">Loading today's sales...</TableCell></TableRow>
+              {isLoading ? <TableRow><TableCell colSpan={salesColumns.length} className="h-24 text-center">{t("Loading today's sales...")}</TableCell></TableRow>
                 : table.getRowModel().rows?.length ? table.getRowModel().rows.map(row => (
                   <TableRow key={row.id}>
                     {row.getVisibleCells().map(cell => (
@@ -167,7 +168,7 @@ export function TodaysSalesTab({ setPosTab }: TodaysSalesTabProps) {
                       </TableCell>
                     ))}
                   </TableRow>
-                )) : <TableRow><TableCell colSpan={salesColumns.length} className="h-24 text-center">No sales recorded yet today.</TableCell></TableRow>}
+                )) : <TableRow><TableCell colSpan={salesColumns.length} className="h-24 text-center">{t("No sales recorded yet today.")}</TableCell></TableRow>}
             </TableBody>
           </Table>
         </div>
