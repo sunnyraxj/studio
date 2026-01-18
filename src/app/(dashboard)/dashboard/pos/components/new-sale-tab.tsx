@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -898,7 +897,7 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
                                             const discountAmount = itemTotal * (item.discount / 100);
                                             const finalPrice = itemTotal - discountAmount;
                                             return (
-                                            <TableRow key={item.product.id}>
+                                            <TableRow key={`${item.product.id}-${index}`}>
                                                 <TableCell className="py-2">{index + 1}</TableCell>
                                                 <TableCell className="py-2 px-2">
                                                     <Button variant="ghost" size="icon" className='h-6 w-6 text-red-500 hover:text-red-700' onClick={() => openDeleteConfirm(item.product.id)}>
