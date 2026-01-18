@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useRef } from 'react';
@@ -13,6 +12,7 @@ import { toast } from '@/hooks/use-toast.tsx';
 import { KOT as KOTPrintable } from './kot';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { formatDistanceToNow } from 'date-fns';
 
 
 interface KotListTabProps {
@@ -91,7 +91,7 @@ export function KotListTab({ onBillFromKot }: KotListTabProps) {
     return (
         <>
         <ScrollArea className="h-full">
-            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
                 {!activeKots || activeKots.length === 0 ? (
                     <div className="col-span-full text-center text-muted-foreground py-20">
                         <p>No active KOTs found.</p>
@@ -107,6 +107,9 @@ export function KotListTab({ onBillFromKot }: KotListTabProps) {
                                         </CardTitle>
                                         <CardDescription className="text-xs pt-1">
                                             {kot.customerName}
+                                        </CardDescription>
+                                        <CardDescription className="text-xs pt-0.5 text-blue-600 font-semibold">
+                                            {formatDistanceToNow(new Date(kot.createdAt), { addSuffix: true })}
                                         </CardDescription>
                                     </div>
                                     <div className="flex items-center -mr-2 -mt-2">
