@@ -228,7 +228,7 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
             
             newWindow.document.write(`<style>${styles}</style>`);
             newWindow.document.write('</head><body>');
-            newWindow.document.write(printableContent);
+            newWindow.document.write(`<div class="print-container">${printableContent}</div>`);
             newWindow.document.write('</body></html>');
             newWindow.document.close();
             newWindow.focus();
@@ -269,7 +269,7 @@ export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
             
             newWindow.document.write(`<style>${styles}</style>`);
             newWindow.document.write('</head><body>');
-            newWindow.document.write(printableContent);
+            newWindow.document.write(`<div class="print-container">${printableContent}</div>`);
             newWindow.document.write('</body></html>');
             newWindow.document.close();
             newWindow.focus();
