@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useRef } from 'react';
@@ -69,7 +68,7 @@ export function KotListTab({ onBillFromKot }: KotListTabProps) {
                   .join('');
                 
                 newWindow.document.write(`<style>${styles}</style>`);
-                newWindow.document.write('</head><body class="kot-print-body">');
+                newWindow.document.write('<body class="kot-print-body">');
                 newWindow.document.write(`<div class="print-container">${printableContent}</div>`);
                 newWindow.document.write('</body></html>');
                 newWindow.document.close();
@@ -98,17 +97,17 @@ export function KotListTab({ onBillFromKot }: KotListTabProps) {
                 ) : (
                     activeKots.map(kot => (
                         <Card key={kot.id} className="flex flex-col">
-                            <CardHeader>
+                            <CardHeader className="p-4">
                                 <div className="flex justify-between items-start">
                                     <div>
-                                        <CardTitle className="flex items-center gap-2">
-                                            <Hash className="h-5 w-5"/> Table: {kot.tableNumber || 'N/A'}
+                                        <CardTitle className="flex items-center gap-2 text-base font-bold">
+                                            <Hash className="h-4 w-4"/> Table: {kot.tableNumber || 'N/A'}
                                         </CardTitle>
-                                        <CardDescription className="flex items-center gap-2 pt-1">
-                                            <User className="h-4 w-4"/> {kot.customerName}
+                                        <CardDescription className="flex items-center gap-1 pt-1 text-xs">
+                                            <User className="h-3 w-3"/> {kot.customerName}
                                         </CardDescription>
                                     </div>
-                                    <div className="flex items-center">
+                                    <div className="flex items-center -mr-2 -mt-2">
                                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setKotToReprint(kot)}>
                                         <Printer className="h-4 w-4" />
                                      </Button>
@@ -118,24 +117,26 @@ export function KotListTab({ onBillFromKot }: KotListTabProps) {
                                     </div>
                                 </div>
                             </CardHeader>
-                            <CardContent className="flex-grow space-y-2">
-                                <ul className="text-sm space-y-1">
-                                    {kot.items.map((item, index) => (
-                                        <li key={index} className="flex justify-between">
-                                            <span>{item.name}</span>
-                                            <span className="font-semibold">x{item.quantity}</span>
-                                        </li>
-                                    ))}
-                                </ul>
+                            <CardContent className="flex-grow space-y-2 p-4 pt-0">
+                                <ScrollArea className="h-24">
+                                    <ul className="text-xs space-y-0.5 pr-2">
+                                        {kot.items.map((item, index) => (
+                                            <li key={index} className="flex justify-between">
+                                                <span>{item.name}</span>
+                                                <span className="font-semibold">x{item.quantity}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </ScrollArea>
                                 {kot.instructions && (
                                      <div className="text-xs text-muted-foreground pt-2 border-t">
                                         <p className="font-semibold flex items-center gap-1"><MessageSquare className="h-3 w-3"/>Instructions:</p>
-                                        <p className="pl-1">{kot.instructions}</p>
+                                        <p className="pl-1 text-xs whitespace-pre-wrap">{kot.instructions}</p>
                                      </div>
                                 )}
                             </CardContent>
-                            <CardFooter>
-                                <Button className="w-full" onClick={() => onBillFromKot(kot)}>
+                            <CardFooter className="p-2 pt-0">
+                                <Button className="w-full" size="sm" onClick={() => onBillFromKot(kot)}>
                                     Bill Order
                                 </Button>
                             </CardFooter>
@@ -156,7 +157,7 @@ export function KotListTab({ onBillFromKot }: KotListTabProps) {
                     <div ref={printRef}>
                        {kotToReprint && (
                            <KOTPrintable
-                                cart={kotToReprint.items.map(item => ({ product: { name: item.name }, quantity: item.quantity }))}
+                                cart={kotToReprint.items.map(item => ({ product: { name: item.name, price: item.price, id: item.productId, margin: item.margin, sku: item.sku, hsn: item.hsn, gst: item.gst, material: '' }, quantity: item.quantity, discount: 0 }))}
                                 invoiceNumber={kotToReprint.id.slice(-6).toUpperCase()} // Using part of KOT ID as a ref
                                 customerName={kotToReprint.customerName}
                                 instructions={kotToReprint.instructions}
