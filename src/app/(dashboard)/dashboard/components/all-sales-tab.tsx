@@ -100,6 +100,7 @@ export function AllSalesTab({ isDemoMode, demoSales, setDemoSales }: AllSalesTab
   const handlePrint = (type: 'invoice' | 'receipt') => {
     const printContentRef = type === 'invoice' ? invoiceRef : receiptRef;
     const printTitle = type === 'invoice' ? 'Print Invoice' : 'Print Receipt';
+    const bodyClass = type === 'invoice' ? 'invoice-print-body' : 'receipt-print-body';
     
     const printContent = printContentRef.current;
     if (printContent) {
@@ -119,7 +120,7 @@ export function AllSalesTab({ isDemoMode, demoSales, setDemoSales }: AllSalesTab
               }).join('');
             
             newWindow.document.write(`<style>${styles}</style>`);
-            newWindow.document.write('</head><body>');
+            newWindow.document.write(`</head><body class="${bodyClass}">`);
             newWindow.document.write(`<div class="print-container">${printableContent}</div>`);
             newWindow.document.write('</body></html>');
             newWindow.document.close();

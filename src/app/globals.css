@@ -110,44 +110,63 @@
 }
 
 @media print {
-  @page {
+  body {
+    -webkit-print-color-adjust: exact;
+  }
+
+  .print-hidden, body:not([class*="-print-body"]) > *:not(.print-container) {
+    display: none !important;
+  }
+
+  .print-container {
+    display: block !important;
+    position: static !important;
+  }
+
+  /* Default/A4 Invoice Styles */
+  body.invoice-print-body @page {
+    size: A4;
+    margin: 2cm;
+  }
+
+  /* KOT & Thermal Receipt Specific Styles */
+  body.kot-print-body @page,
+  body.receipt-print-body @page {
+    size: 80mm auto; /* 80mm width, height grows */
+    margin: 3mm;
+  }
+  
+  body.kot-print-body,
+  body.receipt-print-body {
+    width: 80mm;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Barcode Label Specific Styles */
+  body.barcode-print-body @page {
     size: 2.5in 1.5in;
     margin: 0 !important;
   }
 
-  html, body {
+  body.barcode-print-body {
     width: 2.5in;
     height: 1.5in;
     margin: 0 !important;
     padding: 0 !important;
-    -webkit-print-color-adjust: exact;
   }
 
-  body > *:not(.print-container) {
-    display: none;
-  }
-  
-  .print-container {
-    display: block !important;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
+  body.barcode-print-body .print-container {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 0;
   }
 
-  .label-print-container {
-    visibility: visible;
-    position: absolute;
-    top: 0;
-    left: 0;
+  body.barcode-print-body .label-print-container {
     width: 2.5in;
     height: 1.5in;
     box-sizing: border-box;
     overflow: hidden;
-  }
-  
-  .label-print-container ~ .label-print-container {
-    page-break-before: always;
+    page-break-inside: avoid;
   }
 }

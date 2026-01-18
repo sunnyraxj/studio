@@ -248,7 +248,7 @@ const SupplierDetails: React.FC<{ supplier: AggregatedSupplier, shopId: string |
                     catch (e) { console.log('Access to stylesheet %s is denied. Skipping.', styleSheet.href); return ''; }
                 }).join('');
                 newWindow.document.write(`<style>${styles}</style>`);
-                newWindow.document.write('</head><body><div class="print-container">');
+                newWindow.document.write('</head><body class="invoice-print-body"><div class="print-container">');
                 newWindow.document.write(printableContent);
                 newWindow.document.write('</div></body></html>');
                 newWindow.document.close();

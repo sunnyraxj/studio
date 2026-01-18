@@ -25,7 +25,7 @@ export const KOT: React.FC<KotProps> = ({ cart, invoiceNumber, customerName, ins
     }
 
     return (
-        <div className="bg-white text-black p-2 font-mono text-xs w-[80mm]">
+        <div className="bg-white text-black p-2 font-mono text-xs w-full">
             <header className="text-center space-y-1 mb-2">
                 <h1 className="text-lg font-bold">K.O.T.</h1>
                 <div className="text-xs">

@@ -42,7 +42,7 @@ export const BulkBarcodeDialog: React.FC<BulkBarcodeDialogProps> = ({ isOpen, on
                     .join('');
 
                 newWindow.document.write(`<style>${styles}</style>`);
-                newWindow.document.write('</head><body>');
+                newWindow.document.write('</head><body class="barcode-print-body">');
                 newWindow.document.write(`<div class="print-container">${printableContent}</div>`);
                 newWindow.document.write('</body></html>');
                 newWindow.document.close();
