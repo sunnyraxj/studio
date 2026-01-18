@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -38,44 +37,48 @@ import { Label } from '@/components/ui/label';
 import type { Sale } from '../../page';
 import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit, startAfter, getDocs, where, Query, DocumentData, getCountFromServer, doc } from 'firebase/firestore';
+import { useTranslation } from '@/hooks/use-translation';
 
 const demoChallans: Sale[] = [
     { id: '1', invoiceNumber: 'CHLN-001', date: new Date().toISOString(), customer: { name: 'Ravi Kumar', phone: '9876543210' }, total: 2500, paymentMode: 'upi', items: [], subtotal: 2500, cgst: 0, sgst: 0, igst: 0 },
     { id: '2', invoiceNumber: 'CHLN-002', date: new Date(Date.now() - 86400000).toISOString(), customer: { name: 'Priya Sharma', phone: '9876543211' }, total: 1200, paymentMode: 'card', items: [], subtotal: 1200, cgst: 0, sgst: 0, igst: 0 },
 ];
 
-const challanColumns: ColumnDef<Sale>[] = [
-  {
-    accessorKey: 'invoiceNumber',
-    header: 'Challan #',
-    cell: ({ row }) => <Badge variant="outline">{row.getValue('invoiceNumber')}</Badge>,
-  },
-  {
-    accessorKey: 'customer.name',
-    header: 'Customer',
-    cell: ({ row }) => <div className="font-medium">{row.original.customer.name}</div>,
-  },
-  {
-    accessorKey: 'date',
-    header: ({ column }) => (
-      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
-        Date <CaretSortIcon className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => format(new Date(row.getValue('date')), 'dd MMM yyyy'),
-  },
-  {
-    accessorKey: 'total',
-    header: ({ column }) => (
-      <Button variant="ghost" className='w-full justify-end' onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
-        Amount <CaretSortIcon className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => <div className="text-right font-semibold">₹{row.original.total.toLocaleString('en-IN')}</div>,
-  },
-];
-
 export function ChallanListTab() {
+  const { t } = useTranslation();
+
+  const challanColumns: ColumnDef<Sale>[] = [
+    {
+      accessorKey: 'invoiceNumber',
+      header: t('Challan #'),
+      cell: ({ row }) => <Badge variant="outline">{row.getValue('invoiceNumber')}</Badge>,
+    },
+    {
+      accessorKey: 'customer.name',
+      header: t('Customer'),
+      cell: ({ row }) => <div className="font-medium">{row.original.customer.name}</div>,
+    },
+    {
+      accessorKey: 'date',
+      header: ({ column }) => (
+        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+          {t('Date')} <CaretSortIcon className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => format(new Date(row.getValue('date')), 'dd MMM yyyy'),
+    },
+    {
+      accessorKey: 'total',
+      header: ({ column }) => (
+        <Button variant="ghost" className='w-full justify-end' onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+          {t('Amount')} <CaretSortIcon className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => <div className="text-right font-semibold">₹{row.original.total.toLocaleString('en-IN')}</div>,
+    },
+  ];
+
+
   const { user } = useUser();
   const firestore = useFirestore();
   const isDemoMode = !user;
@@ -224,14 +227,14 @@ export function ChallanListTab() {
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle>All Challans</CardTitle>
-            <CardDescription>A complete list of all your delivery challans.</CardDescription>
+            <CardTitle>{t('All Challans')}</CardTitle>
+            <CardDescription>{t('A complete list of all your delivery challans.')}</CardDescription>
           </div>
            <div className="flex items-center gap-4">
              <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                    placeholder="Search by customer or challan..."
+                    placeholder={t('Search by customer or challan...')}
                     className="pl-8 w-64"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -239,7 +242,7 @@ export function ChallanListTab() {
             </div>
             <div className="flex items-end gap-2 p-2 border rounded-lg bg-muted/50">
                 <div className="grid gap-1.5">
-                  <Label className="text-xs">Start Date</Label>
+                  <Label className="text-xs">{t('Start Date')}</Label>
                   <div className="flex gap-1">
                       <Input placeholder="DD" value={startDay} onChange={e => setStartDay(e.target.value)} className="w-12 h-8" />
                       <Input placeholder="MM" value={startMonth} onChange={e => setStartMonth(e.target.value)} className="w-12 h-8" />
@@ -247,18 +250,18 @@ export function ChallanListTab() {
                   </div>
                 </div>
                 <div className="grid gap-1.5">
-                  <Label className="text-xs">End Date</Label>
+                  <Label className="text-xs">{t('End Date')}</Label>
                    <div className="flex gap-1">
                       <Input placeholder="DD" value={endDay} onChange={e => setEndDay(e.target.value)} className="w-12 h-8" />
                       <Input placeholder="MM" value={endMonth} onChange={e => setEndMonth(e.target.value)} className="w-12 h-8" />
                       <Input placeholder="YYYY" value={endYear} onChange={e => setEndYear(e.target.value)} className="w-20 h-8" />
                   </div>
                 </div>
-                <Button onClick={handleFilter} size="sm">Filter</Button>
+                <Button onClick={handleFilter} size="sm">{t('Filter')}</Button>
                 {isAnyFilterApplied && (
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleClearFilter}>
                       <X className="h-4 w-4" />
-                      <span className="sr-only">Clear Filter</span>
+                      <span className="sr-only">{t('Clear Filter')}</span>
                   </Button>
                 )}
             </div>
@@ -270,7 +273,7 @@ export function ChallanListTab() {
           <Table>
             <TableHeader>{table.getHeaderGroups().map(hg => <TableRow key={hg.id}>{hg.headers.map(h => <TableHead key={h.id}>{h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}</TableHead>)}</TableRow>)}</TableHeader>
             <TableBody>
-              {isLoading && !isDemoMode ? <TableRow><TableCell colSpan={challanColumns.length} className="h-24 text-center">Loading challans...</TableCell></TableRow>
+              {isLoading && !isDemoMode ? <TableRow><TableCell colSpan={challanColumns.length} className="h-24 text-center">{t('Loading challans...')}</TableCell></TableRow>
                 : table.getRowModel().rows?.length ? table.getRowModel().rows.map(row => (
                   <React.Fragment key={row.id}>
                     <TableRow data-state={row.getIsSelected() && 'selected'}>
@@ -281,7 +284,7 @@ export function ChallanListTab() {
                       ))}
                     </TableRow>
                   </React.Fragment>
-                )) : <TableRow><TableCell colSpan={challanColumns.length} className="h-24 text-center">No challans found for the selected period.</TableCell></TableRow>}
+                )) : <TableRow><TableCell colSpan={challanColumns.length} className="h-24 text-center">{t('No challans found for the selected period.')}</TableCell></TableRow>}
             </TableBody>
           </Table>
         </div>

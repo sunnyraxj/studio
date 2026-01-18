@@ -1,9 +1,9 @@
-
 'use client';
 
 import React from 'react';
 import Image from 'next/image';
 import { format } from 'date-fns';
+import { useTranslation } from '@/hooks/use-translation';
 
 type ShopSettings = {
     companyName?: string;
@@ -49,8 +49,10 @@ interface ChallanProps {
 }
 
 export const Challan: React.FC<ChallanProps> = ({ sale, settings }) => {
+    const { t } = useTranslation();
+
     if (!sale || !settings) {
-        return <div className="p-8 text-center">Loading challan...</div>;
+        return <div className="p-8 text-center">{t('Loading challan...')}</div>;
     }
     
     const {
@@ -70,9 +72,9 @@ export const Challan: React.FC<ChallanProps> = ({ sale, settings }) => {
                             <Image src={settings.logoUrl} alt={`${settings.companyName} logo`} className="h-16 w-auto" width={64} height={64}/>
                         )}
                         <div className="text-center flex-grow">
-                            <h2 className="text-3xl font-bold text-primary uppercase">Delivery Challan</h2>
-                            <p className="text-sm font-bold text-gray-900"><strong>Challan No:</strong> {invoiceNumber}</p>
-                            <p className="text-sm font-bold text-gray-900"><strong>Date:</strong> {format(new Date(date), 'd/M/yyyy')}</p>
+                            <h2 className="text-3xl font-bold text-primary uppercase">{t('Delivery Challan')}</h2>
+                            <p className="text-sm font-bold text-gray-900"><strong>{t('Challan No:')}</strong> {invoiceNumber}</p>
+                            <p className="text-sm font-bold text-gray-900"><strong>{t('Date:')}</strong> {format(new Date(date), 'd/M/yyyy')}</p>
                         </div>
                         <div className="w-16"></div> {/* Spacer */}
                     </div>
@@ -80,16 +82,16 @@ export const Challan: React.FC<ChallanProps> = ({ sale, settings }) => {
                         <div className="space-y-1">
                             <h1 className="text-2xl font-bold text-gray-800">{settings.companyName}</h1>
                             <p className="text-sm text-gray-600 max-w-xs">{settings.companyAddress}</p>
-                            <p className="text-sm text-gray-600">Contact: {settings.companyPhone}</p>
+                            <p className="text-sm text-gray-600">{t('Contact:')} {settings.companyPhone}</p>
                         </div>
                         <div className="text-right space-y-1">
-                            <h3 className="font-bold text-gray-700 mb-1">Delivered To:</h3>
+                            <h3 className="font-bold text-gray-700 mb-1">{t('Delivered To:')}</h3>
                             <p className="font-semibold text-gray-800 text-base">{customer.name}</p>
                             <p className="text-sm text-gray-600">{customer.address}</p>
                             {customer.state && customer.pin && (
                                 <p className="text-sm text-gray-600">{customer.state} - {customer.pin}</p>
                             )}
-                            {customer.phone && <p className="text-sm text-gray-600">Phone: {customer.phone}</p>}
+                            {customer.phone && <p className="text-sm text-gray-600">{t('Phone:')} {customer.phone}</p>}
                         </div>
                     </div>
                 </header>
@@ -99,10 +101,10 @@ export const Challan: React.FC<ChallanProps> = ({ sale, settings }) => {
                         <thead className="bg-primary text-primary-foreground print-color-exact">
                             <tr>
                                 <th className="text-left font-semibold p-2">#</th>
-                                <th className="text-left font-semibold p-2">Product</th>
-                                <th className="text-right font-semibold p-2">Qty</th>
-                                <th className="text-right font-semibold p-2">Rate</th>
-                                <th className="text-right font-semibold p-2">Total</th>
+                                <th className="text-left font-semibold p-2">{t('Product')}</th>
+                                <th className="text-right font-semibold p-2">{t('Qty')}</th>
+                                <th className="text-right font-semibold p-2">{t('Rate')}</th>
+                                <th className="text-right font-semibold p-2">{t('Total')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -128,7 +130,7 @@ export const Challan: React.FC<ChallanProps> = ({ sale, settings }) => {
                     <div className="w-full sm:w-2/3 md:w-1/2">
                         <div className="pt-4 mt-4 border-t-2 border-gray-700">
                             <div className="flex justify-between items-center mb-2">
-                                <span className="text-xl font-bold text-gray-900">Total:</span>
+                                <span className="text-xl font-bold text-gray-900">{t('Total:')}</span>
                                 <span className="text-xl font-bold text-gray-900">₹{total.toFixed(2)}</span>
                             </div>
                         </div>
@@ -138,13 +140,13 @@ export const Challan: React.FC<ChallanProps> = ({ sale, settings }) => {
                 <footer className="mt-16 text-sm text-gray-500 border-t border-gray-700 pt-4">
                     <div className="flex justify-between items-start gap-4">
                        <div className='text-sm text-gray-900 flex-1'>
-                            <p className="font-bold text-base text-gray-800">Terms:</p>
-                            <p className="text-xs">This is a delivery challan and not a tax invoice. All goods remain property of {settings.companyName} until paid for in full.</p>
+                            <p className="font-bold text-base text-gray-800">{t('Terms:')}</p>
+                            <p className="text-xs">{t('This is a delivery challan and not a tax invoice. All goods remain property of {companyName} until paid for in full.').replace('{companyName}', settings.companyName || '')}</p>
                        </div>
                        <div className="text-center flex-1 ml-auto w-56">
-                           <p className="font-semibold">For, {settings.companyName}</p>
+                           <p className="font-semibold">{t('For, {companyName}').replace('{companyName}', settings.companyName || '')}</p>
                            <div className="h-20"></div> {/* Space for stamp/signature */}
-                           <p className="font-semibold">Authorised Signatory</p>
+                           <p className="font-semibold">{t('Authorised Signatory')}</p>
                        </div>
                    </div>
                </footer>
