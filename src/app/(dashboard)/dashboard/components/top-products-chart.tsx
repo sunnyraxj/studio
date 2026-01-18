@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -27,6 +26,7 @@ import type { Sale, CreditNote } from '../page';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFirestore, useUser, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, doc } from 'firebase/firestore';
+import { useTranslation } from '@/hooks/use-translation';
 
 
 const chartConfig = {
@@ -40,6 +40,7 @@ export function TopProductsChart({ salesData, isLoading: isSalesLoading }: { sal
   const { user } = useUser();
   const firestore = useFirestore();
   const isDemoMode = !user;
+  const { t } = useTranslation();
   
   const userDocRef = useMemoFirebase(() => (isDemoMode || !firestore || !user ? null : doc(firestore, `users/${user.uid}`)), [user, firestore, isDemoMode]);
   const { data: userData } = useDoc(userDocRef);
@@ -119,19 +120,19 @@ export function TopProductsChart({ salesData, isLoading: isSalesLoading }: { sal
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Top Selling Products</CardTitle>
-          <CardDescription>Highest selling units by quantity.</CardDescription>
+          <CardTitle>{t('Top Selling Products')}</CardTitle>
+          <CardDescription>{t('Highest selling units by quantity.')}</CardDescription>
         </div>
         <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select a time range" />
+                <SelectValue placeholder={t('Select a time range')} />
             </SelectTrigger>
             <SelectContent>
-                <SelectItem value="this-month">This Month</SelectItem>
-                <SelectItem value="last-3-months">Last 3 Months</SelectItem>
-                <SelectItem value="last-6-months">Last 6 Months</SelectItem>
-                <SelectItem value="this-year">This Year</SelectItem>
-                <SelectItem value="last-year">Last Year</SelectItem>
+                <SelectItem value="this-month">{t('This Month')}</SelectItem>
+                <SelectItem value="last-3-months">{t('Last 3 Months')}</SelectItem>
+                <SelectItem value="last-6-months">{t('Last 6 Months')}</SelectItem>
+                <SelectItem value="this-year">{t('This Year')}</SelectItem>
+                <SelectItem value="last-year">{t('Last Year')}</SelectItem>
             </SelectContent>
         </Select>
       </CardHeader>

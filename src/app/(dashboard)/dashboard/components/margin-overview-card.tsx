@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -21,12 +20,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { IndianRupee } from 'lucide-react';
 import { useFirestore, useUser, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, doc, query } from 'firebase/firestore';
+import { useTranslation } from '@/hooks/use-translation';
 
 
 export function MarginOverviewCard({ salesData, isLoading: isSalesLoading }: { salesData: Sale[] | null, isLoading: boolean }) {
   const { user } = useUser();
   const firestore = useFirestore();
   const isDemoMode = !user;
+  const { t } = useTranslation();
   
   const userDocRef = useMemoFirebase(() => (isDemoMode || !firestore || !user ? null : doc(firestore, `users/${user.uid}`)), [user, firestore, isDemoMode]);
   const { data: userData } = useDoc(userDocRef);
@@ -124,26 +125,26 @@ export function MarginOverviewCard({ salesData, isLoading: isSalesLoading }: { s
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-base font-medium">Profit Margin</CardTitle>
+        <CardTitle className="text-base font-medium">{t('Profit Margin')}</CardTitle>
         <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger className="w-[140px] h-8 text-xs">
-                <SelectValue placeholder="Select range" />
+                <SelectValue placeholder={t('Select range')} />
             </SelectTrigger>
             <SelectContent>
-                <SelectItem value="today">Today</SelectItem>
-                <SelectItem value="this-week">This Week</SelectItem>
-                <SelectItem value="this-month">This Month</SelectItem>
-                <SelectItem value="last-3-months">Last 3 Months</SelectItem>
-                <SelectItem value="last-6-months">Last 6 Months</SelectItem>
-                <SelectItem value="this-year">This Year</SelectItem>
-                <SelectItem value="last-year">Last Year</SelectItem>
+                <SelectItem value="today">{t('Today')}</SelectItem>
+                <SelectItem value="this-week">{t('This Week')}</SelectItem>
+                <SelectItem value="this-month">{t('This Month')}</SelectItem>
+                <SelectItem value="last-3-months">{t('Last 3 Months')}</SelectItem>
+                <SelectItem value="last-6-months">{t('Last 6 Months')}</SelectItem>
+                <SelectItem value="this-year">{t('This Year')}</SelectItem>
+                <SelectItem value="last-year">{t('Last Year')}</SelectItem>
             </SelectContent>
         </Select>
       </CardHeader>
       <CardContent>
         {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">{marginPercentage.toFixed(2)}%</div>}
          <p className="text-xs text-muted-foreground flex items-center gap-1">
-            Profit of <IndianRupee className="h-3 w-3" />{totalProfit.toLocaleString('en-IN', { maximumFractionDigits: 0 })} from revenue of <IndianRupee className="h-3 w-3" />{totalRevenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+            {t('Profit of')} <IndianRupee className="h-3 w-3" />{totalProfit.toLocaleString('en-IN', { maximumFractionDigits: 0 })} {t('from revenue of')} <IndianRupee className="h-3 w-3" />{totalRevenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
         </p>
       </CardContent>
     </Card>

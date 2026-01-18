@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useState, useEffect, Suspense } from 'react';
@@ -27,6 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
+import { useTranslation } from '@/hooks/use-translation';
 
 
 // Common Types
@@ -198,6 +198,7 @@ export default function DashboardPage() {
   const firestore = useFirestore();
   const isDemoMode = !user;
   const [activeTab, setActiveTab] = useState('overview');
+  const { t } = useTranslation();
   
   // Centralized state for demo data
   const [demoSales, setDemoSales] = useState<Sale[]>(initialDemoSales);
@@ -271,11 +272,11 @@ export default function DashboardPage() {
   const handleExport = () => {
     const formattedDate = format(selectedDate, 'dd-MMM-yyyy');
     
-    let content = `Sales Report for: ${formattedDate}\n`;
+    let content = `${t('Sales Report for:')} ${formattedDate}\n`;
     content += `-----------------------------------\n`;
-    content += `Cash:    ₹${todayPaymentTotals.cash.toFixed(2)}\n`;
-    content += `Card:    ₹${todayPaymentTotals.card.toFixed(2)}\n`;
-    content += `UPI:     ₹${todayPaymentTotals.upi.toFixed(2)}\n`;
+    content += `${t('Cash')}:    ₹${todayPaymentTotals.cash.toFixed(2)}\n`;
+    content += `${t('Card')}:    ₹${todayPaymentTotals.card.toFixed(2)}\n`;
+    content += `${t('UPI')}:     ₹${todayPaymentTotals.upi.toFixed(2)}\n`;
     content += `-----------------------------------\n`;
     content += `TOTAL:   ₹${todaySales.toFixed(2)}\n`;
     
@@ -301,7 +302,7 @@ export default function DashboardPage() {
     <div className="flex-1 space-y-6">
         <div className="flex items-center justify-between">
             <h2 className="text-3xl font-bold tracking-tight">
-                {isDemoMode ? 'Dashboard (Demo Mode)' : 'Dashboard'}
+                {isDemoMode ? t('Dashboard (Demo Mode)') : t('Dashboard')}
             </h2>
         </div>
         
@@ -312,16 +313,16 @@ export default function DashboardPage() {
                         <PartyPopper className="h-6 w-6" />
                     </div>
                     <div>
-                        <CardTitle>Welcome to Apna Billing ERP!</CardTitle>
-                        <CardDescription>Congratulations on your new subscription. We're thrilled to have you on board.</CardDescription>
+                        <CardTitle>{t('Welcome to Apna Billing ERP!')}</CardTitle>
+                        <CardDescription>{t("Congratulations on your new subscription. We're thrilled to have you on board.")}</CardDescription>
                     </div>
                 </CardHeader>
                 <CardContent>
                     <p className="text-sm text-muted-foreground mb-4">
-                       You're all set to start managing your business. The best place to start is by adding products to your inventory.
+                       {t("You're all set to start managing your business. The best place to start is by adding products to your inventory.")}
                     </p>
                     <Link href="/dashboard/inventory/add" passHref>
-                        <Button>Add Your First Product</Button>
+                        <Button>{t('Add Your First Product')}</Button>
                     </Link>
                 </CardContent>
             </Card>
@@ -329,20 +330,20 @@ export default function DashboardPage() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
             <TabsList>
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="sales">All Sales</TabsTrigger>
-                <TabsTrigger value="reports">Reports</TabsTrigger>
-                <TabsTrigger value="payments">Payments</TabsTrigger>
-                <TabsTrigger value="customers">Customers</TabsTrigger>
-                <TabsTrigger value="gst" disabled={!hasGstin}>GST Reports</TabsTrigger>
-                <TabsTrigger value="khata">Khata Book</TabsTrigger>
+                <TabsTrigger value="overview">{t('Overview')}</TabsTrigger>
+                <TabsTrigger value="sales">{t('All Sales')}</TabsTrigger>
+                <TabsTrigger value="reports">{t('Reports')}</TabsTrigger>
+                <TabsTrigger value="payments">{t('Payments')}</TabsTrigger>
+                <TabsTrigger value="customers">{t('Customers')}</TabsTrigger>
+                <TabsTrigger value="gst" disabled={!hasGstin}>{t('GST Reports')}</TabsTrigger>
+                <TabsTrigger value="khata">{t('Khata Book')}</TabsTrigger>
             </TabsList>
             <TabsContent value="overview" className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     <Card>
                         <CardHeader className="pb-2">
                             <CardTitle className="text-base font-medium">
-                                Total Sales
+                                {t('Total Sales')}
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-2">
@@ -359,14 +360,14 @@ export default function DashboardPage() {
                                 className="h-9"
                             />
                             <Button variant="outline" size="sm" className="w-full" onClick={handleExport}>
-                                <FileText className="mr-2 h-4 w-4" /> Export Summary
+                                <FileText className="mr-2 h-4 w-4" /> {t('Export Summary')}
                             </Button>
                         </CardContent>
                     </Card>
                     <MarginOverviewCard salesData={salesData} isLoading={isLoading} />
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-base font-medium">This Month's Sales ({format(new Date(), 'MMMM')})</CardTitle>
+                        <CardTitle className="text-base font-medium">{t("This Month's Sales")} ({format(new Date(), 'MMMM')})</CardTitle>
                         <IndianRupee className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
@@ -375,7 +376,7 @@ export default function DashboardPage() {
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-base font-medium">This Year's Sales</CardTitle>
+                        <CardTitle className="text-base font-medium">{t("This Year's Sales")}</CardTitle>
                         <IndianRupee className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
@@ -387,31 +388,31 @@ export default function DashboardPage() {
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <div onClick={() => setActiveTab('payments')} className="cursor-pointer">
-                                <PaymentBreakdownCard title={`Today's Payments (${format(selectedDate, 'dd MMM')})`} totals={todayPaymentTotals} isLoading={isLoading} />
+                                <PaymentBreakdownCard title={`${t("Today's Payments")} (${format(selectedDate, 'dd MMM')})`} totals={todayPaymentTotals} isLoading={isLoading} />
                             </div>
                         </TooltipTrigger>
                         <TooltipContent>
-                            <p className="font-bold">Click to see more data</p>
+                            <p className="font-bold">{t('Click to see more data')}</p>
                         </TooltipContent>
                     </Tooltip>
                     <Tooltip>
                         <TooltipTrigger asChild>
                            <div onClick={() => setActiveTab('payments')} className="cursor-pointer">
-                                <PaymentBreakdownCard title="Yesterday's Payments" totals={yesterdayPaymentTotals} isLoading={isLoading} />
+                                <PaymentBreakdownCard title={t("Yesterday's Payments")} totals={yesterdayPaymentTotals} isLoading={isLoading} />
                             </div>
                         </TooltipTrigger>
                         <TooltipContent>
-                            <p className="font-bold">Click to see more data</p>
+                            <p className="font-bold">{t('Click to see more data')}</p>
                         </TooltipContent>
                     </Tooltip>
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <div onClick={() => setActiveTab('payments')} className="cursor-pointer">
-                                <PaymentBreakdownCard title="All-Time Totals" totals={allTimePaymentTotals} isLoading={isLoading}/>
+                                <PaymentBreakdownCard title={t("All-Time Totals")} totals={allTimePaymentTotals} isLoading={isLoading}/>
                             </div>
                         </TooltipTrigger>
                          <TooltipContent>
-                            <p className="font-bold">Click to see more data</p>
+                            <p className="font-bold">{t('Click to see more data')}</p>
                         </TooltipContent>
                     </Tooltip>
                 </div>
