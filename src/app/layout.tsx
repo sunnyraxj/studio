@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { FirebaseClientProvider } from '@/firebase';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as HotToaster } from 'react-hot-toast';
+import { ThemeProvider } from '@/components/theme-provider';
 
 const fontSans = FontSans({
   subsets: ['latin'],
@@ -27,11 +28,18 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={cn("min-h-screen bg-background font-sans antialiased", fontSans.variable)}>
-        <FirebaseClientProvider>
-          {children}
-        </FirebaseClientProvider>
-        <Toaster />
-        <HotToaster />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <FirebaseClientProvider>
+            {children}
+          </FirebaseClientProvider>
+          <Toaster />
+          <HotToaster />
+        </ThemeProvider>
       </body>
     </html>
   );

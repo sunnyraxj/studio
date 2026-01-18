@@ -19,10 +19,11 @@ import { useFirestore, useUser, useDoc, useMemoFirebase, useFirebaseApp, useShop
 import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { toast } from '@/hooks/use-toast.tsx';
-import { Upload, X, Building, Banknote, Settings as SettingsIcon } from 'lucide-react';
+import { Upload, X, Building, Banknote, Settings as SettingsIcon, Palette } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useTheme } from 'next-themes';
 
 type ShopSettings = {
     companyName?: string;
@@ -61,6 +62,7 @@ export default function SettingsPage() {
   const firestore = useFirestore();
   const { user } = useUser();
   const isDemoMode = !user;
+  const { setTheme, theme } = useTheme();
 
   const { settings: settingsData, isLoading } = useShopSettings();
 
@@ -308,6 +310,30 @@ export default function SettingsPage() {
                     </CardContent>
                 </Card>
               );
+          case 'appearance':
+              return (
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Appearance</CardTitle>
+                        <CardDescription>Customize the look and feel of the application.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                       <div className="flex items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                            <Label htmlFor="dark-mode" className="text-base">Dark Mode</Label>
+                            <p className="text-sm text-muted-foreground">
+                                Enable dark mode for the application.
+                            </p>
+                            </div>
+                            <Switch
+                                id="dark-mode"
+                                checked={theme === 'dark'}
+                                onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
+              );
           default:
               return null;
       }
@@ -326,6 +352,7 @@ export default function SettingsPage() {
                     <NavButton active={activeSection === 'company'} onClick={() => setActiveSection('company')} icon={Building}>Company Details</NavButton>
                     <NavButton active={activeSection === 'payments'} onClick={() => setActiveSection('payments')} icon={Banknote}>Payments</NavButton>
                     <NavButton active={activeSection === 'pos'} onClick={() => setActiveSection('pos')} icon={SettingsIcon}>POS Settings</NavButton>
+                    <NavButton active={activeSection === 'appearance'} onClick={() => setActiveSection('appearance')} icon={Palette}>Appearance</NavButton>
                 </nav>
             </aside>
             <main>
