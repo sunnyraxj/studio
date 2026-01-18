@@ -187,6 +187,7 @@ export function NewSaleTab() {
   const [isKotOpen, setIsKotOpen] = useState(false);
   const kotPrintRef = useRef(null);
   const [orderInstructions, setOrderInstructions] = useState('');
+  const [tableNumber, setTableNumber] = useState('');
 
   useEffect(() => {
     mounted.current = true;
@@ -271,7 +272,7 @@ export function NewSaleTab() {
                 if (mounted.current) {
                   setIsKotOpen(false);
                 }
-            }, 500);
+            }, 250);
         }
     }
   };
@@ -512,6 +513,7 @@ export function NewSaleTab() {
     setPaymentMode('cash');
     setPaymentDetails({ cash: 0, card: 0, upi: 0 });
     setOrderInstructions('');
+    setTableNumber('');
   };
   
   const showPrintToast = () => {
@@ -989,17 +991,28 @@ export function NewSaleTab() {
             </DialogHeader>
             <div className="p-4 flex justify-center">
                 <div ref={kotPrintRef}>
-                    <KOT cart={cart} invoiceNumber={invoiceNumber} customerName={customerName} instructions={orderInstructions} />
+                    <KOT cart={cart} invoiceNumber={invoiceNumber} customerName={customerName} instructions={orderInstructions} tableNumber={tableNumber} />
                 </div>
             </div>
-            <div className="px-4 pb-4 space-y-2">
-                <Label htmlFor="kot-instructions" className="font-semibold">Instructions</Label>
-                <Textarea
-                    id="kot-instructions"
-                    placeholder="e.g., Make it spicy, no onions..."
-                    value={orderInstructions}
-                    onChange={(e) => setOrderInstructions(e.target.value)}
-                />
+            <div className="px-4 pb-4 space-y-4">
+                <div>
+                    <Label htmlFor="table-number" className="font-semibold">Table Number</Label>
+                    <Input
+                        id="table-number"
+                        placeholder="e.g., T-5"
+                        value={tableNumber}
+                        onChange={(e) => setTableNumber(e.target.value)}
+                    />
+                </div>
+                <div>
+                    <Label htmlFor="kot-instructions" className="font-semibold">Instructions</Label>
+                    <Textarea
+                        id="kot-instructions"
+                        placeholder="e.g., Make it spicy, no onions..."
+                        value={orderInstructions}
+                        onChange={(e) => setOrderInstructions(e.target.value)}
+                    />
+                </div>
             </div>
             <DialogFooter className="p-4 border-t">
                 <Button variant="outline" onClick={() => setIsKotOpen(false)}>Close</Button>

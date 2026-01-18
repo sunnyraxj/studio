@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -15,9 +16,10 @@ interface KotProps {
     invoiceNumber: string;
     customerName: string;
     instructions?: string;
+    tableNumber?: string;
 }
 
-export const KOT: React.FC<KotProps> = ({ cart, invoiceNumber, customerName, instructions }) => {
+export const KOT: React.FC<KotProps> = ({ cart, invoiceNumber, customerName, instructions, tableNumber }) => {
     if (!cart || cart.length === 0) {
         return <div className="p-2 text-center text-xs">No items in order.</div>;
     }
@@ -27,6 +29,7 @@ export const KOT: React.FC<KotProps> = ({ cart, invoiceNumber, customerName, ins
             <header className="text-center space-y-1 mb-2">
                 <h1 className="text-lg font-bold">K.O.T.</h1>
                 <div className="text-xs">
+                    {tableNumber && <p className="font-bold text-sm">TABLE: {tableNumber}</p>}
                     <p>For: {customerName || 'Walk-in Customer'}</p>
                     <p>Bill #: {invoiceNumber}</p>
                     <p>Time: {format(new Date(), 'hh:mm a')}</p>
