@@ -91,7 +91,7 @@ export function KotListTab({ onBillFromKot }: KotListTabProps) {
     return (
         <>
         <ScrollArea className="h-full">
-            <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {!activeKots || activeKots.length === 0 ? (
                     <div className="col-span-full text-center text-muted-foreground py-20">
                         <p>No active KOTs found.</p>
@@ -120,7 +120,7 @@ export function KotListTab({ onBillFromKot }: KotListTabProps) {
                                 </div>
                             </CardHeader>
                             <CardContent className="flex-grow space-y-2 p-3 pt-0">
-                                <ScrollArea className="h-20 border-t border-b py-2">
+                                <ScrollArea className="h-16 border-t border-b py-2">
                                     <ul className="text-xs space-y-1 pr-3">
                                         {kot.items.map((item, index) => (
                                             <li key={index} className="flex justify-between items-center">
