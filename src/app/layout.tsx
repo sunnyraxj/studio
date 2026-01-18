@@ -6,6 +6,7 @@ import { FirebaseClientProvider } from '@/firebase';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as HotToaster } from 'react-hot-toast';
 import { ThemeProvider } from '@/components/theme-provider';
+import { LanguageProvider } from '@/context/language-provider';
 
 const fontSans = FontSans({
   subsets: ['latin'],
@@ -35,7 +36,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <FirebaseClientProvider>
-            {children}
+            <LanguageProvider>
+              {children}
+            </LanguageProvider>
           </FirebaseClientProvider>
           <Toaster />
           <HotToaster />

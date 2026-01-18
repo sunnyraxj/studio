@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -19,11 +20,12 @@ import { useFirestore, useUser, useDoc, useMemoFirebase, useFirebaseApp, useShop
 import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { toast } from '@/hooks/use-toast.tsx';
-import { Upload, X, Building, Banknote, Settings as SettingsIcon, Palette } from 'lucide-react';
+import { Upload, X, Building, Banknote, Settings as SettingsIcon, Palette, Languages } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useTheme } from 'next-themes';
+import { useTranslation } from '@/hooks/use-translation';
 
 type ShopSettings = {
     companyName?: string;
@@ -63,6 +65,7 @@ export default function SettingsPage() {
   const { user } = useUser();
   const isDemoMode = !user;
   const { setTheme, theme } = useTheme();
+  const { t, language, setLanguage } = useTranslation();
 
   const { settings: settingsData, isLoading } = useShopSettings();
 
@@ -314,7 +317,7 @@ export default function SettingsPage() {
               return (
                  <Card>
                     <CardHeader>
-                        <CardTitle>Appearance</CardTitle>
+                        <CardTitle>{t('Appearance')}</CardTitle>
                         <CardDescription>Customize the look and feel of the application.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -334,6 +337,21 @@ export default function SettingsPage() {
                     </CardContent>
                 </Card>
               );
+          case 'language':
+              return (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>{t('Language')}</CardTitle>
+                        <CardDescription>Choose your preferred language for the application.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <RadioGroup value={language} onValueChange={(value) => setLanguage(value as any)} className="flex items-center gap-4 pt-2">
+                          <div className="flex items-center space-x-2"><RadioGroupItem value="en" id="r-en" /><Label htmlFor="r-en">{t('English')}</Label></div>
+                          <div className="flex items-center space-x-2"><RadioGroupItem value="hi" id="r-hi" /><Label htmlFor="r-hi">{t('Hindi')}</Label></div>
+                      </RadioGroup>
+                    </CardContent>
+                </Card>
+              );
           default:
               return null;
       }
@@ -341,7 +359,7 @@ export default function SettingsPage() {
 
   return (
     <div className="flex-1 space-y-4">
-       <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
+       <h2 className="text-3xl font-bold tracking-tight">{t('Settings')}</h2>
        <p className="text-muted-foreground">
           Manage your company, bank, and payment details for invoices.
        </p>
@@ -349,10 +367,11 @@ export default function SettingsPage() {
        <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-8">
             <aside>
                 <nav className="flex flex-col gap-1">
-                    <NavButton active={activeSection === 'company'} onClick={() => setActiveSection('company')} icon={Building}>Company Details</NavButton>
-                    <NavButton active={activeSection === 'payments'} onClick={() => setActiveSection('payments')} icon={Banknote}>Payments</NavButton>
-                    <NavButton active={activeSection === 'pos'} onClick={() => setActiveSection('pos')} icon={SettingsIcon}>POS Settings</NavButton>
-                    <NavButton active={activeSection === 'appearance'} onClick={() => setActiveSection('appearance')} icon={Palette}>Appearance</NavButton>
+                    <NavButton active={activeSection === 'company'} onClick={() => setActiveSection('company')} icon={Building}>{t('Company Details')}</NavButton>
+                    <NavButton active={activeSection === 'payments'} onClick={() => setActiveSection('payments')} icon={Banknote}>{t('Payments')}</NavButton>
+                    <NavButton active={activeSection === 'pos'} onClick={() => setActiveSection('pos')} icon={SettingsIcon}>{t('POS Settings')}</NavButton>
+                    <NavButton active={activeSection === 'appearance'} onClick={() => setActiveSection('appearance')} icon={Palette}>{t('Appearance')}</NavButton>
+                    <NavButton active={activeSection === 'language'} onClick={() => setActiveSection('language')} icon={Languages}>{t('Language')}</NavButton>
                 </nav>
             </aside>
             <main>

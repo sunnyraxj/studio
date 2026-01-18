@@ -26,6 +26,8 @@ import {
   ScanBarcode,
   Truck,
   Search,
+  Languages,
+  Palette,
 } from 'lucide-react';
 
 import {
@@ -66,6 +68,7 @@ import { doc } from 'firebase/firestore';
 import { isAfter } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
 import { UniversalSearch } from './components/universal-search';
+import { useTranslation } from '@/hooks/use-translation';
 
 const navLinks = [
   {
@@ -135,6 +138,7 @@ function AppSidebar({ shopName, isExpired }: { shopName: string, isExpired: bool
   const { user } = useUser();
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
+  const { t } = useTranslation();
 
   const handleLogout = () => {
     if (auth) {
@@ -144,7 +148,7 @@ function AppSidebar({ shopName, isExpired }: { shopName: string, isExpired: bool
   };
   
   const filteredNavLinks = navLinks.filter(link => 
-    link.label.toLowerCase().includes(searchTerm.toLowerCase())
+    t(link.label as any).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const groupedLinks = filteredNavLinks.reduce((acc, link) => {
@@ -184,10 +188,10 @@ function AppSidebar({ shopName, isExpired }: { shopName: string, isExpired: bool
                                     <SidebarMenuButton
                                         isActive={pathname === link.href}
                                         disabled={isExpired && link.href !== '/dashboard/subscription'}
-                                        tooltip={link.label}
+                                        tooltip={t(link.label as any)}
                                     >
                                         <link.icon className="h-4 w-4" />
-                                        <span>{link.label}</span>
+                                        <span>{t(link.label as any)}</span>
                                     </SidebarMenuButton>
                                 </Link>
                             </SidebarMenuItem>
@@ -213,7 +217,7 @@ function AppSidebar({ shopName, isExpired }: { shopName: string, isExpired: bool
                     <DropdownMenuItem asChild disabled={isExpired}>
                       <Link href={isExpired ? '#' : "/dashboard/settings"}>
                         <Settings className="mr-2 h-4 w-4" />
-                        <span>Settings</span>
+                        <span>{t('Settings')}</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem disabled={isExpired}>
@@ -258,6 +262,7 @@ const MobileSidebar = ({ shopName, isExpired }: { shopName: string; isExpired: b
     const [open, setOpen] = useState(false);
     const auth = useAuth();
     const router = useRouter();
+    const { t } = useTranslation();
 
     const handleLogout = () => {
         if (auth) {
@@ -295,7 +300,7 @@ const MobileSidebar = ({ shopName, isExpired }: { shopName: string; isExpired: b
                             )}
                         >
                             <link.icon className="h-4 w-4" />
-                            {link.label}
+                            {t(link.label as any)}
                         </Link>
                     ))}
                 </nav>
@@ -303,7 +308,7 @@ const MobileSidebar = ({ shopName, isExpired }: { shopName: string; isExpired: b
                     <Separator />
                      <Link href={isExpired ? '#' : "/dashboard/settings"} passHref aria-disabled={isExpired}>
                          <Button variant="ghost" className="w-full justify-start gap-2" disabled={isExpired}>
-                            <Settings className="h-4 w-4" /> Settings
+                            <Settings className="h-4 w-4" /> {t('Settings')}
                          </Button>
                      </Link>
                      <Button variant="ghost" className="w-full justify-start gap-2" onClick={handleLogout}>
