@@ -84,12 +84,15 @@ export default function ShopSetupPage() {
         const settingsDocRef = doc(firestore, `shops/${shopDocRef.id}/settings`, 'details');
         const settingsData = {
             companyName,
-            companyAddress: `${companyAddress}, ${companyState}, ${companyPin}`,
+            companyAddress,
+            companyState,
+            companyPin,
             companyPhone,
             upiId: wantsUpi ? upiId : '',
             bankName: wantsBank ? bankName : '',
             accountNumber: wantsBank ? accountNumber : '',
             ifscCode: wantsBank ? ifscCode : '',
+            enableKot: true,
         };
         batch.set(settingsDocRef, settingsData);
 

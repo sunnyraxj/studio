@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -82,7 +83,7 @@ export default function SettingsPage() {
   const [upiId, setUpiId] = useState('demo@upi');
   
   // State for POS settings
-  const [enableKot, setEnableKot] = useState(false);
+  const [enableKot, setEnableKot] = useState(true);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -99,7 +100,7 @@ export default function SettingsPage() {
         setAccountNumber(settingsData.accountNumber || '');
         setIfscCode(settingsData.ifscCode || '');
         setUpiId(settingsData.upiId || '');
-        setEnableKot(settingsData.enableKot || false);
+        setEnableKot(settingsData.enableKot ?? true);
     }
   }, [settingsData]);
 
