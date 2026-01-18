@@ -7,10 +7,11 @@ import type { KOT } from '../../page';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { User, Hash, MessageSquare, XCircle, Printer } from 'lucide-react';
+import { Hash, MessageSquare, XCircle, Printer } from 'lucide-react';
 import { toast } from '@/hooks/use-toast.tsx';
 import { KOT as KOTPrintable } from './kot';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 
 
 interface KotListTabProps {
@@ -96,15 +97,15 @@ export function KotListTab({ onBillFromKot }: KotListTabProps) {
                     </div>
                 ) : (
                     activeKots.map(kot => (
-                        <Card key={kot.id} className="flex flex-col">
-                            <CardHeader className="p-4">
+                        <Card key={kot.id} className="flex flex-col bg-slate-50/50 hover:shadow-md transition-shadow">
+                            <CardHeader className="p-3">
                                 <div className="flex justify-between items-start">
                                     <div>
-                                        <CardTitle className="flex items-center gap-2 text-base font-bold">
-                                            <Hash className="h-4 w-4"/> Table: {kot.tableNumber || 'N/A'}
+                                        <CardTitle className="text-sm font-bold flex items-center gap-1.5">
+                                            <Hash className="h-3.5 w-3.5"/> Table: {kot.tableNumber || 'N/A'}
                                         </CardTitle>
-                                        <CardDescription className="flex items-center gap-1 pt-1 text-xs">
-                                            <User className="h-3 w-3"/> {kot.customerName}
+                                        <CardDescription className="text-xs pt-1">
+                                            {kot.customerName}
                                         </CardDescription>
                                     </div>
                                     <div className="flex items-center -mr-2 -mt-2">
@@ -117,20 +118,20 @@ export function KotListTab({ onBillFromKot }: KotListTabProps) {
                                     </div>
                                 </div>
                             </CardHeader>
-                            <CardContent className="flex-grow space-y-2 p-4 pt-0">
-                                <ScrollArea className="h-24">
-                                    <ul className="text-xs space-y-0.5 pr-2">
+                            <CardContent className="flex-grow space-y-2 p-3 pt-0">
+                                <ScrollArea className="h-28 border-t border-b py-2">
+                                    <ul className="text-xs space-y-1 pr-3">
                                         {kot.items.map((item, index) => (
-                                            <li key={index} className="flex justify-between">
-                                                <span>{item.name}</span>
-                                                <span className="font-semibold">x{item.quantity}</span>
+                                            <li key={index} className="flex justify-between items-center">
+                                                <span className="truncate pr-2">{item.name}</span>
+                                                <Badge variant="secondary" className="h-5">x{item.quantity}</Badge>
                                             </li>
                                         ))}
                                     </ul>
                                 </ScrollArea>
                                 {kot.instructions && (
-                                     <div className="text-xs text-muted-foreground pt-2 border-t">
-                                        <p className="font-semibold flex items-center gap-1"><MessageSquare className="h-3 w-3"/>Instructions:</p>
+                                     <div className="text-xs text-muted-foreground pt-1">
+                                        <p className="font-semibold flex items-center gap-1"><MessageSquare className="h-3 w-3"/>Note:</p>
                                         <p className="pl-1 text-xs whitespace-pre-wrap">{kot.instructions}</p>
                                      </div>
                                 )}
