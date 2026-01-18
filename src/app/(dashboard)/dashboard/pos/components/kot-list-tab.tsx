@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useRef } from 'react';
@@ -119,7 +120,7 @@ export function KotListTab({ onBillFromKot }: KotListTabProps) {
                                 </div>
                             </CardHeader>
                             <CardContent className="flex-grow space-y-2 p-3 pt-0">
-                                <ScrollArea className="h-28 border-t border-b py-2">
+                                <ScrollArea className="h-20 border-t border-b py-2">
                                     <ul className="text-xs space-y-1 pr-3">
                                         {kot.items.map((item, index) => (
                                             <li key={index} className="flex justify-between items-center">
