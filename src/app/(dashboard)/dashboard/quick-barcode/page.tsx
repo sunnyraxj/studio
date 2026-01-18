@@ -30,6 +30,7 @@ import type { InventoryItem } from '../inventory/page';
 import { format } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from '@/hooks/use-toast.tsx';
+import { useTranslation } from '@/hooks/use-translation';
 
 type ShopSettings = {
     companyName?: string;
@@ -43,6 +44,7 @@ export default function QuickBarcodePage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const isDemoMode = !user;
+  const { t } = useTranslation();
 
   const userDocRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -126,7 +128,7 @@ export default function QuickBarcodePage() {
 
   const saveAndPrint = async () => {
     if (!product.name || !product.price) {
-        toast({ variant: 'destructive', title: 'Missing Details', description: 'Product Name and MRP are required.' });
+        toast({ variant: 'destructive', title: t('Missing Details'), description: t('Product Name and MRP are required.') });
         return;
     }
 
@@ -149,7 +151,7 @@ export default function QuickBarcodePage() {
         );
         if (!isDuplicate) {
             setDemoPrintHistory(prev => [printData, ...prev]);
-            toast({ title: 'Print Saved (Demo)', description: `${product.name} added to history.` });
+            toast({ title: t('Print Saved (Demo)'), description: `${product.name} ${t('added to history.')}` });
         }
     } else {
         if (!firestore || !shopId) {
@@ -173,7 +175,7 @@ export default function QuickBarcodePage() {
                 await addDoc(collection(firestore, `shops/${shopId}/quickPrints`), printData);
             }
         } catch(e: any) {
-            toast({ variant: 'destructive', title: 'Error', description: `Failed to save print history: ${e.message}` });
+            toast({ variant: 'destructive', title: 'Error', description: `${t('Failed to save print history:')} ${e.message}` });
         }
     }
 
@@ -219,9 +221,9 @@ export default function QuickBarcodePage() {
     <div className="flex-1 space-y-4">
       <div className="flex items-center justify-between">
         <div>
-            <h2 className="text-3xl font-bold tracking-tight">Quick Barcode Generator</h2>
+            <h2 className="text-3xl font-bold tracking-tight">{t('Quick Barcode Generator')}</h2>
             <p className="text-muted-foreground">
-                Generate a single barcode label for existing or new items.
+                {t('Generate a single barcode label for existing or new items.')}
             </p>
         </div>
       </div>
@@ -229,19 +231,19 @@ export default function QuickBarcodePage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <Card>
           <CardHeader>
-            <CardTitle>Product Details</CardTitle>
+            <CardTitle>{t('Product Details')}</CardTitle>
             <CardDescription>
-              Search for an existing item or manually enter details below.
+              {t('Search for an existing item or manually enter details below.')}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 gap-6">
              <div className="p-4 border rounded-lg bg-muted/50 relative space-y-2">
-                <Label htmlFor="search-inventory" className="font-semibold">Search Inventory</Label>
+                <Label htmlFor="search-inventory" className="font-semibold">{t('Search Inventory')}</Label>
                 <div className="flex items-center gap-2">
                     <Search className="h-5 w-5 text-muted-foreground" />
                     <Input
                         id="search-inventory"
-                        placeholder="Search by name or SKU..."
+                        placeholder={t('Search by name or SKU...')}
                         value={inventorySearch}
                         onChange={(e) => setInventorySearch(e.target.value)}
                         className="bg-background"
@@ -269,15 +271,15 @@ export default function QuickBarcodePage() {
 
             <div className="flex items-center gap-4">
                 <Separator className="flex-1" />
-                <span className="text-xs text-muted-foreground">OR</span>
+                <span className="text-xs text-muted-foreground">{t('OR')}</span>
                 <Separator className="flex-1" />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="product-name">Product Name <span className="text-destructive">*</span></Label>
+              <Label htmlFor="product-name">{t('Product Name')} <span className="text-destructive">*</span></Label>
               <Input
                 id="product-name"
-                placeholder="e.g., Special Gift Box"
+                placeholder={t('e.g., Special Gift Box')}
                 value={product.name || ''}
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 required
@@ -285,21 +287,21 @@ export default function QuickBarcodePage() {
             </div>
              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <Label htmlFor="mrp">MRP (₹) <span className="text-destructive">*</span></Label>
+                    <Label htmlFor="mrp">{t('MRP (₹)')} <span className="text-destructive">*</span></Label>
                     <Input
                         id="mrp"
                         type="number"
-                        placeholder="e.g., 299"
+                        placeholder={t('e.g., 299')}
                         value={product.price || ''}
                         onChange={(e) => handleInputChange('price', parseFloat(e.target.value))}
                         required
                     />
                 </div>
                  <div className="space-y-2">
-                    <Label htmlFor="size">Size (Optional)</Label>
+                    <Label htmlFor="size">{t('Size (Optional)')}</Label>
                     <Input
                         id="size"
-                        placeholder="e.g., L, M, XL"
+                        placeholder={t('e.g., L, M, XL')}
                         value={product.size || ''}
                         onChange={(e) => handleInputChange('size', e.target.value)}
                     />
@@ -307,16 +309,16 @@ export default function QuickBarcodePage() {
             </div>
              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="product-code">SKU (Optional)</Label>
+                  <Label htmlFor="product-code">{t('SKU (Optional)')}</Label>
                   <Input
                     id="product-code"
-                    placeholder="e.g., QCK-001 (or scan existing)"
+                    placeholder={t('e.g., QCK-001 (or scan existing)')}
                     value={product.sku || ''}
                     onChange={(e) => handleInputChange('sku', e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="expiry-date">Expiry Date (Optional)</Label>
+                    <Label htmlFor="expiry-date">{t('Expiry Date (Optional)')}</Label>
                     <Input
                         id="expiry-date"
                         type="date"
@@ -327,15 +329,15 @@ export default function QuickBarcodePage() {
              </div>
           </CardContent>
           <CardFooter className="flex justify-end gap-2">
-            <Button onClick={handleGenerate} disabled={!product.name || !product.price}>Generate Barcode</Button>
+            <Button onClick={handleGenerate} disabled={!product.name || !product.price}>{t('Generate Barcode')}</Button>
           </CardFooter>
         </Card>
         
         <div className="space-y-4">
             <Card>
                 <CardHeader>
-                    <CardTitle>Barcode Preview</CardTitle>
-                    <CardDescription>This is how your label will look.</CardDescription>
+                    <CardTitle>{t('Barcode Preview')}</CardTitle>
+                    <CardDescription>{t('This is how your label will look.')}</CardDescription>
                 </CardHeader>
                 <CardContent className="flex items-center justify-center">
                     {showBarcode && product.name ? (
@@ -346,14 +348,14 @@ export default function QuickBarcodePage() {
                         </div>
                     ) : (
                         <div className="w-full h-[1.5in] flex items-center justify-center bg-muted/50 border-dashed border-2 rounded-md">
-                            <p className="text-muted-foreground">Fill details to see preview</p>
+                            <p className="text-muted-foreground">{t('Fill details to see preview')}</p>
                         </div>
                     )}
                 </CardContent>
                 {showBarcode && (
                     <CardFooter>
                          <Button onClick={saveAndPrint} className="w-full">
-                            <Printer className="mr-2 h-4 w-4" /> Save & Print Label
+                            <Printer className="mr-2 h-4 w-4" /> {t('Save & Print Label')}
                         </Button>
                     </CardFooter>
                 )}
@@ -362,15 +364,15 @@ export default function QuickBarcodePage() {
       </div>
       <Card className="mt-8">
           <CardHeader>
-              <CardTitle>Print History</CardTitle>
-              <CardDescription>A log of all barcodes generated via this page.</CardDescription>
+              <CardTitle>{t('Print History')}</CardTitle>
+              <CardDescription>{t('A log of all barcodes generated via this page.')}</CardDescription>
           </CardHeader>
           <CardContent>
               <div className="flex justify-end mb-4">
                   <div className="relative">
                       <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                       <Input
-                          placeholder="Search history..."
+                          placeholder={t('Search history...')}
                           className="pl-8 w-64"
                           value={historySearchTerm}
                           onChange={(e) => setHistorySearchTerm(e.target.value)}
@@ -381,15 +383,15 @@ export default function QuickBarcodePage() {
                   <Table>
                       <TableHeader>
                           <TableRow>
-                              <TableHead>Printed On</TableHead>
-                              <TableHead>Name</TableHead>
-                              <TableHead>SKU</TableHead>
-                              <TableHead className="text-right">MRP</TableHead>
-                              <TableHead className="text-right">Actions</TableHead>
+                              <TableHead>{t('Printed On')}</TableHead>
+                              <TableHead>{t('Name')}</TableHead>
+                              <TableHead>{t('SKU')}</TableHead>
+                              <TableHead className="text-right">{t('MRP')}</TableHead>
+                              <TableHead className="text-right">{t('Actions')}</TableHead>
                           </TableRow>
                       </TableHeader>
                       <TableBody>
-                          {isHistoryLoading ? <TableRow><TableCell colSpan={5} className="text-center h-24">Loading history...</TableCell></TableRow>
+                          {isHistoryLoading ? <TableRow><TableCell colSpan={5} className="text-center h-24">{t('Loading history...')}</TableCell></TableRow>
                           : filteredHistory.length > 0 ? (
                               filteredHistory.map((item, index) => (
                                   <TableRow key={item.id || index}>
@@ -399,13 +401,13 @@ export default function QuickBarcodePage() {
                                       <TableCell className="text-right flex items-center justify-end gap-1"><IndianRupee className="h-4 w-4"/>{item.price?.toLocaleString('en-IN')}</TableCell>
                                       <TableCell className="text-right">
                                           <Button variant="outline" size="sm" onClick={() => { setProduct(item); handleGenerate(); }}>
-                                              <Printer className="mr-2 h-4 w-4" /> Reprint
+                                              <Printer className="mr-2 h-4 w-4" /> {t('Reprint')}
                                           </Button>
                                       </TableCell>
                                   </TableRow>
                               ))
                           ) : (
-                              <TableRow><TableCell colSpan={5} className="text-center h-24">No print history found.</TableCell></TableRow>
+                              <TableRow><TableCell colSpan={5} className="text-center h-24">{t('No print history found.')}</TableCell></TableRow>
                           )}
                       </TableBody>
                   </Table>
