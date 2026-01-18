@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useRef } from 'react';
@@ -108,9 +109,9 @@ export function KotListTab({ onBillFromKot }: KotListTabProps) {
                                         <CardDescription className="text-xs pt-1">
                                             {kot.customerName}
                                         </CardDescription>
-                                        <CardDescription className="text-xs pt-0.5 text-blue-600 font-semibold">
+                                        <div className="text-sm pt-1 text-blue-600 font-bold">
                                             {formatDistanceToNow(new Date(kot.createdAt), { addSuffix: true })}
-                                        </CardDescription>
+                                        </div>
                                     </div>
                                     <div className="flex items-center -mr-2 -mt-2">
                                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setKotToReprint(kot)}>
@@ -180,3 +181,5 @@ export function KotListTab({ onBillFromKot }: KotListTabProps) {
         </>
     )
 }
+
+    
