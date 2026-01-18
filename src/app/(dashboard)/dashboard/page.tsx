@@ -112,6 +112,16 @@ export type CreditNote = {
   totalAmount: number; // should be negative
 };
 
+export type KOT = {
+  id: string;
+  tableNumber?: string;
+  customerName: string;
+  instructions?: string;
+  items: SaleItem[];
+  status: 'Active' | 'Billed' | 'Cancelled';
+  createdAt: string;
+};
+
 
 type UserProfile = {
   shopId?: string;

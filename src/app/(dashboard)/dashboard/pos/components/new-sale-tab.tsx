@@ -39,7 +39,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc, useShopSettings } from '@/firebase';
-import { collection, doc, addDoc, query, orderBy, limit, getDocs, where } from 'firebase/firestore';
+import { collection, doc, addDoc, query, orderBy, limit, getDocs, where, runTransaction } from 'firebase/firestore';
 import { toast as hotToast } from 'react-hot-toast';
 import {
   Collapsible,
@@ -59,6 +59,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { CompactReceipt } from '../../components/compact-receipt';
 import { KOT } from './kot';
+import type { KOT as KOTType } from '../../page';
 
 
 type Product = {
@@ -82,20 +83,6 @@ type UserProfile = {
   shopId?: string;
 }
 
-type ShopSettings = {
-    companyName?: string;
-    companyAddress?: string;
-    companyGstin?: string;
-    companyPhone?: string;
-    logoUrl?: string;
-    bankName?: string;
-    accountNumber?: string;
-    ifscCode?: string;
-    upiId?: string;
-    companyState?: string;
-    enableKot?: boolean;
-}
-
 type Sale = {
     invoiceNumber: string;
     date: string;
@@ -105,6 +92,11 @@ type PaymentDetails = {
     cash?: number;
     card?: number;
     upi?: number;
+}
+
+interface NewSaleTabProps {
+  kotToBill: KOTType | null;
+  onBillingComplete: () => void;
 }
 
 const sampleProducts: Product[] = [
@@ -120,7 +112,7 @@ const sampleProducts: Product[] = [
   { id: "10", name: 'Belt', price: 300, margin: 28, sku: 'BL-01', hsn: '3926', gst: 18, material: 'Leather' },
 ];
 
-export function NewSaleTab() {
+export function NewSaleTab({ kotToBill, onBillingComplete }: NewSaleTabProps) {
   const router = useRouter();
   const firestore = useFirestore();
   const { user } = useUser();
@@ -178,6 +170,7 @@ export function NewSaleTab() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const [billingKotId, setBillingKotId] = useState<string | null>(null);
 
   const [scanBuffer, setScanBuffer] = useState('');
 
@@ -188,6 +181,8 @@ export function NewSaleTab() {
   const kotPrintRef = useRef(null);
   const [orderInstructions, setOrderInstructions] = useState('');
   const [tableNumber, setTableNumber] = useState('');
+  const [isSavingKot, setIsSavingKot] = useState(false);
+
 
   useEffect(() => {
     mounted.current = true;
@@ -196,6 +191,18 @@ export function NewSaleTab() {
       timeouts.current.forEach(clearTimeout);
     };
   }, []);
+  
+  useEffect(() => {
+    if (kotToBill) {
+        // Populate form from KOT
+        clearSale(false); // don't notify parent yet
+        setCart(kotToBill.items.map(item => ({ product: item as any, quantity: item.quantity, discount: item.discount })));
+        setCustomerName(kotToBill.customerName);
+        setTableNumber(kotToBill.tableNumber || '');
+        setOrderInstructions(kotToBill.instructions || '');
+        setBillingKotId(kotToBill.id);
+    }
+}, [kotToBill]);
 
   const handlePrint = () => {
     const printContent = invoiceRef.current;
@@ -269,13 +276,65 @@ export function NewSaleTab() {
             setTimeout(() => {
                 newWindow.print();
                 newWindow.close();
-                if (mounted.current) {
-                  setIsKotOpen(false);
-                }
             }, 250);
         }
     }
   };
+  
+  const handleSaveAndPrintKOT = async () => {
+    if (cart.length === 0) {
+        hotToast.error('Add items to the cart first.');
+        return;
+    }
+    setIsSavingKot(true);
+    const kotData = {
+        tableNumber,
+        customerName: customerName || 'Walk-in Customer',
+        instructions: orderInstructions,
+        items: cart.map(item => ({
+            productId: item.product.id,
+            name: item.product.name,
+            quantity: item.quantity,
+            price: item.product.price,
+            margin: item.product.margin || 0,
+            sku: item.product.sku || '',
+            hsn: item.product.hsn || '',
+            gst: item.product.gst || 0,
+            discount: item.discount,
+        })),
+        status: 'Active',
+        createdAt: new Date().toISOString(),
+    };
+
+    if (isDemoMode) {
+        hotToast.success('KOT sent to kitchen (Demo)');
+        handlePrintKOT();
+        setIsKotOpen(false);
+        clearSale();
+        setIsSavingKot(false);
+        return;
+    }
+
+    if (!shopId || !firestore) {
+        hotToast.error('Shop not found.');
+        setIsSavingKot(false);
+        return;
+    }
+    
+    try {
+        const kotsCollectionRef = collection(firestore, `shops/${shopId}/kots`);
+        await addDoc(kotsCollectionRef, kotData);
+        hotToast.success('KOT saved and sent to kitchen!');
+        handlePrintKOT();
+        setIsKotOpen(false);
+        clearSale();
+    } catch(e: any) {
+        hotToast.error(`Could not save KOT: ${e.message}`);
+    } finally {
+        setIsSavingKot(false);
+    }
+};
+
   
   useEffect(() => {
     const generateNextInvoiceNumber = async () => {
@@ -502,7 +561,7 @@ export function NewSaleTab() {
     return false;
   });
 
-  const clearSale = () => {
+  const clearSale = (notifyParent = true) => {
     setCart([]);
     setCustomerName('');
     setCustomerPhone('');
@@ -514,6 +573,10 @@ export function NewSaleTab() {
     setPaymentDetails({ cash: 0, card: 0, upi: 0 });
     setOrderInstructions('');
     setTableNumber('');
+    setBillingKotId(null);
+    if(notifyParent) {
+      onBillingComplete();
+    }
   };
   
   const showPrintToast = () => {
@@ -589,6 +652,7 @@ export function NewSaleTab() {
       },
       paymentMode: paymentMode,
       invoiceNumber: invoiceNumber,
+      status: 'Completed',
     };
     
     if (paymentMode === 'both') {
@@ -619,9 +683,16 @@ export function NewSaleTab() {
     }
 
     try {
-      const salesCollectionRef = collection(firestore, `shops/${shopId}/sales`);
-      await addDoc(salesCollectionRef, saleData);
-      showPrintToast();
+        await runTransaction(firestore, async (transaction) => {
+            const saleDocRef = doc(collection(firestore, `shops/${shopId}/sales`));
+            transaction.set(saleDocRef, saleData);
+            
+            if (billingKotId) {
+                const kotDocRef = doc(firestore, `shops/${shopId}/kots`, billingKotId);
+                transaction.update(kotDocRef, { status: 'Billed' });
+            }
+        });
+        showPrintToast();
     } catch(error: any) {
       hotToast.error(`Error completing sale: ${error.message}`);
     } finally {
@@ -950,7 +1021,7 @@ export function NewSaleTab() {
                         <div className="flex-col items-stretch space-y-2">
                             {shopSettings?.enableKot && (
                                 <Button variant="outline" className="w-full" disabled={cart.length === 0} onClick={() => setIsKotOpen(true)}>
-                                    <Printer className="mr-2 h-4 w-4" /> Print KOT
+                                    <Printer className="mr-2 h-4 w-4" /> Prepare KOT
                                 </Button>
                             )}
                             <Button className="w-full" disabled={cart.length === 0 || (paymentMode === 'both' && remainingBalance.toFixed(2) !== '0.00') || isGenerating} onClick={completeSale}>
@@ -984,9 +1055,9 @@ export function NewSaleTab() {
     <Dialog open={isKotOpen} onOpenChange={setIsKotOpen}>
         <DialogContent className="max-w-sm p-0 border-0">
             <DialogHeader className="p-4 border-b">
-                <DialogTitle>KOT Preview</DialogTitle>
+                <DialogTitle>Prepare Kitchen Order Ticket</DialogTitle>
                 <DialogDescription>
-                    Kitchen Order Ticket for Invoice #{invoiceNumber}
+                    Add table number and instructions before saving and printing the KOT.
                 </DialogDescription>
             </DialogHeader>
             <div className="p-4 flex justify-center">
@@ -994,32 +1065,33 @@ export function NewSaleTab() {
                     <KOT cart={cart} invoiceNumber={invoiceNumber} customerName={customerName} instructions={orderInstructions} tableNumber={tableNumber} />
                 </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-x-4 gap-y-3 px-4 pb-4">
+            <div className="grid grid-cols-[100px_1fr] items-center gap-x-4 gap-y-3 px-4 pb-4">
                 <Label htmlFor="table-number" className="text-right whitespace-nowrap">
-                    Table #
+                    Table Number
                 </Label>
                 <Input
                     id="table-number"
                     placeholder="e.g., 5"
                     value={tableNumber}
                     onChange={(e) => setTableNumber(e.target.value)}
-                    className="col-span-3"
                 />
                 <Label htmlFor="kot-instructions" className="text-right self-start pt-2">
-                    Notes
+                    Instructions
                 </Label>
                 <Textarea
                     id="kot-instructions"
                     placeholder="e.g., Make it spicy..."
                     value={orderInstructions}
                     onChange={(e) => setOrderInstructions(e.target.value)}
-                    className="col-span-3"
                     rows={2}
                 />
             </div>
             <DialogFooter className="p-4 border-t">
-                <Button variant="outline" onClick={() => setIsKotOpen(false)}>Close</Button>
-                <Button onClick={handlePrintKOT}><Printer className="mr-2 h-4 w-4" /> Print</Button>
+                <Button variant="outline" onClick={() => setIsKotOpen(false)}>Cancel</Button>
+                <Button onClick={handleSaveAndPrintKOT} disabled={isSavingKot}>
+                    {isSavingKot && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save & Print KOT
+                </Button>
             </DialogFooter>
         </DialogContent>
     </Dialog>

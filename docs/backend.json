@@ -529,6 +529,32 @@
         "totalAmount": { "type": "number", "description": "The total value of the credit note (negative)." }
       },
       "required": ["id", "creditNoteNumber", "originalInvoiceId", "originalInvoiceNumber", "date", "customer", "items", "totalAmount"]
+    },
+     "KOT": {
+      "title": "Kitchen Order Ticket",
+      "type": "object",
+      "description": "Represents a pending order sent to the kitchen before billing.",
+      "properties": {
+        "id": { "type": "string" },
+        "tableNumber": { "type": "string" },
+        "customerName": { "type": "string" },
+        "instructions": { "type": "string" },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/entities/Sale/properties/items/items"
+          }
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Active", "Billed", "Cancelled"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["items", "status", "createdAt"]
     }
   },
   "auth": {
@@ -681,6 +707,15 @@
             "$ref": "#/backend/entities/CreditNote"
           },
           "description": "Credit Notes for returned sales in a specific shop."
+        }
+      },
+      {
+        "path": "/shops/{shopId}/kots/{kotId}",
+        "definition": {
+          "schema": {
+            "$ref": "#/entities/KOT"
+          },
+          "description": "Stores active Kitchen Order Tickets for a specific shop."
         }
       }
     ]
