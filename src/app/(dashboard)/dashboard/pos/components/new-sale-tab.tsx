@@ -994,25 +994,28 @@ export function NewSaleTab() {
                     <KOT cart={cart} invoiceNumber={invoiceNumber} customerName={customerName} instructions={orderInstructions} tableNumber={tableNumber} />
                 </div>
             </div>
-            <div className="px-4 pb-4 space-y-4">
-                <div>
-                    <Label htmlFor="table-number" className="font-semibold">Table Number</Label>
-                    <Input
-                        id="table-number"
-                        placeholder="e.g., T-5"
-                        value={tableNumber}
-                        onChange={(e) => setTableNumber(e.target.value)}
-                    />
-                </div>
-                <div>
-                    <Label htmlFor="kot-instructions" className="font-semibold">Instructions</Label>
-                    <Textarea
-                        id="kot-instructions"
-                        placeholder="e.g., Make it spicy, no onions..."
-                        value={orderInstructions}
-                        onChange={(e) => setOrderInstructions(e.target.value)}
-                    />
-                </div>
+            <div className="grid grid-cols-4 items-center gap-x-4 gap-y-3 px-4 pb-4">
+                <Label htmlFor="table-number" className="text-right whitespace-nowrap">
+                    Table #
+                </Label>
+                <Input
+                    id="table-number"
+                    placeholder="e.g., 5"
+                    value={tableNumber}
+                    onChange={(e) => setTableNumber(e.target.value)}
+                    className="col-span-3"
+                />
+                <Label htmlFor="kot-instructions" className="text-right self-start pt-2">
+                    Notes
+                </Label>
+                <Textarea
+                    id="kot-instructions"
+                    placeholder="e.g., Make it spicy..."
+                    value={orderInstructions}
+                    onChange={(e) => setOrderInstructions(e.target.value)}
+                    className="col-span-3"
+                    rows={2}
+                />
             </div>
             <DialogFooter className="p-4 border-t">
                 <Button variant="outline" onClick={() => setIsKotOpen(false)}>Close</Button>
