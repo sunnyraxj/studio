@@ -20,6 +20,7 @@ type ShopSettings = {
     ifscCode?: string;
     upiId?: string;
     enableKot?: boolean;
+    invoicePaymentDisplay?: 'bank' | 'upi' | 'both' | 'none';
 }
 
 type UserProfile = {

@@ -18,6 +18,7 @@ type ShopSettings = {
     ifscCode?: string;
     upiId?: string;
     companyState?: string;
+    invoicePaymentDisplay?: 'bank' | 'upi' | 'both' | 'none';
 }
 
 type Sale = {
@@ -86,6 +87,15 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
 
     const hasGstin = !!settings.companyGstin;
     const amountInWords = numberToWords(total);
+    
+    const upiQrCodeUrl = useMemo(() => {
+        if (!settings?.upiId || !settings?.companyName) return null;
+        const upiDeepLink = `upi://pay?pa=${settings.upiId}&pn=${encodeURIComponent(settings.companyName)}&am=${total.toFixed(2)}&cu=INR&tn=INV-${invoiceNumber}`;
+        return `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(upiDeepLink)}`;
+    }, [settings?.upiId, settings?.companyName, total, invoiceNumber]);
+
+    const showBankDetails = settings?.invoicePaymentDisplay === 'bank' || settings?.invoicePaymentDisplay === 'both';
+    const showUpiQr = settings?.invoicePaymentDisplay === 'upi' || settings?.invoicePaymentDisplay === 'both';
 
     return (
         <div className="bg-white text-black p-8 font-sans w-full min-h-full" id="invoice-print">
@@ -189,7 +199,10 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
                 
                  <section className="mt-8 flex justify-between items-start">
                     <div className="w-1/2">
-                         {/* Tax summary can go here if needed in future */}
+                         <div className="text-right text-xs mt-2">
+                            <p className="font-bold">Amount in words:</p>
+                            <p className="text-gray-600">{amountInWords}</p>
+                        </div>
                     </div>
 
                     <div className="w-full sm:w-2/3 md:w-1/2 max-w-sm ml-auto space-y-4">
@@ -224,27 +237,30 @@ export const DetailedInvoice: React.FC<DetailedInvoiceProps> = ({ sale, settings
                                 <span className="text-xl font-bold text-gray-900 flex items-center gap-1"><IndianRupee className="h-5 w-5" />{total.toFixed(2)}</span>
                             </div>
                         </div>
-
-                        <div className="text-right text-xs mt-2">
-                            <p className="font-bold">Amount in words:</p>
-                            <p className="text-gray-600">{amountInWords}</p>
-                        </div>
                     </div>
                 </section>
 
                 <footer className="mt-16 text-sm text-gray-500 border-t border-gray-700 pt-4">
                     <div className="flex justify-between items-start gap-4">
-                       {settings.bankName && (
-                            <div className='text-sm text-gray-900 flex-1'>
-                                <p className="font-bold text-base text-gray-800">Bank Details:</p>
-                                <div className="text-gray-700 text-sm font-bold space-y-0.5">
-                                  {settings.companyName && <p><strong>Holder:</strong> {settings.companyName}</p>}
-                                  {settings.accountNumber && <p><strong>A/C No:</strong> {settings.accountNumber}</p>}
-                                  {settings.bankName && <p><strong>Bank:</strong> {settings.bankName}</p>}
-                                  {settings.ifscCode && <p><strong>IFSC:</strong> {settings.ifscCode}</p>}
+                        <div className='text-sm text-gray-900 flex-1 space-y-4'>
+                            {showBankDetails && settings.bankName && (
+                                <div>
+                                    <p className="font-bold text-base text-gray-800">Bank Details:</p>
+                                    <div className="text-gray-700 text-sm font-bold space-y-0.5">
+                                      {settings.companyName && <p><strong>Holder:</strong> {settings.companyName}</p>}
+                                      {settings.accountNumber && <p><strong>A/C No:</strong> {settings.accountNumber}</p>}
+                                      {settings.bankName && <p><strong>Bank:</strong> {settings.bankName}</p>}
+                                      {settings.ifscCode && <p><strong>IFSC:</strong> {settings.ifscCode}</p>}
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
+                            {showUpiQr && upiQrCodeUrl && (
+                                <div>
+                                    <p className="font-bold text-base text-gray-800">Scan to Pay:</p>
+                                    <Image src={upiQrCodeUrl} alt="UPI QR Code" width={120} height={120} unoptimized/>
+                                </div>
+                            )}
+                        </div>
                        <div className="text-center flex-1 ml-auto w-56">
                            <p className="font-semibold">For, {settings.companyName}</p>
                            <div className="h-20"></div> {/* Space for stamp/signature */}
