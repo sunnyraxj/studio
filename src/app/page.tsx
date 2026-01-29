@@ -83,7 +83,7 @@ export default function RoleSelectionPage() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-background">
       <div className="text-center mb-12 px-6">
         <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-          Welcome to Apna Billing ERP
+          Welcome to Axom Billing
         </h1>
         <p className="mt-4 text-lg text-muted-foreground">
           Select how you want to enter the application.

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState, useEffect, Suspense } from 'react';
@@ -313,7 +314,7 @@ export default function DashboardPage() {
                         <PartyPopper className="h-6 w-6" />
                     </div>
                     <div>
-                        <CardTitle>{t('Welcome to Apna Billing ERP!')}</CardTitle>
+                        <CardTitle>{t('Welcome to Axom Billing!')}</CardTitle>
                         <CardDescription>{t("Congratulations on your new subscription. We're thrilled to have you on board.")}</CardDescription>
                     </div>
                 </CardHeader>

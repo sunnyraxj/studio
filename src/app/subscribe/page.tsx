@@ -107,7 +107,7 @@ export default function SubscribePage() {
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         subscription_id: subscriptionId,
-        name: 'Apna Billing ERP',
+        name: 'Axom Billing',
         description: `Subscribing to ${selectedPlan.name}`,
         handler: async function (response: any) {
           // 3. Verify payment on your backend
