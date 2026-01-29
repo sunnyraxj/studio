@@ -126,6 +126,7 @@ type UserProfile = {
   subscriptionEndDate?: string;
   role?: 'user' | 'admin';
   shopId?: string;
+  subscriptionType?: 'New' | 'Renew';
 };
 
 type ShopSettings = {
@@ -367,12 +368,6 @@ export default function DashboardLayout({
       }
       
       switch (userData.subscriptionStatus) {
-        case 'pending_verification':
-          if (userData.shopId && userData.subscriptionType === 'Renew') {
-            break;
-          }
-          router.push('/pending-verification');
-          break;
         case 'active':
           if (!shopId) {
             router.push('/shop-setup');
@@ -380,6 +375,7 @@ export default function DashboardLayout({
           break;
         case 'inactive':
         case 'rejected':
+        case 'pending_verification': // Treat pending as inactive for UI purposes until webhook confirms
           router.push('/subscribe');
           break;
         default:
