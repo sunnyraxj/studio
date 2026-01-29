@@ -27,14 +27,6 @@ const roles = [
     id: 'dashboard',
     role: 'user',
   },
-  {
-    name: 'Admin',
-    description: 'Login to the admin panel to oversee the platform.',
-    icon: Shield,
-    href: '/login?role=admin',
-    id: 'admin',
-    role: 'admin',
-  },
 ];
 
 export default function RoleSelectionPage() {
@@ -97,12 +89,10 @@ export default function RoleSelectionPage() {
           Select how you want to enter the application.
         </p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full px-6">
+      <div className="grid grid-cols-1 gap-8 max-w-md w-full px-6">
         {roles.map((role) => {
-          if (role.role === 'admin' && userData?.role === 'user') {
-            return null; // Don't show admin login for regular users
-          }
-          if (role.role === 'user' && userData?.role === 'admin') {
+          // This check is no longer strictly necessary with one role but is kept for robustness
+          if (userData?.role === 'admin' && role.role === 'user') {
             return null; // Don't show user dashboard for admins
           }
 
