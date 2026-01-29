@@ -14,9 +14,15 @@ import {
 import { Check, BadgePercent, IndianRupee } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
-import { doc, updateDoc, collection, query, orderBy } from 'firebase/firestore';
+import { doc, collection, query, orderBy } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast.tsx';
 import { Skeleton } from '@/components/ui/skeleton';
+
+declare global {
+    interface Window {
+        Razorpay: any;
+    }
+}
 
 type Plan = {
   id: string;
@@ -28,9 +34,13 @@ type Plan = {
   features: string[];
   highlight: boolean;
   order: number;
+  razorpayPlanId?: string;
 };
 
 type UserProfile = {
+  name?: string;
+  email?: string;
+  phone?: string;
   subscriptionStatus?: 'active' | 'inactive' | 'pending_verification' | 'rejected';
 }
 
@@ -54,8 +64,8 @@ export default function SubscribePage() {
   const { data: userData, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  // Set default selected plan
   useEffect(() => {
     if (plans) {
       setSelectedPlan(plans.find(p => p.highlight) || plans[0] || null);
@@ -64,50 +74,84 @@ export default function SubscribePage() {
 
   const handleSubscribe = async () => {
     if (!selectedPlan) {
-      toast({
-        variant: 'destructive',
-        title: 'No Plan Selected',
-        description: 'Please select a plan to continue.',
-      });
+      toast({ variant: 'destructive', title: 'No Plan Selected' });
       return;
     }
-    
-    // If user is not logged in, redirect to login page.
-    if (!user) {
-        // We can pass the selected plan ID to the login page to remember the choice after login
-        router.push(`/login?redirect=/subscribe&planId=${selectedPlan.id}`);
+
+    if (!user || !userData) {
+      router.push(`/login?redirect=/subscribe&planId=${selectedPlan.id}`);
+      return;
+    }
+
+    if (!selectedPlan.razorpayPlanId) {
+        toast({ variant: 'destructive', title: 'Configuration Error', description: 'This plan is not configured for payments. Please contact admin.'});
         return;
     }
     
-    const hasSubscription = userData?.subscriptionStatus && userData.subscriptionStatus !== 'inactive';
-    const subscriptionType = hasSubscription ? 'Renew' : 'New';
+    setIsProcessing(true);
 
     try {
-      const userDocRef = doc(firestore, 'users', user.uid);
-      
-      const updateData: any = {
-        planName: selectedPlan.name,
-        planPrice: selectedPlan.price,
-        planDurationMonths: selectedPlan.durationMonths,
-        subscriptionRequestDate: new Date().toISOString(),
-        subscriptionType: subscriptionType,
+      // 1. Create a subscription on your backend
+      const createSubResponse = await fetch('/api/razorpay/create-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planId: selectedPlan.razorpayPlanId }),
+      });
+
+      if (!createSubResponse.ok) {
+        throw new Error('Failed to create subscription on server.');
+      }
+      const { subscriptionId } = await createSubResponse.json();
+
+      // 2. Open Razorpay Checkout
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        subscription_id: subscriptionId,
+        name: 'Apna Billing ERP',
+        description: `Subscribing to ${selectedPlan.name}`,
+        handler: async function (response: any) {
+          // 3. Verify payment on your backend
+          const verifyResponse = await fetch('/api/razorpay/verify-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_subscription_id: response.razorpay_subscription_id,
+              razorpay_signature: response.razorpay_signature,
+              userId: user.uid,
+              plan: selectedPlan,
+            }),
+          });
+          
+          if (!verifyResponse.ok) {
+            throw new Error('Payment verification failed.');
+          }
+          
+          toast({ title: 'Success!', description: 'Subscription activated. Redirecting...' });
+          router.push('/shop-setup');
+        },
+        prefill: {
+          name: userData.name || '',
+          email: userData.email || '',
+          contact: userData.phone || '',
+        },
+        theme: {
+          color: '#F4B03F',
+        },
       };
 
-      // Only move to pending verification if they are not already an active user renewing.
-      if (userData?.subscriptionStatus !== 'active') {
-        updateData.subscriptionStatus = 'pending_verification';
-      }
+      const rzp = new window.Razorpay(options);
+      rzp.open();
 
-      await updateDoc(userDocRef, updateData);
-
-      router.push('/payment');
     } catch (error: any) {
-      console.error("Subscription update failed:", error);
+      console.error("Subscription process failed:", error);
       toast({
         variant: 'destructive',
         title: 'Subscription Failed',
-        description: `Could not update your subscription status. ${error.message}`,
+        description: error.message,
       });
+    } finally {
+        setIsProcessing(false);
     }
   };
   
@@ -205,9 +249,9 @@ export default function SubscribePage() {
           className="w-full shadow-lg shadow-primary/50 sparkle"
           size="lg"
           onClick={handleSubscribe}
-          disabled={!selectedPlan || isPlansLoading}
+          disabled={!selectedPlan || isPlansLoading || isProcessing}
         >
-          {selectedPlan ? <>Pay <IndianRupee className="h-5 w-5 mx-1" /> {selectedPlan.price.toLocaleString('en-IN')}</> : 'Select a Plan'}
+          {isProcessing ? 'Processing...' : selectedPlan ? <>Pay <IndianRupee className="h-5 w-5 mx-1" /> {selectedPlan.price.toLocaleString('en-IN')}</> : 'Select a Plan'}
         </Button>
       </div>
     </div>

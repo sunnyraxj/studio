@@ -75,9 +75,13 @@
             "admin"
           ]
         },
-        "utr": {
-          "type": "string",
-          "description": "The Unique Transaction Reference (UTR) for the subscription payment."
+        "razorpay_subscription_id": {
+            "type": "string",
+            "description": "The ID of the subscription from Razorpay."
+        },
+        "razorpay_payment_id": {
+            "type": "string",
+            "description": "The ID of the last successful payment from Razorpay."
         },
         "planName": {
             "type": "string",
@@ -90,10 +94,6 @@
         "planDurationMonths": {
             "type": "number",
             "description": "The duration of the subscription plan in months."
-        },
-        "rejectionReason": {
-          "type": "string",
-          "description": "The reason provided by an admin for rejecting a payment."
         },
         "subscriptionRequestDate": {
             "type": "string",
@@ -418,7 +418,8 @@
         "description": { "type": "string" },
         "features": { "type": "array", "items": { "type": "string" } },
         "highlight": { "type": "boolean" },
-        "order": { "type": "number", "description": "Sort order for displaying plans." }
+        "order": { "type": "number", "description": "Sort order for displaying plans." },
+        "razorpayPlanId": { "type": "string", "description": "The corresponding Plan ID from Razorpay." }
       },
       "required": ["id", "name", "price", "durationMonths", "order"]
     },
