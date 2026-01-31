@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
@@ -31,7 +30,7 @@ import { ChevronDownIcon, ChevronRightIcon } from '@radix-ui/react-icons';
 import * as React from 'react';
 import { useMemo } from 'react';
 import { useDoc } from '@/firebase/firestore/use-doc';
-import { differenceInDays } from 'date-fns';
+import { differenceInDays, format } from 'date-fns';
 
 type Shop = {
   id: string;
@@ -53,6 +52,9 @@ type UserProfile = {
   email?: string;
   subscriptionEndDate?: string;
   subscriptionStatus?: 'active' | 'inactive' | 'pending_verification' | 'rejected';
+  planName?: string;
+  razorpay_payment_id?: string;
+  subscriptionStartDate?: string;
 }
 
 type ShopViewModel = Shop & {
@@ -137,6 +139,16 @@ function ShopRow({ shop }: { shop: Shop }) {
                             <div className="space-y-1 p-3 rounded-md border bg-background">
                                 <p className="font-semibold text-muted-foreground">UPI Details</p>
                                 <p><strong>UPI ID:</strong> {settings?.upiId || 'N/A'}</p>
+                            </div>
+                            <div className="space-y-2 p-3 rounded-md border bg-background md:col-span-3">
+                                <p className="font-semibold text-muted-foreground">Subscription Details</p>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-2 pt-2">
+                                    <p><strong>Plan:</strong> {owner?.planName || 'N/A'}</p>
+                                    <p><strong>Status:</strong> <span className="capitalize">{owner?.subscriptionStatus?.replace('_', ' ') || 'N/A'}</span></p>
+                                    <p><strong>Start Date:</strong> {owner?.subscriptionStartDate ? format(new Date(owner.subscriptionStartDate), 'dd MMM, yyyy') : 'N/A'}</p>
+                                    <p><strong>End Date:</strong> {owner?.subscriptionEndDate ? format(new Date(owner.subscriptionEndDate), 'dd MMM, yyyy') : 'N/A'}</p>
+                                    <p className="md:col-span-2"><strong>Payment ID:</strong> {owner?.razorpay_payment_id || 'N/A'}</p>
+                                </div>
                             </div>
                         </div>
                      )}
