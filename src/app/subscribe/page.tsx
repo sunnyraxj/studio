@@ -42,6 +42,7 @@ type UserProfile = {
   email?: string;
   phone?: string;
   subscriptionStatus?: 'active' | 'inactive' | 'pending_verification' | 'rejected';
+  shopId?: string;
 }
 
 
@@ -91,7 +92,8 @@ export default function SubscribePage() {
     setIsProcessing(true);
 
     try {
-      // 1. Create a subscription on your backend
+      const isRenewal = userData.subscriptionStatus === 'active' || userData.subscriptionStatus === 'inactive';
+      
       const createSubResponse = await fetch('/api/razorpay/create-subscription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -103,14 +105,14 @@ export default function SubscribePage() {
       }
       const { subscriptionId } = await createSubResponse.json();
 
-      // 2. Open Razorpay Checkout
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         subscription_id: subscriptionId,
         name: 'Axom Billing',
         description: `Subscribing to ${selectedPlan.name}`,
         handler: async function (response: any) {
-          // 3. Verify payment on your backend
+          toast({ title: 'Payment Successful!', description: 'Verifying and activating your subscription...' });
+
           const verifyResponse = await fetch('/api/razorpay/verify-payment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -120,15 +122,23 @@ export default function SubscribePage() {
               razorpay_signature: response.razorpay_signature,
               userId: user.uid,
               plan: selectedPlan,
+              isRenewal: isRenewal,
             }),
           });
           
           if (!verifyResponse.ok) {
-            throw new Error('Payment verification failed.');
+             const errorData = await verifyResponse.json();
+             throw new Error(errorData.error || 'Payment verification failed on the server.');
           }
           
-          toast({ title: 'Payment Successful!', description: 'Your subscription is being activated. Please wait...' });
-          router.push('/pending-verification');
+          toast({ title: 'Subscription Activated!', description: 'Redirecting you now...' });
+          
+          // Redirect based on whether it's a first-time setup or a renewal
+          if (!userData.shopId) {
+            router.push('/shop-setup');
+          } else {
+            router.push('/dashboard');
+          }
         },
         prefill: {
           name: userData.name || '',
@@ -138,6 +148,12 @@ export default function SubscribePage() {
         theme: {
           color: '#F4B03F',
         },
+        "modal": {
+            "ondismiss": function(){
+                setIsProcessing(false);
+                toast({ variant: 'destructive', title: 'Payment Cancelled', description: 'The payment window was closed.' });
+            }
+        }
       };
 
       const rzp = new window.Razorpay(options);
@@ -150,8 +166,7 @@ export default function SubscribePage() {
         title: 'Subscription Failed',
         description: error.message,
       });
-    } finally {
-        setIsProcessing(false);
+      setIsProcessing(false);
     }
   };
   

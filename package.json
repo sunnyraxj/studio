@@ -60,7 +60,8 @@
     "cmdk": "^1.0.0",
     "next-themes": "^0.3.0",
     "razorpay": "^2.9.4",
-    "short-uuid": "^4.2.2"
+    "short-uuid": "^4.2.2",
+    "firebase-admin": "^12.2.0"
   },
   "devDependencies": {
     "@types/node": "^20",
