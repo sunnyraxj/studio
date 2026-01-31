@@ -1,7 +1,5 @@
 
-import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp, getApps, App } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { type NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 
 // Explicitly mark this as a dynamic Node.js-based serverless function to prevent build-time execution
@@ -9,7 +7,11 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
-  // Helper function is now defined inside the handler to prevent any module-level execution during build
+  // Dynamically import Firebase Admin SDK modules to prevent build-time execution
+  const { initializeApp, getApps, type App } = await import('firebase-admin/app');
+  const { getFirestore } = await import('firebase-admin/firestore');
+
+  // Helper function is now defined and used inside the handler
   function getFirebaseAdminApp(): App {
     if (getApps().length > 0) {
         return getApps()[0];

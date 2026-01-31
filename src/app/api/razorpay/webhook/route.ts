@@ -1,24 +1,26 @@
 
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { initializeApp, getApps, App } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
 import { add } from 'date-fns';
 
 // This line is crucial for Vercel. It ensures this route is treated as a dynamic serverless function
 // and is not processed at build time.
 export const dynamic = 'force-dynamic';
-
-// Helper function to initialize Firebase Admin SDK only once per serverless function instance.
-function getFirebaseAdminApp(): App {
-    if (getApps().length > 0) {
-        return getApps()[0];
-    }
-    // This will only be called once in the serverless function's lifecycle.
-    return initializeApp();
-}
+export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
+  // Dynamically import Firebase Admin SDK modules to prevent build-time execution
+  const { initializeApp, getApps, type App } = await import('firebase-admin/app');
+  const { getFirestore } = await import('firebase-admin/firestore');
+
+  // Helper function to initialize Firebase Admin SDK only once per serverless function instance.
+  function getFirebaseAdminApp(): App {
+      if (getApps().length > 0) {
+          return getApps()[0];
+      }
+      return initializeApp();
+  }
+
   const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
   if (!secret) {
     console.error('RAZORPAY_WEBHOOK_SECRET is not set in environment variables.');
