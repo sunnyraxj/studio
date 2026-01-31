@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   Package2,
-  ShieldCheck,
+  LineChart,
   Store,
   LifeBuoy,
   Settings,
@@ -22,8 +22,8 @@ import { Button } from '@/components/ui/button';
 const adminNavLinks = [
   {
     href: '/admin',
-    icon: ShieldCheck,
-    label: 'Payment Verify',
+    icon: LineChart,
+    label: 'Dashboard',
   },
   {
     href: '/admin/shops',
