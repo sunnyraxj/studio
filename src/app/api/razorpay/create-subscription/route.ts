@@ -4,6 +4,11 @@ import { razorpayInstance } from '@/lib/razorpay';
 
 export async function POST(req: NextRequest) {
   try {
+    // Add a runtime check to ensure Razorpay is configured before use
+    if (!razorpayInstance) {
+      throw new Error('Razorpay is not configured. Please set API keys in environment variables.');
+    }
+    
     const { planId } = await req.json();
 
     if (!planId) {
