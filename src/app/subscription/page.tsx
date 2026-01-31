@@ -27,7 +27,7 @@ type UserProfile = {
   subscriptionStartDate?: string;
   subscriptionEndDate?: string;
   subscriptionType?: 'New' | 'Renew';
-  razorpay_subscription_id?: string;
+  rejectionReason?: string;
 };
 
 type TimeRemaining = {
@@ -92,6 +92,7 @@ export default function SubscriptionPage() {
       const interval = setInterval(updateRemainingTime, 60000); // Update every minute
       return () => clearInterval(interval);
     } else {
+        // Handle non-active states
         if (userData?.subscriptionStatus === 'inactive' || userData?.subscriptionStatus === 'rejected') {
             setCanRenew(true);
         }
@@ -111,6 +112,21 @@ export default function SubscriptionPage() {
           description: 'You have full access to all features.',
           badgeVariant: 'default',
         };
+      case 'pending_verification':
+        return {
+          icon: <Clock className="h-6 w-6 text-yellow-500" />,
+          title: 'Verification Pending',
+          description: 'Your payment is being verified. This may take a few hours.',
+          badgeVariant: 'secondary',
+        };
+      case 'rejected':
+         return {
+          icon: <XCircle className="h-6 w-6 text-red-500" />,
+          title: 'Payment Rejected',
+          description: userData.rejectionReason ? `Reason: ${userData.rejectionReason}` : 'Your recent payment was not successful. Please try again.',
+          badgeVariant: 'destructive',
+        };
+      case 'inactive':
       default:
         return {
           icon: <AlertTriangle className="h-6 w-6 text-red-500" />,
@@ -123,6 +139,8 @@ export default function SubscriptionPage() {
   
   const statusInfo = getStatusInfo();
   const isLoading = isUserLoading || isProfileLoading;
+  
+  const isRenewalPending = userData?.subscriptionType === 'Renew';
 
   if (isDemoMode) {
       return (
@@ -172,7 +190,7 @@ export default function SubscriptionPage() {
                 </div>
             </div>
 
-            {userData?.subscriptionStatus === 'active' && (
+            {(userData?.subscriptionStatus === 'active' || (userData?.subscriptionStatus === 'inactive' && userData?.planName)) && (
                 <div className="space-y-4 rounded-md border p-4">
                     <div className="grid grid-cols-1 gap-y-2 text-sm md:grid-cols-2">
                         <div className="flex justify-between items-center">
@@ -185,7 +203,7 @@ export default function SubscriptionPage() {
                         </div>
                         <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">Price</span>
-                            {isLoading ? <Skeleton className="h-5 w-24" /> : <span className="font-bold flex items-center gap-1"><IndianRupee className="h-4 w-4"/>{userData.planPrice?.toLocaleString('en-IN') || 0}</span>}
+                            {isLoading ? <Skeleton className="h-5 w-24" /> : <span className="font-bold">₹{userData.planPrice?.toLocaleString('en-IN') || 0}</span>}
                         </div>
                         <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">Expiry Date</span>
@@ -214,10 +232,14 @@ export default function SubscriptionPage() {
             )}
         </CardContent>
         <CardFooter>
-            <Button onClick={handleAction} disabled={isLoading || !canRenew}>
+            <Button onClick={handleAction} disabled={isLoading || !canRenew || isRenewalPending}>
                 {userData?.subscriptionStatus === 'active' ? 'Renew Subscription' : 'Subscribe Now'}
             </Button>
-            {!canRenew && userData?.subscriptionStatus === 'active' && (
+            {isRenewalPending ? (
+                <div className="text-sm text-muted-foreground ml-4">
+                   Your renewal is pending verification.
+                </div>
+            ) : !canRenew && userData?.subscriptionStatus === 'active' && (
                 <div className="text-sm text-muted-foreground ml-4">
                    You can renew your subscription within 30 days of expiry.
                 </div>
@@ -227,3 +249,5 @@ export default function SubscriptionPage() {
     </div>
   );
 }
+
+    

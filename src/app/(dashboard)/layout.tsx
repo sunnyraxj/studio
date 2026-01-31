@@ -373,9 +373,13 @@ export default function DashboardLayout({
             router.push('/shop-setup');
           }
           break;
+        case 'pending_verification':
+           if (pathname !== '/pending-verification') {
+                router.push('/pending-verification');
+            }
+          break;
         case 'inactive':
         case 'rejected':
-        case 'pending_verification': // Treat pending as inactive for UI purposes until webhook confirms
           router.push('/subscribe');
           break;
         default:

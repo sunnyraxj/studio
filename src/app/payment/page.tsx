@@ -17,10 +17,10 @@ export default function DeprecatedPaymentPage() {
             </CardHeader>
             <CardContent>
                 <p className="text-sm text-muted-foreground">
-                    If you were redirected here, please go to the new subscription page to complete your payment.
+                    If your payment was successful, please go to your dashboard. Your subscription will activate automatically.
                 </p>
                 <Button asChild className="mt-6">
-                    <Link href="/subscribe">Go to Subscription Page</Link>
+                    <Link href="/dashboard/subscription">Go to My Subscription</Link>
                 </Button>
             </CardContent>
         </Card>

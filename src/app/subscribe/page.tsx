@@ -127,8 +127,8 @@ export default function SubscribePage() {
             throw new Error('Payment verification failed.');
           }
           
-          toast({ title: 'Success!', description: 'Subscription activated. Redirecting...' });
-          router.push('/shop-setup');
+          toast({ title: 'Payment Successful!', description: 'Your subscription is being activated. Please wait...' });
+          router.push('/pending-verification');
         },
         prefill: {
           name: userData.name || '',

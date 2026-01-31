@@ -42,44 +42,62 @@ export async function POST(req: NextRequest) {
   // 2. Handle the event
   try {
     switch (eventType) {
-      case 'subscription.activated':
-        // This can be used as a backup if the verify-payment API fails for some reason
-        const { subscription: activatedSub, payment: activatedPayment } = payload;
-        await updateUserOnSubscriptionEvent(activatedSub.id, activatedPayment.id, 'active');
-        break;
-
-      case 'invoice.paid':
-        // This is CRUCIAL for handling auto-renewals
-        const { subscription: renewedSub, payment: renewalPayment, invoice } = payload;
+      case 'subscription.charged':
+        const { subscription: chargedSub, payment: chargedPayment } = payload;
         
-        const userQuery = await db.collection('users').where('razorpay_subscription_id', '==', renewedSub.id).limit(1).get();
+        const userQuery = await db.collection('users').where('razorpay_subscription_id', '==', chargedSub.id).limit(1).get();
+
         if (!userQuery.empty) {
             const userDoc = userQuery.docs[0];
             const userData = userDoc.data();
+            
+            // This event handles BOTH first payment and renewals.
+            // We differentiate based on the user's current status.
 
-            const durationMonths = userData.planDurationMonths || 12;
-            const currentEndDate = new Date(userData.subscriptionEndDate);
-            const newEndDate = add(currentEndDate, { months: durationMonths });
+            if (userData.subscriptionStatus === 'pending_verification') {
+                // This is the FIRST successful payment after checkout.
+                const startDate = new Date();
+                const endDate = add(startDate, { months: userData.planDurationMonths || 12 });
 
-            await userDoc.ref.update({
-                subscriptionEndDate: newEndDate.toISOString(),
-                razorpay_payment_id: renewalPayment.id,
-            });
+                await userDoc.ref.update({
+                    subscriptionStatus: 'active',
+                    subscriptionStartDate: startDate.toISOString(),
+                    subscriptionEndDate: endDate.toISOString(),
+                    razorpay_payment_id: chargedPayment.id, // Update with the latest payment ID
+                    subscriptionType: '', // Clear the request type
+                });
+
+            } else if (userData.subscriptionStatus === 'active') {
+                // This is a successful RENEWAL payment.
+                const currentEndDate = new Date(userData.subscriptionEndDate);
+                // Ensure we extend from the correct date, even if payment is early
+                const newEndDate = add(currentEndDate > new Date() ? currentEndDate : new Date(), { months: userData.planDurationMonths || 12 });
+
+                 await userDoc.ref.update({
+                    subscriptionEndDate: newEndDate.toISOString(),
+                    razorpay_payment_id: chargedPayment.id, // Update with the latest renewal payment ID
+                });
+            }
+        } else {
+             console.warn(`Webhook (subscription.charged) received for unknown subscription ID: ${chargedSub.id}`);
         }
         break;
 
       case 'subscription.cancelled':
         const { subscription: cancelledSub } = payload;
-        await updateUserOnSubscriptionEvent(cancelledSub.id, null, 'inactive');
+        const userCancelQuery = await db.collection('users').where('razorpay_subscription_id', '==', cancelledSub.id).limit(1).get();
+        if (!userCancelQuery.empty) {
+            await userCancelQuery.docs[0].ref.update({ subscriptionStatus: 'inactive' });
+        }
         break;
         
       case 'payment.failed':
-          // You could implement logic here to notify the user of the failed payment
-          console.log('Payment failed:', payload.payment.entity);
+          console.log('Payment failed webhook:', payload.payment.entity);
+          // Optional: Add logic to set user status to 'payment_failed' or notify them.
           break;
 
       default:
-        console.log(`Unhandled event type: ${eventType}`);
+        // console.log(`Unhandled event type: ${eventType}`);
     }
 
     return NextResponse.json({ received: true });
@@ -87,20 +105,5 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error('Webhook handler error:', error);
     return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 });
-  }
-}
-
-async function updateUserOnSubscriptionEvent(subscriptionId: string, paymentId: string | null, status: 'active' | 'inactive') {
-  const userQuery = await db.collection('users').where('razorpay_subscription_id', '==', subscriptionId).limit(1).get();
-
-  if (!userQuery.empty) {
-    const userDoc = userQuery.docs[0];
-    const updateData: any = { subscriptionStatus: status };
-    if (paymentId) {
-        updateData.razorpay_payment_id = paymentId;
-    }
-    await userDoc.ref.update(updateData);
-  } else {
-    console.warn(`Webhook received for unknown subscription ID: ${subscriptionId}`);
   }
 }
