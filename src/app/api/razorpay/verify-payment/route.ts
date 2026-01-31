@@ -4,19 +4,20 @@ import { initializeApp, getApps, App } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import crypto from 'crypto';
 
+// Explicitly mark this as a dynamic Node.js-based serverless function to prevent build-time execution
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
-// Helper function to initialize Firebase Admin SDK only when needed
-function getFirebaseAdminApp(): App {
+export async function POST(req: NextRequest) {
+  // Helper function is now defined inside the handler to prevent any module-level execution during build
+  function getFirebaseAdminApp(): App {
     if (getApps().length > 0) {
         return getApps()[0];
     }
     return initializeApp();
-}
+  }
 
-export async function POST(req: NextRequest) {
   try {
-    // Initialize Firebase Admin within the request handler
     const adminApp = getFirebaseAdminApp();
     const db = getFirestore(adminApp);
 
