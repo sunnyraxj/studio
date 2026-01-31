@@ -1,15 +1,22 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { initializeApp, getApps } from 'firebase-admin/app';
+import { initializeApp, getApps, App } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { add } from 'date-fns';
 
-// Initialize Firebase Admin SDK
-if (!getApps().length) {
-  initializeApp();
+// This line is crucial for Vercel. It ensures this route is treated as a dynamic serverless function
+// and is not processed at build time.
+export const dynamic = 'force-dynamic';
+
+// Helper function to initialize Firebase Admin SDK only once per serverless function instance.
+function getFirebaseAdminApp(): App {
+    if (getApps().length > 0) {
+        return getApps()[0];
+    }
+    // This will only be called once in the serverless function's lifecycle.
+    return initializeApp();
 }
-const db = getFirestore();
 
 export async function POST(req: NextRequest) {
   const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
@@ -19,7 +26,7 @@ export async function POST(req: NextRequest) {
   }
 
   const signature = req.headers.get('x-razorpay-signature');
-  const body = await req.text();
+  const body = await req.text(); // Get raw body for signature verification
 
   // 1. Verify Webhook Signature
   try {
@@ -32,8 +39,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
     }
   } catch (error) {
+     console.error('Error during signature verification:', error);
     return NextResponse.json({ error: 'Signature verification failed' }, { status: 500 });
   }
+  
+  // Initialize Firebase Admin SDK *inside* the request handler
+  const adminApp = getFirebaseAdminApp();
+  const db = getFirestore(adminApp);
 
   const event = JSON.parse(body);
   const eventType = event.event;
@@ -61,7 +73,7 @@ export async function POST(req: NextRequest) {
                     subscriptionStatus: 'active',
                     subscriptionStartDate: startDate.toISOString(),
                     subscriptionEndDate: endDate.toISOString(),
-                    razorpay_payment_id: chargedPayment.id,
+                    razorpay_payment_id: chargedPayment.entity.id, // Correctly access the nested payment ID
                     subscriptionType: '', // Clear the request type
                 });
 
@@ -77,7 +89,7 @@ export async function POST(req: NextRequest) {
                     subscriptionEndDate: newEndDate.toISOString(),
                     // Only update start date if the old plan had already expired
                     subscriptionStartDate: (currentEndDate > new Date() ? userData.subscriptionStartDate : newStartDate.toISOString()),
-                    razorpay_payment_id: chargedPayment.id,
+                    razorpay_payment_id: chargedPayment.entity.id, // Correctly access the nested payment ID
                     subscriptionType: '', // Clear the request type
                 });
             }
@@ -107,6 +119,6 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('Webhook handler error:', error);
-    return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 });
+    return NextResponse.json({ error: `Webhook handler failed: ${error.message}` }, { status: 500 });
   }
 }
