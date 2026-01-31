@@ -2,6 +2,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { add } from 'date-fns';
+import type { App } from 'firebase-admin/app';
 
 // This line is crucial for Vercel. It ensures this route is treated as a dynamic serverless function
 // and is not processed at build time.
@@ -10,7 +11,7 @@ export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
   // Dynamically import Firebase Admin SDK modules to prevent build-time execution
-  const { initializeApp, getApps, type App } = await import('firebase-admin/app');
+  const { initializeApp, getApps } = await import('firebase-admin/app');
   const { getFirestore } = await import('firebase-admin/firestore');
 
   // Helper function to initialize Firebase Admin SDK only once per serverless function instance.
