@@ -23,7 +23,8 @@ export async function POST(req: NextRequest) {
 
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
     if (!keySecret) {
-      throw new Error('Razorpay key secret not found in environment variables.');
+      console.error('Razorpay key secret not found in environment variables.');
+      return NextResponse.json({ error: 'Server configuration error: Razorpay secret is not set.' }, { status: 500 });
     }
 
     // 1. Verify Razorpay signature
