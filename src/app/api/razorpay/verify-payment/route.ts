@@ -1,21 +1,25 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp, getApps } from 'firebase-admin/app';
+import { initializeApp, getApps, App } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
 
-// This is a server-side only file. Initialize Firebase Admin SDK.
-// Make sure to set up GOOGLE_APPLICATION_CREDENTIALS in your environment.
-if (!getApps().length) {
-  initializeApp();
+// Helper function to initialize Firebase Admin SDK only when needed
+function getFirebaseAdminApp(): App {
+    if (getApps().length > 0) {
+        return getApps()[0];
+    }
+    return initializeApp();
 }
-
-const db = getFirestore();
 
 export async function POST(req: NextRequest) {
   try {
+    // Initialize Firebase Admin within the request handler
+    const adminApp = getFirebaseAdminApp();
+    const db = getFirestore(adminApp);
+
     const body = await req.json();
     const { razorpay_payment_id, razorpay_subscription_id, razorpay_signature, userId, plan } = body;
 
