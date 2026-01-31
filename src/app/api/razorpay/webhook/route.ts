@@ -14,7 +14,7 @@ const db = getFirestore();
 export async function POST(req: NextRequest) {
   const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
   if (!secret) {
-    console.error('RAZORPAY_WEBHOOK_SECRET is not set.');
+    console.error('RAZORPAY_WEBHOOK_SECRET is not set in environment variables.');
     return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 });
   }
 
@@ -51,11 +51,9 @@ export async function POST(req: NextRequest) {
             const userDoc = userQuery.docs[0];
             const userData = userDoc.data();
             
-            // This event handles BOTH first payment and renewals.
-            // We differentiate based on the user's current status.
-
-            if (userData.subscriptionStatus === 'pending_verification') {
-                // This is the FIRST successful payment after checkout.
+            // Differentiate between a new subscription and a renewal
+            if (userData.subscriptionType === 'New' && userData.subscriptionStatus === 'pending_verification') {
+                // New subscription activation
                 const startDate = new Date();
                 const endDate = add(startDate, { months: userData.planDurationMonths || 12 });
 
@@ -63,19 +61,24 @@ export async function POST(req: NextRequest) {
                     subscriptionStatus: 'active',
                     subscriptionStartDate: startDate.toISOString(),
                     subscriptionEndDate: endDate.toISOString(),
-                    razorpay_payment_id: chargedPayment.id, // Update with the latest payment ID
+                    razorpay_payment_id: chargedPayment.id,
                     subscriptionType: '', // Clear the request type
                 });
 
-            } else if (userData.subscriptionStatus === 'active') {
-                // This is a successful RENEWAL payment.
-                const currentEndDate = new Date(userData.subscriptionEndDate);
-                // Ensure we extend from the correct date, even if payment is early
-                const newEndDate = add(currentEndDate > new Date() ? currentEndDate : new Date(), { months: userData.planDurationMonths || 12 });
+            } else if (userData.subscriptionType === 'Renew' || userData.subscriptionStatus === 'active') {
+                // Renewal for an active or recently expired subscription
+                const currentEndDate = userData.subscriptionEndDate ? new Date(userData.subscriptionEndDate) : new Date();
+                // Extend from the current end date if it's in the future, otherwise extend from today.
+                const newStartDate = currentEndDate > new Date() ? currentEndDate : new Date();
+                const newEndDate = add(newStartDate, { months: userData.planDurationMonths || 12 });
 
-                 await userDoc.ref.update({
+                await userDoc.ref.update({
+                    subscriptionStatus: 'active', // Ensure it's active
                     subscriptionEndDate: newEndDate.toISOString(),
-                    razorpay_payment_id: chargedPayment.id, // Update with the latest renewal payment ID
+                    // Only update start date if the old plan had already expired
+                    subscriptionStartDate: (currentEndDate > new Date() ? userData.subscriptionStartDate : newStartDate.toISOString()),
+                    razorpay_payment_id: chargedPayment.id,
+                    subscriptionType: '', // Clear the request type
                 });
             }
         } else {
