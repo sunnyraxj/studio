@@ -50,7 +50,6 @@
     "recharts": "^2.12.7",
     "date-fns": "^3.6.0",
     "firebase": "^10.12.3",
-    "firebase-admin": "^12.2.0",
     "@radix-ui/react-navigation-menu": "^1.2.0",
     "zod": "^3.23.8",
     "@hookform/resolvers": "^3.9.0",
