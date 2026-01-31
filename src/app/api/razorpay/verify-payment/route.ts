@@ -4,6 +4,8 @@ import { initializeApp, getApps } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import crypto from 'crypto';
 
+export const dynamic = 'force-dynamic';
+
 // This is a server-side only file. Initialize Firebase Admin SDK.
 // Make sure to set up GOOGLE_APPLICATION_CREDENTIALS in your environment.
 if (!getApps().length) {
