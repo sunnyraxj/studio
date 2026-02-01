@@ -9,7 +9,6 @@ import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@
 import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -94,8 +93,6 @@ export default function HomePage() {
       )
   }
 
-  const heroImage = PlaceHolderImages.find(p => p.id === 'hero-section');
-
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:px-6">
@@ -124,7 +121,7 @@ export default function HomePage() {
         </div>
       </header>
       <main className="flex-1">
-        <section className="w-full py-12 md:py-24 lg:py-32">
+        <section className="w-full py-12 md:py-24 lg:py-16">
           <div className="container px-4 md:px-6">
             <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px]">
               <div className="flex flex-col justify-center space-y-4">
@@ -145,21 +142,21 @@ export default function HomePage() {
                   </Button>
                 </div>
               </div>
-              {heroImage && (
+              
                 <Image
-                    src={heroImage.imageUrl}
+                    src="https://images.unsplash.com/photo-1546213290-e1b492ab3eee?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxyZXRhaWwlMjBzdG9yZXxlbnwwfHx8fDE3Njk4NTgxMjJ8MA&ixlib=rb-4.1.0&q=80&w=1080"
                     width={1200}
                     height={800}
                     alt="Hero"
                     className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last lg:aspect-square"
-                    data-ai-hint={heroImage.imageHint}
+                    data-ai-hint="retail store"
                 />
-              )}
+              
             </div>
           </div>
         </section>
         
-        <section className="w-full py-12 md:py-24 lg:py-32 bg-muted">
+        <section className="w-full py-12 md:py-24 lg:py-16 bg-muted">
             <div className="container px-4 md:px-6">
                 <div className="flex flex-col items-center justify-center space-y-4 text-center">
                     <div className="space-y-2">
@@ -173,7 +170,7 @@ export default function HomePage() {
                 <div className="mx-auto grid max-w-6xl items-start gap-4 sm:grid-cols-2 md:gap-8 lg:grid-cols-3 mt-8">
                     {isFeaturesLoading ? (
                         Array.from({ length: 3 }).map((_, i) => (
-                            <Card key={i}>
+                             <Card key={i}>
                                 <CardContent className="p-6 space-y-4">
                                     <Skeleton className="aspect-video w-full rounded-lg" />
                                     <Skeleton className="h-6 w-3/4" />
@@ -217,7 +214,7 @@ export default function HomePage() {
             </div>
         </section>
 
-        <section className="w-full py-12 md:py-24 lg:py-32 bg-muted">
+        <section className="w-full py-12 md:py-24 lg:py-16 bg-muted">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
@@ -232,9 +229,9 @@ export default function HomePage() {
                 </p>
               </div>
             </div>
-            <div className="mx-auto grid max-w-6xl items-start gap-6 py-12 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mx-auto grid max-w-6xl items-start gap-6 py-12 sm:grid-cols-2 lg:grid-cols-3">
               {isPlansLoading ? (
-                Array.from({ length: 4 }).map((_, i) => (
+                Array.from({ length: 3 }).map((_, i) => (
                   <Card key={i}>
                       <CardHeader>
                           <Skeleton className="h-6 w-3/4" />
