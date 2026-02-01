@@ -35,10 +35,10 @@ export async function POST(req: NextRequest) {
         razorpay_order_id,
         razorpay_signature,
         userId,
-        plan,
+        plan, // The plan object from the client contains the ID
     } = await req.json();
 
-    if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature || !userId || !plan) {
+    if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature || !userId || !plan || !plan.id) {
       return NextResponse.json({ error: 'Missing required parameters for verification' }, { status: 400 });
     }
 
@@ -65,13 +65,20 @@ export async function POST(req: NextRequest) {
     initializeFirebaseAdmin();
     const adminFirestore = getFirestore();
     const userDocRef = adminFirestore.collection('users').doc(userId);
-    const userDoc = await userDocRef.get();
+    
+    // ** NEW: Fetch the plan from Firestore to ensure data integrity **
+    const planDocRef = adminFirestore.collection('plans').doc(plan.id);
+    const [userDoc, planDoc] = await Promise.all([userDocRef.get(), planDocRef.get()]);
 
     if (!userDoc.exists) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
+    if (!planDoc.exists) {
+        return NextResponse.json({ error: 'Plan not found' }, { status: 404 });
+    }
     
     const userData = userDoc.data();
+    const fetchedPlan = planDoc.data(); // Use the securely fetched plan data
     const now = new Date();
     
     const isRenewal = userData?.subscriptionStatus === 'active' || (userData?.subscriptionStatus === 'inactive' && !!userData?.planName);
@@ -81,15 +88,15 @@ export async function POST(req: NextRequest) {
     const currentEndDate = userData?.subscriptionEndDate ? new Date(userData.subscriptionEndDate) : now;
     const startDate = isRenewal && currentEndDate > now ? currentEndDate : now;
     
-    const duration = { [plan.durationType]: plan.durationValue };
+    const duration = { [fetchedPlan.durationType]: fetchedPlan.durationValue };
     const endDate = add(startDate, duration);
 
     const subscriptionData = {
         subscriptionStatus: 'active',
-        planName: plan.name,
-        planPrice: plan.price,
-        planDurationValue: plan.durationValue,
-        planDurationType: plan.durationType,
+        planName: fetchedPlan.name,
+        planPrice: fetchedPlan.price,
+        planDurationValue: fetchedPlan.durationValue,
+        planDurationType: fetchedPlan.durationType,
         razorpay_payment_id: razorpay_payment_id,
         subscriptionRequestDate: new Date().toISOString(),
         subscriptionStartDate: startDate.toISOString(),
@@ -105,5 +112,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
-
-    
