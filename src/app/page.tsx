@@ -217,11 +217,11 @@ export default function HomePage() {
             </div>
         </section>
 
-        <section className="w-full py-12 md:py-24 lg:py-32">
+        <section className="w-full py-12 md:py-24 lg:py-32 bg-muted">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
-                <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm">
+                <div className="inline-block rounded-lg bg-background px-3 py-1 text-sm">
                   Pricing
                 </div>
                 <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
@@ -232,7 +232,7 @@ export default function HomePage() {
                 </p>
               </div>
             </div>
-            <div className="mx-auto grid max-w-6xl items-start gap-6 py-12 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+            <div className="mx-auto grid max-w-6xl items-start gap-6 py-12 sm:grid-cols-2 lg:grid-cols-4">
               {isPlansLoading ? (
                 Array.from({ length: 4 }).map((_, i) => (
                   <Card key={i}>
@@ -251,7 +251,7 @@ export default function HomePage() {
                   </Card>
                 ))
               ) : plans?.map(plan => (
-                <Card key={plan.id} className={cn('flex flex-col transition-all duration-300 relative overflow-hidden hover:shadow-lg hover:-translate-y-1', plan.highlight ? 'border-primary ring-2 ring-primary shadow-xl' : '')}>
+                <Card key={plan.id} className={cn('flex flex-col rounded-2xl border bg-background/60 backdrop-blur-lg transition-all duration-300 hover:shadow-2xl', plan.highlight ? 'border-primary ring-2 ring-primary' : 'border-border/20')}>
                     {plan.highlight && (
                         <div className="text-center py-1 bg-primary text-primary-foreground text-sm font-semibold sparkle">
                             Most Popular
@@ -263,11 +263,11 @@ export default function HomePage() {
                             Save {Math.round(100 - (plan.price / plan.originalPrice) * 100)}%
                         </div>
                     )}
-                    <CardHeader className="pt-8 flex-shrink-0">
-                        <CardTitle className="text-xl min-h-[28px]">{plan.name}</CardTitle>
-                        <CardDescription className="min-h-[40px]">{plan.description}</CardDescription>
+                    <CardHeader className="p-4 pt-6">
+                        <CardTitle className="text-xl">{plan.name}</CardTitle>
+                        <CardDescription>{plan.description}</CardDescription>
                     </CardHeader>
-                    <CardContent className="flex-grow flex flex-col justify-between">
+                    <CardContent className="p-4 flex-grow">
                         <div>
                             <div className="flex items-baseline flex-wrap gap-x-2">
                                 <span className="text-4xl font-bold flex items-center gap-1"><IndianRupee className="h-8 w-8"/>{plan.price.toLocaleString('en-IN')}</span>
@@ -288,8 +288,8 @@ export default function HomePage() {
                             </ul>
                         </div>
                     </CardContent>
-                    <CardFooter>
-                      <Button asChild className="w-full mt-6">
+                    <CardFooter className="p-4 pt-0">
+                      <Button asChild className="w-full">
                         <Link href="/subscribe">Choose Plan</Link>
                       </Button>
                     </CardFooter>
