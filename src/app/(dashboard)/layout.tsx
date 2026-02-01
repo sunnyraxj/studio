@@ -27,6 +27,7 @@ import {
   Search,
   Languages,
   Palette,
+  Lightbulb,
 } from 'lucide-react';
 
 import {
@@ -119,8 +120,8 @@ const navLinks = [
   },
   {
     href: '/dashboard/help',
-    icon: LifeBuoy,
-    label: 'Help & Support',
+    icon: Lightbulb,
+    label: 'Suggestions',
     category: 'Utilities'
   }
 ];
@@ -227,8 +228,8 @@ function AppSidebar({ shopName, isExpired }: { shopName: string, isExpired: bool
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild disabled={isExpired && pathname !== '/dashboard/help'}>
                       <Link href={isExpired && pathname !== '/dashboard/help' ? '#' : "/dashboard/help"}>
-                        <LifeBuoy className="mr-2 h-4 w-4" />
-                        <span>Help & Support</span>
+                        <Lightbulb className="mr-2 h-4 w-4" />
+                        <span>Suggestions</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />

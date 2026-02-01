@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -115,12 +114,12 @@ export default function AdminHelpPage() {
 
     return (
         <div className="h-full flex flex-col">
-            <h2 className="text-3xl font-bold tracking-tight mb-4">Help Desk</h2>
+            <h2 className="text-3xl font-bold tracking-tight mb-4">Feature Requests</h2>
             <div className="flex-grow grid grid-cols-1 md:grid-cols-3 gap-6 h-full min-h-0">
                 <Card className="md:col-span-1 h-full flex flex-col">
                     <CardHeader className="flex-row justify-between items-center">
                         <div>
-                            <CardTitle>All Tickets</CardTitle>
+                            <CardTitle>All Suggestions</CardTitle>
                         </div>
                         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
                             <SelectTrigger className="w-[140px]">
@@ -160,7 +159,7 @@ export default function AdminHelpPage() {
                                 ))
                             ) : (
                                 <div className="text-center p-10 text-sm text-muted-foreground">
-                                    No support tickets found for this filter.
+                                    No suggestions found for this filter.
                                 </div>
                             )}
                         </ScrollArea>
@@ -207,14 +206,14 @@ export default function AdminHelpPage() {
                         </CardContent>
                         <CardFooter className="pt-4 border-t">
                             <div className="flex w-full items-center gap-2">
-                                <Input value={reply} onChange={e => setReply(e.target.value)} placeholder="Type your reply..." onKeyDown={e => e.key === 'Enter' && handleSendReply()} />
+                                <Input value={reply} onChange={e => setReply(e.target.value)} placeholder="Reply to the suggestion..." onKeyDown={e => e.key === 'Enter' && handleSendReply()} />
                                 <Button onClick={handleSendReply}><Send className="h-4 w-4"/></Button>
                             </div>
                         </CardFooter>
                         </>
                     ) : (
                          <div className="flex items-center justify-center h-full text-muted-foreground">
-                            <p>Select a ticket to view the conversation.</p>
+                            <p>Select a suggestion to view the conversation.</p>
                         </div>
                     )}
                 </Card>
@@ -222,4 +221,3 @@ export default function AdminHelpPage() {
         </div>
     );
 }
-

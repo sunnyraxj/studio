@@ -11,8 +11,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { PlusCircle, Send, ArrowLeft, Loader2 } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { PlusCircle, Send, ArrowLeft, Loader2, Lightbulb } from 'lucide-react';
+import { format, formatDistanceToNow, isAfter, differenceInDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -39,17 +39,17 @@ type SupportMessage = {
     createdAt: any;
 }
 
-const NewTicketDialog = ({ isOpen, onOpenChange, onTicketCreated }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onTicketCreated: () => void }) => {
+const SuggestionDialog = ({ isOpen, onOpenChange, onSuggestionCreated }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onSuggestionCreated: () => void }) => {
     const { user } = useUser();
     const firestore = useFirestore();
-    const [subject, setSubject] = useState('');
-    const [message, setMessage] = useState('');
+    const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleCreateTicket = async () => {
+    const handleCreateSuggestion = async () => {
         if (!user || !firestore) return;
-        if (!subject.trim() || !message.trim()) {
-            toast({ variant: 'destructive', title: 'Missing fields', description: 'Please provide a subject and a message.' });
+        if (!title.trim() || !description.trim()) {
+            toast({ variant: 'destructive', title: 'Missing fields', description: 'Please provide a title and a description for your suggestion.' });
             return;
         }
 
@@ -57,35 +57,35 @@ const NewTicketDialog = ({ isOpen, onOpenChange, onTicketCreated }: { isOpen: bo
         try {
             const now = serverTimestamp();
             
-            const newTicket: Omit<SupportTicket, 'id'> = {
+            const newSuggestion: Omit<SupportTicket, 'id'> = {
                 ownerId: user.uid,
                 ownerName: user.displayName || 'Unknown User',
                 ownerEmail: user.email || 'no-email',
-                subject: subject,
+                subject: title,
                 status: 'Open',
                 createdAt: now,
                 lastUpdatedAt: now,
-                lastMessage: message,
+                lastMessage: description,
                 isReadByAdmin: false,
             };
             
             const ticketsCollectionRef = collection(firestore, 'supportTickets');
-            const newTicketRef = await addDoc(ticketsCollectionRef, newTicket);
+            const newTicketRef = await addDoc(ticketsCollectionRef, newSuggestion);
 
             const newMessage: Omit<SupportMessage, 'id'> = {
                 senderId: user.uid,
                 senderName: user.displayName || 'User',
-                text: message,
+                text: description,
                 createdAt: now,
             };
 
             const messagesCollectionRef = collection(newTicketRef, 'messages');
             await addDoc(messagesCollectionRef, newMessage);
             
-            toast({ title: 'Ticket created', description: 'Our team will get back to you shortly.'});
-            setSubject('');
-            setMessage('');
-            onTicketCreated();
+            toast({ title: 'Suggestion Submitted', description: 'Thank you for your feedback! Our team will review it.'});
+            setTitle('');
+            setDescription('');
+            onSuggestionCreated();
             onOpenChange(false);
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Error', description: e.message });
@@ -98,22 +98,22 @@ const NewTicketDialog = ({ isOpen, onOpenChange, onTicketCreated }: { isOpen: bo
          <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Create a New Support Ticket</DialogTitle>
-                    <DialogDescription>Describe your issue or suggestion below.</DialogDescription>
+                    <DialogTitle>Suggest a New Feature</DialogTitle>
+                    <DialogDescription>Have an idea to improve the app? Let us know!</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                        <Label htmlFor="subject">Subject</Label>
-                        <Input id="subject" value={subject} onChange={e => setSubject(e.target.value)} placeholder="e.g., Issue with billing" />
+                        <Label htmlFor="title">Feature Title</Label>
+                        <Input id="title" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g., Add analytics for customer demographics" />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="message">Message</Label>
-                        <Textarea id="message" value={message} onChange={e => setMessage(e.target.value)} placeholder="Please describe the issue in detail..." rows={5} />
+                        <Label htmlFor="description">Description</Label>
+                        <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder="Please describe your feature idea in detail..." rows={5} />
                     </div>
                 </div>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                    <Button onClick={handleCreateTicket} disabled={isSubmitting}>Create Ticket</Button>
+                    <Button onClick={handleCreateSuggestion} disabled={isSubmitting}>Submit Suggestion</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -123,20 +123,20 @@ const NewTicketDialog = ({ isOpen, onOpenChange, onTicketCreated }: { isOpen: bo
 export default function HelpAndSupportPage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
-    const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
-    const [isNewTicketDialogOpen, setIsNewTicketDialogOpen] = useState(false);
+    const [selectedSuggestion, setSelectedSuggestion] = useState<SupportTicket | null>(null);
+    const [isNewSuggestionDialogOpen, setIsNewSuggestionDialogOpen] = useState(false);
     const [reply, setReply] = useState('');
 
     const ticketsQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
         return query(collection(firestore, 'supportTickets'), where('ownerId', '==', user.uid), orderBy('lastUpdatedAt', 'desc'));
     }, [user, firestore]);
-    const { data: tickets, isLoading: isTicketsLoading } = useCollection<SupportTicket>(ticketsQuery);
+    const { data: suggestions, isLoading: isSuggestionsLoading } = useCollection<SupportTicket>(ticketsQuery);
 
     const messagesQuery = useMemoFirebase(() => {
-        if (!selectedTicket || !firestore) return null;
-        return query(collection(firestore, 'supportTickets', selectedTicket.id, 'messages'), orderBy('createdAt', 'asc'));
-    }, [selectedTicket, firestore]);
+        if (!selectedSuggestion || !firestore) return null;
+        return query(collection(firestore, 'supportTickets', selectedSuggestion.id, 'messages'), orderBy('createdAt', 'asc'));
+    }, [selectedSuggestion, firestore]);
     const { data: messages, isLoading: isMessagesLoading } = useCollection<SupportMessage>(messagesQuery);
     
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -145,30 +145,12 @@ export default function HelpAndSupportPage() {
     }, [messages]);
 
     const handleSendReply = async () => {
-        if (!reply.trim() || !selectedTicket || !user || !firestore) return;
+        if (!reply.trim() || !selectedSuggestion || !user || !firestore) return;
 
-        const messagesRef = collection(firestore, 'supportTickets', selectedTicket.id, 'messages');
-        const ticketRef = doc(firestore, 'supportTickets', selectedTicket.id);
-
-        try {
-            await addDoc(messagesRef, {
-                senderId: user.uid,
-                senderName: user.displayName || 'User',
-                text: reply,
-                createdAt: serverTimestamp(),
-            });
-            await updateDoc(ticketRef, {
-                lastMessage: reply,
-                lastUpdatedAt: serverTimestamp(),
-                isReadByAdmin: false,
-            });
-            setReply('');
-        } catch(e: any) {
-            toast({ variant: 'destructive', title: 'Error', description: e.message });
-        }
+        toast({ variant: 'destructive', title: 'Feature Disabled', description: 'Replying to suggestions is not enabled.' });
     };
     
-    const handleTicketCreated = () => {
+    const handleSuggestionCreated = () => {
         // The useCollection hook will automatically refresh the list.
     };
 
@@ -183,30 +165,30 @@ export default function HelpAndSupportPage() {
 
     return (
         <div className="h-full flex flex-col">
-            <h2 className="text-3xl font-bold tracking-tight mb-4">Help & Support</h2>
+            <h2 className="text-3xl font-bold tracking-tight mb-4">Suggestions &amp; Feature Requests</h2>
             <div className="flex-grow grid grid-cols-1 md:grid-cols-3 gap-6 h-full min-h-0">
                 <Card className="md:col-span-1 h-full flex flex-col">
                     <CardHeader className="flex-row justify-between items-center">
                         <div>
-                            <CardTitle>My Tickets</CardTitle>
-                            <CardDescription>Your support history</CardDescription>
+                            <CardTitle>My Suggestions</CardTitle>
+                            <CardDescription>Your submitted ideas</CardDescription>
                         </div>
-                         <Button size="sm" onClick={() => setIsNewTicketDialogOpen(true)}><PlusCircle className="mr-2 h-4 w-4"/>New</Button>
+                         <Button size="sm" onClick={() => setIsNewSuggestionDialogOpen(true)}><Lightbulb className="mr-2 h-4 w-4"/>New Suggestion</Button>
                     </CardHeader>
                     <CardContent className="flex-grow p-0 overflow-y-auto">
                         <ScrollArea className="h-full">
-                            {isTicketsLoading ? (
+                            {isSuggestionsLoading ? (
                                 <div className="p-4 space-y-4">
                                     <Skeleton className="h-16 w-full" />
                                     <Skeleton className="h-16 w-full" />
                                     <Skeleton className="h-16 w-full" />
                                 </div>
-                            ) : tickets && tickets.length > 0 ? (
-                                tickets.map(ticket => (
+                            ) : suggestions && suggestions.length > 0 ? (
+                                suggestions.map(ticket => (
                                     <div 
                                         key={ticket.id} 
-                                        onClick={() => setSelectedTicket(ticket)}
-                                        className={cn("p-4 border-b cursor-pointer hover:bg-accent", selectedTicket?.id === ticket.id && "bg-muted")}
+                                        onClick={() => setSelectedSuggestion(ticket)}
+                                        className={cn("p-4 border-b cursor-pointer hover:bg-accent", selectedSuggestion?.id === ticket.id && "bg-muted")}
                                     >
                                         <div className="flex justify-between items-start">
                                             <p className="font-semibold text-sm">{ticket.subject}</p>
@@ -218,7 +200,7 @@ export default function HelpAndSupportPage() {
                                 ))
                             ) : (
                                 <div className="text-center p-10 text-sm text-muted-foreground">
-                                    You have no support tickets.
+                                    You have no suggestions.
                                 </div>
                             )}
                         </ScrollArea>
@@ -226,14 +208,14 @@ export default function HelpAndSupportPage() {
                 </Card>
 
                 <Card className="md:col-span-2 h-full flex flex-col">
-                    {selectedTicket ? (
+                    {selectedSuggestion ? (
                         <>
                         <CardHeader className="border-b">
                              <div className="flex items-center gap-2">
-                                <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSelectedTicket(null)}><ArrowLeft className="h-4 w-4"/></Button>
+                                <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSelectedSuggestion(null)}><ArrowLeft className="h-4 w-4"/></Button>
                                 <div>
-                                    <CardTitle className="text-lg">{selectedTicket.subject}</CardTitle>
-                                    <CardDescription>Created on {format(new Date(selectedTicket.createdAt?.toDate()), 'dd MMM yyyy')}</CardDescription>
+                                    <CardTitle className="text-lg">{selectedSuggestion.subject}</CardTitle>
+                                    <CardDescription>Created on {format(new Date(selectedSuggestion.createdAt?.toDate()), 'dd MMM yyyy')}</CardDescription>
                                 </div>
                             </div>
                         </CardHeader>
@@ -253,24 +235,20 @@ export default function HelpAndSupportPage() {
                             </ScrollArea>
                         </CardContent>
                         <CardFooter className="pt-4 border-t">
-                            {selectedTicket.status !== 'Closed' ? (
-                                <div className="flex w-full items-center gap-2">
-                                    <Input value={reply} onChange={e => setReply(e.target.value)} placeholder="Type your reply..." onKeyDown={e => e.key === 'Enter' && handleSendReply()} />
-                                    <Button onClick={handleSendReply}><Send className="h-4 w-4"/></Button>
-                                </div>
-                            ) : (
-                                <p className="text-sm text-muted-foreground text-center w-full">This ticket has been closed.</p>
-                            )}
+                            <div className="flex w-full items-center gap-2">
+                                <Input value={reply} onChange={e => setReply(e.target.value)} placeholder="Replying is disabled" disabled />
+                                <Button onClick={handleSendReply} disabled><Send className="h-4 w-4"/></Button>
+                            </div>
                         </CardFooter>
                         </>
                     ) : (
                          <div className="flex items-center justify-center h-full text-muted-foreground">
-                            <p>Select a ticket to view the conversation.</p>
+                            <p>Select a suggestion to view the conversation.</p>
                         </div>
                     )}
                 </Card>
             </div>
-             <NewTicketDialog isOpen={isNewTicketDialogOpen} onOpenChange={setIsNewTicketDialogOpen} onTicketCreated={handleTicketCreated} />
+             <SuggestionDialog isOpen={isNewSuggestionDialogOpen} onOpenChange={setIsNewSuggestionDialogOpen} onSuggestionCreated={handleSuggestionCreated} />
         </div>
     );
 }

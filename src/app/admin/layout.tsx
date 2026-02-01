@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect } from 'react';
@@ -13,6 +12,7 @@ import {
   LogOut,
   Tags,
   LayoutList,
+  Lightbulb,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -43,8 +43,8 @@ const adminNavLinks = [
   },
   {
     href: '/admin/help',
-    icon: LifeBuoy,
-    label: 'Help Desk',
+    icon: Lightbulb,
+    label: 'Feature Requests',
   },
   {
     href: '/admin/settings',
