@@ -43,10 +43,15 @@ service cloud.firestore {
 
       // Notifications for a user
       match /notifications/{notificationId} {
-        // A user can read their own notifications.
-        allow read: if isOwner(userId);
+        // A user can get a single one of their own notifications.
+        allow get: if isOwner(userId);
         // An admin can write (create) notifications for a user.
         allow write: if isAdmin();
+      }
+
+      match /notifications {
+        // A user can list their own notifications.
+        allow list: if isOwner(userId);
       }
     }
 
