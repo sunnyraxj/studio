@@ -65,7 +65,6 @@ import {
 } from '@/components/ui/collapsible';
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { isAfter, differenceInDays } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
 import { UniversalSearch } from './components/universal-search';
 import { useTranslation } from '@/hooks/use-translation';
@@ -356,8 +355,8 @@ export default function DashboardLayout({
     if (userData?.subscriptionStatus === 'active' && userData?.subscriptionEndDate) {
         const endDate = new Date(userData.subscriptionEndDate);
         const now = new Date();
-        // A plan is expired if the end date is before today.
-        return differenceInDays(endDate, now) < 0;
+        // A plan is expired if the end date's timestamp is in the past.
+        return endDate.getTime() < now.getTime();
     }
     // If status is not active, treat as expired UI-wise
     if(userData?.subscriptionStatus && userData.subscriptionStatus !== 'active') return true;
