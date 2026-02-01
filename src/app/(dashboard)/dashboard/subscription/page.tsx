@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -104,15 +103,17 @@ export default function SubscriptionPage() {
         setTimeRemaining({ days, hours, minutes });
 
         const totalDuration = differenceInMilliseconds(endDate, startDate);
+        let progressPercentage = 0;
         if (totalDuration > 0) {
             const elapsed = differenceInMilliseconds(now, startDate);
-            const progressPercentage = Math.max(0, Math.min(100, (elapsed / totalDuration) * 100));
+            progressPercentage = Math.max(0, Math.min(100, (elapsed / totalDuration) * 100));
             setProgress(progressPercentage);
         } else {
+            progressPercentage = 100;
             setProgress(100);
         }
         
-        setCanRenew(days <= 30);
+        setCanRenew(progressPercentage >= 50);
       };
 
       updateRemainingTime();
@@ -311,7 +312,7 @@ export default function SubscriptionPage() {
                 </div>
             ) : !canRenew && userData?.subscriptionStatus === 'active' && (
                 <div className="text-sm text-muted-foreground ml-4">
-                   You can renew your subscription within 30 days of expiry.
+                   You can renew your plan once 50% of it has been used.
                 </div>
             )}
         </CardFooter>
