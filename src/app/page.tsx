@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Gem } from 'lucide-react';
+import { Gem, LayoutDashboard, ShoppingCart, BarChart } from 'lucide-react';
 import Link from 'next/link';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
@@ -15,6 +15,27 @@ type UserProfile = {
   subscriptionStatus?: string;
   role?: 'user' | 'admin';
 };
+
+const features = [
+    {
+      id: 'feature-pos',
+      title: 'Effortless Point of Sale',
+      description: 'A fast, intuitive POS system that makes billing a breeze. Handle sales, returns, and challans with ease.',
+      icon: ShoppingCart
+    },
+    {
+      id: 'feature-inventory',
+      title: 'Smart Inventory Control',
+      description: 'Manage your products, track stock levels, and generate barcodes. Never run out of your best-selling items.',
+      icon: LayoutDashboard
+    },
+    {
+      id: 'feature-dashboard',
+      title: 'Insightful Analytics',
+      description: 'Get a clear view of your sales, profit margins, and top products with our powerful dashboard and reports.',
+      icon: BarChart
+    }
+];
 
 export default function HomePage() {
   const { user, isUserLoading } = useUser();
@@ -100,8 +121,8 @@ export default function HomePage() {
               {heroImage && (
                 <Image
                     src={heroImage.imageUrl}
-                    width="1200"
-                    height="800"
+                    width={1200}
+                    height={800}
                     alt="Hero"
                     className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last lg:aspect-square"
                     data-ai-hint={heroImage.imageHint}
@@ -110,7 +131,55 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+        
+        <section className="w-full py-12 md:py-24 lg:py-32 bg-muted">
+            <div className="container px-4 md:px-6">
+                <div className="flex flex-col items-center justify-center space-y-4 text-center">
+                    <div className="space-y-2">
+                        <div className="inline-block rounded-lg bg-muted-foreground/10 px-3 py-1 text-sm">Key Features</div>
+                        <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Everything You Need to Succeed</h2>
+                        <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                            Our platform is packed with powerful features designed to simplify your retail operations and boost your growth.
+                        </p>
+                    </div>
+                </div>
+                <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-2 md:gap-12 lg:max-w-none lg:grid-cols-3 mt-12">
+                    {features.map((feature) => {
+                        const featureImage = PlaceHolderImages.find(p => p.id === feature.id);
+                        return (
+                            <div key={feature.title} className="grid gap-4 rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
+                                {featureImage && (
+                                    <Image
+                                        src={featureImage.imageUrl}
+                                        width={600}
+                                        height={400}
+                                        alt={feature.title}
+                                        className="rounded-lg object-cover aspect-video"
+                                        data-ai-hint={featureImage.imageHint}
+                                    />
+                                )}
+                                <div className="space-y-2">
+                                    <h3 className="text-xl font-bold flex items-center gap-2"><feature.icon className="h-5 w-5" />{feature.title}</h3>
+                                    <p className="text-muted-foreground">{feature.description}</p>
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+            </div>
+        </section>
       </main>
+      <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
+        <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} Axom Billing. All rights reserved.</p>
+        <nav className="sm:ml-auto flex gap-4 sm:gap-6">
+            <Link href="#" className="text-xs hover:underline underline-offset-4">
+                Terms of Service
+            </Link>
+            <Link href="#" className="text-xs hover:underline underline-offset-4">
+                Privacy
+            </Link>
+        </nav>
+      </footer>
     </div>
   )
 }
