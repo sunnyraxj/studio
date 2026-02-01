@@ -2,10 +2,59 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      // WARNING: This rule allows anyone to read and write to your entire database.
-      // This is insecure and not recommended for production applications.
-      allow read, write: if true;
+
+    // --- Helper Functions ---
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Is the requesting user the owner of the document specified by `userId`?
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Does the requesting user belong to the shop specified by `shopId`?
+    // This is checked by looking at the `shopId` field in their user profile.
+    function isShopMember(shopId) {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId == shopId;
+    }
+
+    // Is the requesting user an admin?
+    function isAdmin() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // --- Rules ---
+
+    // Global data (e.g., subscription plans)
+    match /global/{path=**} {
+      // Authenticated users can read global data.
+      allow read: if isAuthenticated();
+      // Only admins can write to global data.
+      allow write: if isAdmin();
+    }
+
+    // User profiles and their sub-collections
+    match /users/{userId} {
+      // A user can read and write their own profile.
+      // An admin can also read any user's profile.
+      allow read, write: if isOwner(userId);
+      allow get: if isAdmin();
+
+      // Notifications for a user
+      match /notifications/{notificationId} {
+        // A user can read their own notifications.
+        allow read: if isOwner(userId);
+        // An admin can write (create) notifications for a user.
+        allow write: if isAdmin();
+      }
+    }
+
+    // All shop-related data
+    match /shops/{shopId}/{document=**} {
+      // A user who is a member of the shop can read and write anything within that shop's data.
+      // Admins can also read and write anything.
+      allow read, write: if isShopMember(shopId) || isAdmin();
     }
   }
 }
