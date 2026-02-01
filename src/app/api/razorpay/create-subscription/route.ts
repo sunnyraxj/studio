@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { razorpayInstance } from '@/lib/razorpay';
+import { getRazorpayInstance } from '@/lib/razorpay';
 import type { App } from 'firebase-admin/app';
 
 // Helper function to initialize Firebase Admin SDK only once per serverless function instance.
@@ -28,7 +28,8 @@ function initializeFirebaseAdmin(): App {
 
 export async function POST(req: NextRequest) {
   try {
-    if (!razorpayInstance) {
+    const razorpay = getRazorpayInstance();
+    if (!razorpay) {
       throw new Error('Razorpay is not configured. Please set API keys in environment variables.');
     }
     
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
       }
     };
     
-    const order = await razorpayInstance.orders.create(options);
+    const order = await razorpay.orders.create(options);
 
     return NextResponse.json(order);
 
@@ -71,5 +72,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
-
     
