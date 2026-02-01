@@ -144,7 +144,7 @@ export default function HomePage() {
                         </p>
                     </div>
                 </div>
-                <div className="mx-auto grid max-w-6xl items-start gap-6 sm:grid-cols-2 md:gap-8 lg:grid-cols-3 mt-12">
+                <div className="mx-auto grid max-w-6xl items-start gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-3 mt-12">
                     {features.map((feature) => {
                         const featureImage = PlaceHolderImages.find(p => p.id === feature.id);
                         return (
