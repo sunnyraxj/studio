@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -190,10 +189,10 @@ function AppSidebar({ shopName, isExpired }: { shopName: string, isExpired: bool
                         <Separator className="my-2" />
                         {links.map((link) => (
                             <SidebarMenuItem key={link.label}>
-                                <Link href={isExpired && link.href !== '/dashboard/subscription' ? '#' : link.href} passHref>
+                                <Link href={isExpired && link.href !== '/dashboard/subscription' && link.href !== '/dashboard/help' ? '#' : link.href} passHref>
                                     <SidebarMenuButton
                                         isActive={pathname === link.href}
-                                        disabled={isExpired && link.href !== '/dashboard/subscription'}
+                                        disabled={isExpired && link.href !== '/dashboard/subscription' && link.href !== '/dashboard/help'}
                                         tooltip={t(link.label as any)}
                                     >
                                         <link.icon className="h-4 w-4" />
@@ -226,9 +225,11 @@ function AppSidebar({ shopName, isExpired }: { shopName: string, isExpired: bool
                         <span>{t('Settings')}</span>
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem disabled={isExpired}>
-                      <LifeBuoy className="mr-2 h-4 w-4" />
-                      <span>Support</span>
+                    <DropdownMenuItem asChild disabled={isExpired && pathname !== '/dashboard/help'}>
+                      <Link href={isExpired && pathname !== '/dashboard/help' ? '#' : "/dashboard/help"}>
+                        <LifeBuoy className="mr-2 h-4 w-4" />
+                        <span>Help & Support</span>
+                      </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout}>
@@ -298,11 +299,11 @@ const MobileSidebar = ({ shopName, isExpired }: { shopName: string; isExpired: b
                     {navLinks.map((link) => (
                         <Link
                             key={link.label}
-                            href={isExpired && link.href !== '/dashboard/subscription' ? '#' : link.href}
+                            href={isExpired && link.href !== '/dashboard/subscription' && link.href !== '/dashboard/help' ? '#' : link.href}
                             className={cn(
                                 "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
                                 pathname === link.href && "text-primary bg-muted",
-                                isExpired && link.href !== '/dashboard/subscription' && "pointer-events-none opacity-50"
+                                isExpired && link.href !== '/dashboard/subscription' && link.href !== '/dashboard/help' && "pointer-events-none opacity-50"
                             )}
                         >
                             <link.icon className="h-4 w-4" />
@@ -355,10 +356,8 @@ export default function DashboardLayout({
     if (userData?.subscriptionStatus === 'active' && userData?.subscriptionEndDate) {
         const endDate = new Date(userData.subscriptionEndDate);
         const now = new Date();
-        // A plan is expired if the end date's timestamp is in the past.
         return endDate.getTime() < now.getTime();
     }
-    // If status is not active, treat as expired UI-wise
     if(userData?.subscriptionStatus && userData.subscriptionStatus !== 'active') return true;
     return false;
   }, [userData]);
@@ -413,7 +412,7 @@ export default function DashboardLayout({
 
   const shopName = user ? (settingsData?.companyName || 'My Shop') : 'Demo Shop';
 
-  const isUIBlocked = isSubscriptionExpired && pathname !== '/dashboard/subscription';
+  const isUIBlocked = isSubscriptionExpired && pathname !== '/dashboard/subscription' && pathname !== '/dashboard/help';
 
   return (
     <SidebarProvider>
