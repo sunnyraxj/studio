@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -215,27 +214,6 @@ export default function SubscriptionPage() {
     <div className="flex-1 space-y-4">
       <h2 className="text-3xl font-bold tracking-tight">My Subscription</h2>
       
-      {adjustmentNotification && (
-        <Card className={cn(adjustmentNotification.type === 'bonus' ? 'bg-green-500/10 border-green-500' : 'bg-destructive/10 border-destructive')}>
-            <CardContent className="p-4 flex items-center gap-4">
-                <div className={cn('p-2 rounded-full', adjustmentNotification.type === 'bonus' ? 'bg-green-500/20 text-green-700' : 'bg-destructive/20 text-destructive')}>
-                    {adjustmentNotification.type === 'bonus' ? <Gift className="h-5 w-5" /> : <ShieldAlert className="h-5 w-5" />}
-                </div>
-                <div className='flex-grow'>
-                    <p className="font-semibold text-sm">
-                        {adjustmentNotification.type === 'bonus' ? 'Plan Extended by Admin' : 'Plan Reduced by Admin'}
-                    </p>
-                    <p className='text-xs text-muted-foreground'>
-                        Reason: {adjustmentNotification.reason}
-                    </p>
-                </div>
-                <div className={cn('text-lg font-bold', adjustmentNotification.type === 'bonus' ? 'text-green-700' : 'text-destructive')}>
-                    {adjustmentNotification.days > 0 ? `+${adjustmentNotification.days}` : adjustmentNotification.days} Days
-                </div>
-            </CardContent>
-        </Card>
-      )}
-
       <Card>
         <CardHeader>
           <div className="flex items-start justify-between">
@@ -247,6 +225,27 @@ export default function SubscriptionPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6 pt-2">
+            {adjustmentNotification && (
+                <Card className={cn('shadow-none', adjustmentNotification.type === 'bonus' ? 'bg-green-500/10 border-green-500' : 'bg-destructive/10 border-destructive')}>
+                    <CardContent className="p-4 flex items-center gap-4">
+                        <div className={cn('p-2 rounded-full', adjustmentNotification.type === 'bonus' ? 'bg-green-500/20 text-green-700' : 'bg-destructive/20 text-destructive')}>
+                            {adjustmentNotification.type === 'bonus' ? <Gift className="h-5 w-5" /> : <ShieldAlert className="h-5 w-5" />}
+                        </div>
+                        <div className='flex-grow'>
+                            <p className="font-semibold text-sm">
+                                {adjustmentNotification.type === 'bonus' ? 'Plan Extended by Admin' : 'Plan Reduced by Admin'}
+                            </p>
+                            <p className='text-xs text-muted-foreground'>
+                                Reason: {adjustmentNotification.reason}
+                            </p>
+                        </div>
+                        <div className={cn('text-lg font-bold', adjustmentNotification.type === 'bonus' ? 'text-green-700' : 'text-destructive')}>
+                            {adjustmentNotification.days > 0 ? `+${adjustmentNotification.days}` : adjustmentNotification.days} Days
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
             <div className="flex items-center space-x-4 rounded-md border p-4">
                 {isLoading ? <Skeleton className="h-8 w-8" /> : statusInfo.icon}
                 <div className="flex-1 space-y-1">
@@ -261,25 +260,22 @@ export default function SubscriptionPage() {
 
             {(userData?.subscriptionStatus === 'active' || (userData?.subscriptionStatus === 'inactive' && userData?.planName)) && (
                 <div className="space-y-6 rounded-md border p-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-muted-foreground">Current Plan</p>
-                            {isLoading ? <Skeleton className="h-6 w-24 mt-1" /> : <p className="text-xl font-bold">{userData.planName || 'N/A'}</p>}
+                    <div className="grid grid-cols-1 gap-y-4 text-sm md:grid-cols-2 lg:grid-cols-4">
+                        <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">Current Plan</p>
+                            {isLoading ? <Skeleton className="h-6 w-24" /> : <p className="text-lg font-bold">{userData.planName || 'N/A'}</p>}
                         </div>
-                        <div>
-                            <p className="text-sm text-muted-foreground text-right">Price</p>
-                            {isLoading ? <Skeleton className="h-6 w-20 mt-1" /> : <p className="text-xl font-bold flex items-center justify-end"><IndianRupee className="h-5 w-5 mr-1" />{userData.planPrice?.toLocaleString('en-IN') || 0}</p>}
+                        <div className="space-y-1">
+                             <p className="text-xs text-muted-foreground">Price</p>
+                            {isLoading ? <Skeleton className="h-6 w-20" /> : <p className="text-lg font-bold flex items-center"><IndianRupee className="h-5 w-5 mr-1" />{userData.planPrice?.toLocaleString('en-IN') || 0}</p>}
                         </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 text-center">
-                        <div className="p-3 bg-muted/50 rounded-md">
+                        <div className="space-y-1">
                             <p className="text-xs text-muted-foreground">Activation Date</p>
-                            {isLoading ? <Skeleton className="h-5 w-24 mx-auto mt-1" /> : <p className="font-medium text-sm">{userData.subscriptionStartDate ? format(new Date(userData.subscriptionStartDate), 'dd MMM, yyyy') : 'N/A'}</p>}
+                            {isLoading ? <Skeleton className="h-5 w-24" /> : <p className="font-medium">{userData.subscriptionStartDate ? format(new Date(userData.subscriptionStartDate), 'dd MMM, yyyy') : 'N/A'}</p>}
                         </div>
-                        <div className="p-3 bg-muted/50 rounded-md">
+                        <div className="space-y-1">
                             <p className="text-xs text-muted-foreground">Expiry Date</p>
-                            {isLoading ? <Skeleton className="h-5 w-24 mx-auto mt-1" /> : <p className="font-medium text-sm">{userData.subscriptionEndDate ? format(new Date(userData.subscriptionEndDate), 'dd MMM, yyyy') : 'N/A'}</p>}
+                            {isLoading ? <Skeleton className="h-5 w-24" /> : <p className="font-medium">{userData.subscriptionEndDate ? format(new Date(userData.subscriptionEndDate), 'dd MMM, yyyy') : 'N/A'}</p>}
                         </div>
                     </div>
                     
