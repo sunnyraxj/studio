@@ -152,7 +152,7 @@ export default function HomePage() {
                     width={1200}
                     height={800}
                     alt="Hero"
-                    className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last"
+                    className="mx-auto aspect-[16/10] overflow-hidden rounded-xl object-contain sm:w-full lg:order-last"
                     data-ai-hint="retail interior"
                 />
               
