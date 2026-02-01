@@ -32,14 +32,14 @@ export async function POST(req: NextRequest) {
   try {
     const { 
         razorpay_payment_id, 
-        razorpay_subscription_id, 
+        razorpay_order_id,
         razorpay_signature,
         userId,
         plan,
         isRenewal,
     } = await req.json();
 
-    if (!razorpay_payment_id || !razorpay_subscription_id || !razorpay_signature || !userId || !plan) {
+    if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature || !userId || !plan) {
       return NextResponse.json({ error: 'Missing required parameters for verification' }, { status: 400 });
     }
 
@@ -49,18 +49,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Server configuration error: Razorpay secret is not set.' }, { status: 500 });
     }
 
-    const generated_signature = crypto
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSignature = crypto
       .createHmac('sha256', keySecret)
-      .update(razorpay_payment_id + '|' + razorpay_subscription_id)
+      .update(body)
       .digest('hex');
 
-    if (generated_signature !== razorpay_signature) {
+    if (expectedSignature !== razorpay_signature) {
       return NextResponse.json({ error: 'Invalid payment signature' }, { status: 400 });
     }
     
-    // --- Signature Verified, Activate Subscription in Firestore ---
+    // --- Signature Verified, Activate Plan in Firestore ---
     
-    // Dynamically import Firestore modules only when needed
     const { getFirestore } = await import('firebase-admin/firestore');
     
     initializeFirebaseAdmin();
@@ -88,7 +88,6 @@ export async function POST(req: NextRequest) {
         planPrice: plan.price,
         planDurationMonths: plan.durationMonths,
         razorpay_payment_id: razorpay_payment_id,
-        razorpay_subscription_id: razorpay_subscription_id,
         subscriptionRequestDate: new Date().toISOString(),
         subscriptionStartDate: startDate.toISOString(),
         subscriptionEndDate: endDate.toISOString(),
@@ -97,9 +96,11 @@ export async function POST(req: NextRequest) {
 
     await userDocRef.update(subscriptionData);
 
-    return NextResponse.json({ success: true, message: 'Subscription activated successfully.' });
+    return NextResponse.json({ success: true, message: 'Plan activated successfully.' });
   } catch (error: any) {
-    console.error('Error verifying Razorpay payment and activating subscription:', error);
+    console.error('Error verifying Razorpay payment and activating plan:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+    

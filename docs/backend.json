@@ -75,10 +75,6 @@
             "admin"
           ]
         },
-        "razorpay_subscription_id": {
-            "type": "string",
-            "description": "The ID of the subscription from Razorpay."
-        },
         "razorpay_payment_id": {
             "type": "string",
             "description": "The ID of the last successful payment from Razorpay."
@@ -722,3 +718,5 @@
     ]
   }
 }
+
+    

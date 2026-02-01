@@ -18,7 +18,6 @@ function initializeFirebaseAdmin(): App {
     return getApps()[0];
   }
   
-  // The service account key is securely stored in a Vercel environment variable.
   const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
   if (!serviceAccountEnv) {
     throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set.');
@@ -58,44 +57,64 @@ export async function POST(req: NextRequest) {
   
   const event = JSON.parse(body);
 
-  // 2. Process only the `subscription.charged` event
-  if (event.event === 'subscription.charged') {
+  // 2. Process only the `order.paid` event
+  if (event.event === 'order.paid') {
     try {
       const { getFirestore } = await import('firebase-admin/firestore');
       initializeFirebaseAdmin();
       const adminFirestore = getFirestore();
       
-      const subscription = event.payload.subscription.entity;
+      const order = event.payload.order.entity;
       const payment = event.payload.payment.entity;
       
-      // Find the user associated with this subscription
-      const usersRef = adminFirestore.collection('users');
-      const userQuery = usersRef.where('razorpay_subscription_id', '==', subscription.id).limit(1);
-      const userSnapshot = await userQuery.get();
+      const { userId, planId } = order.notes;
 
-      if (userSnapshot.empty) {
-        console.warn(`Webhook received for unknown subscription ID: ${subscription.id}`);
-        // Still return success to Razorpay to prevent retries for this case.
-        return NextResponse.json({ received: true, message: 'User for subscription not found.' });
+      if (!userId || !planId) {
+        console.warn(`Webhook received for order.paid without userId or planId in notes. Order ID: ${order.id}`);
+        return NextResponse.json({ received: true, message: 'Order processed, but missing user/plan details.' });
       }
 
-      const userDoc = userSnapshot.docs[0];
+      const userDocRef = adminFirestore.collection('users').doc(userId);
+      const planDocRef = adminFirestore.collection('global/plans/all').doc(planId);
+      
+      const [userDoc, planDoc] = await Promise.all([userDocRef.get(), planDocRef.get()]);
+
+      if (!userDoc.exists) {
+        console.warn(`Webhook: User not found for ID: ${userId}`);
+        return NextResponse.json({ received: true, message: 'User for order not found.' });
+      }
+      if (!planDoc.exists) {
+        console.error(`Webhook: Plan not found for ID: ${planId}`);
+        return NextResponse.json({ received: true, message: `Plan ${planId} not found`});
+      }
+      
       const userData = userDoc.data();
+      const planData = planDoc.data();
+
+      // Idempotency Check: If we have already processed this payment, ignore the webhook.
+      if (userData?.razorpay_payment_id === payment.id) {
+          console.log(`Webhook: Payment ID ${payment.id} already processed for user ${userId}. Skipping.`);
+          return NextResponse.json({ received: true, message: 'Duplicate webhook ignored.' });
+      }
       
       const now = new Date();
-      // If the old plan is still active, extend from the old expiry date. Otherwise, start from now.
-      const currentEndDate = userData.subscriptionEndDate ? new Date(userData.subscriptionEndDate) : now;
-      const startDate = currentEndDate > now ? currentEndDate : now;
+      const isRenewal = userData?.subscriptionStatus === 'active' || userData?.subscriptionStatus === 'inactive';
       
-      // Assume 1 month renewal per charge. For more complex plans, you would look up the plan details.
-      const planDurationMonths = userData.planDurationMonths || 1;
-      const newEndDate = add(startDate, { months: planDurationMonths });
+      // If renewing, start new plan from end of current one, otherwise start now.
+      const currentEndDate = userData?.subscriptionEndDate ? new Date(userData.subscriptionEndDate) : now;
+      const startDate = isRenewal && currentEndDate > now ? currentEndDate : now;
+      
+      const endDate = add(startDate, { months: planData.durationMonths });
 
       await userDoc.ref.update({
         subscriptionStatus: 'active',
-        subscriptionEndDate: newEndDate.toISOString(),
-        subscriptionStartDate: startDate.toISOString(), // Update start date for renewal period
+        subscriptionEndDate: endDate.toISOString(),
+        subscriptionStartDate: startDate.toISOString(),
         razorpay_payment_id: payment.id, // Log the latest payment ID
+        planName: planData.name,
+        planPrice: planData.price,
+        planDurationMonths: planData.durationMonths,
+        subscriptionType: isRenewal ? 'Renew' : 'New',
       });
 
     } catch (error: any) {
@@ -105,6 +124,8 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // 3. Acknowledge receipt to Razorpay
+  // 3. Acknowledge receipt to Razorpay for any other events
   return NextResponse.json({ received: true });
 }
+
+    

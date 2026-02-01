@@ -12,12 +12,12 @@ export default function DeprecatedPaymentPage() {
             <CardHeader>
                 <CardTitle>Page Deprecated</CardTitle>
                 <CardDescription>
-                    This payment verification page is no longer in use. Our new automated system handles payments instantly.
+                    This payment page is no longer in use. Our new system handles payments automatically.
                 </CardDescription>
             </CardHeader>
             <CardContent>
                 <p className="text-sm text-muted-foreground">
-                    If your payment was successful, please go to your dashboard. Your subscription will activate automatically.
+                    If your payment was successful, please go to your subscription page. Your plan will be activated shortly.
                 </p>
                 <Button asChild className="mt-6">
                     <Link href="/dashboard/subscription">Go to My Subscription</Link>
@@ -27,3 +27,5 @@ export default function DeprecatedPaymentPage() {
     </div>
   );
 }
+
+    

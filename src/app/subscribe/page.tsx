@@ -83,42 +83,40 @@ export default function SubscribePage() {
       router.push(`/login?redirect=/subscribe&planId=${selectedPlan.id}`);
       return;
     }
-
-    if (!selectedPlan.razorpayPlanId) {
-        toast({ variant: 'destructive', title: 'Configuration Error', description: 'This plan is not configured for payments. Please contact admin.'});
-        return;
-    }
     
     setIsProcessing(true);
 
     try {
       const isRenewal = userData.subscriptionStatus === 'active' || userData.subscriptionStatus === 'inactive';
       
-      const createSubResponse = await fetch('/api/razorpay/create-subscription', {
+      const createOrderResponse = await fetch('/api/razorpay/create-subscription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId: selectedPlan.razorpayPlanId }),
+        body: JSON.stringify({ planId: selectedPlan.id, userId: user.uid }),
       });
 
-      if (!createSubResponse.ok) {
-        throw new Error('Failed to create subscription on server.');
+      if (!createOrderResponse.ok) {
+        const errorData = await createOrderResponse.json();
+        throw new Error(errorData.error || 'Failed to create order on server.');
       }
-      const { subscriptionId } = await createSubResponse.json();
+      const order = await createOrderResponse.json();
 
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        subscription_id: subscriptionId,
+        amount: order.amount,
+        currency: "INR",
         name: 'Axom Billing',
-        description: `Subscribing to ${selectedPlan.name}`,
+        description: `One-time payment for ${selectedPlan.name}`,
+        order_id: order.id,
         handler: async function (response: any) {
-          toast({ title: 'Payment Successful!', description: 'Verifying and activating your subscription...' });
+          toast({ title: 'Payment Successful!', description: 'Verifying and activating your plan...' });
 
           const verifyResponse = await fetch('/api/razorpay/verify-payment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_subscription_id: response.razorpay_subscription_id,
+              razorpay_order_id: response.razorpay_order_id,
               razorpay_signature: response.razorpay_signature,
               userId: user.uid,
               plan: selectedPlan,
@@ -131,9 +129,8 @@ export default function SubscribePage() {
              throw new Error(errorData.error || 'Payment verification failed on the server.');
           }
           
-          toast({ title: 'Subscription Activated!', description: 'Redirecting you now...' });
+          toast({ title: 'Plan Activated!', description: 'Redirecting you now...' });
           
-          // Redirect based on whether it's a first-time setup or a renewal
           if (!userData.shopId) {
             router.push('/shop-setup');
           } else {
@@ -160,10 +157,10 @@ export default function SubscribePage() {
       rzp.open();
 
     } catch (error: any) {
-      console.error("Subscription process failed:", error);
+      console.error("Payment process failed:", error);
       toast({
         variant: 'destructive',
-        title: 'Subscription Failed',
+        title: 'Payment Failed',
         description: error.message,
       });
       setIsProcessing(false);
@@ -272,3 +269,5 @@ export default function SubscribePage() {
     </div>
   );
 }
+
+    
