@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -38,13 +39,21 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 type Plan = {
   id: string;
   name: string;
   price: number;
   originalPrice?: number;
-  durationDays: number;
+  durationValue: number;
+  durationType: 'hours' | 'days' | 'months' | 'years';
   order: number;
   description: string;
   features: string[];
@@ -60,7 +69,8 @@ const PlanFormDialog = ({ isOpen, onOpenChange, plan, onSaveSuccess }: { isOpen:
             name: '',
             price: 0,
             originalPrice: 0,
-            durationDays: 30,
+            durationValue: 30,
+            durationType: 'days',
             description: '',
             features: [],
             highlight: false,
@@ -83,13 +93,14 @@ const PlanFormDialog = ({ isOpen, onOpenChange, plan, onSaveSuccess }: { isOpen:
             ...formData,
             price: Number(formData.price) || 0,
             originalPrice: Number(formData.originalPrice) || 0,
-            durationDays: Number(formData.durationDays) || 1,
+            durationValue: Number(formData.durationValue) || 1,
+            durationType: formData.durationType || 'days',
             order: Number(formData.order) || 1,
             highlight: formData.highlight || false,
             features: formData.features || []
         };
 
-        if (!planData.name || !planData.price || !planData.durationDays) {
+        if (!planData.name || !planData.price || !planData.durationValue) {
             toast({ variant: 'destructive', title: 'Missing Fields', description: 'Name, Price, and Duration are required.' });
             return;
         }
@@ -129,8 +140,27 @@ const PlanFormDialog = ({ isOpen, onOpenChange, plan, onSaveSuccess }: { isOpen:
                     <div className="space-y-2"><Label>Original Price</Label><div className="relative"><IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="number" value={formData.originalPrice || ''} onChange={e => handleChange('originalPrice', e.target.value)} className="pl-8" /></div></div>
                   </div>
                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label>Duration (Days)</Label><Input type="number" value={formData.durationDays || ''} onChange={e => handleChange('durationDays', e.target.value)} /></div>
                         <div className="space-y-2"><Label>Display Order</Label><Input type="number" value={formData.order || ''} onChange={e => handleChange('order', e.target.value)} /></div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-2">
+                              <Label>Duration</Label>
+                              <Input type="number" value={formData.durationValue || ''} onChange={e => handleChange('durationValue', e.target.value)} />
+                          </div>
+                           <div className="space-y-2">
+                              <Label>Type</Label>
+                              <Select value={formData.durationType || 'days'} onValueChange={(value) => handleChange('durationType', value)}>
+                                  <SelectTrigger>
+                                      <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                      <SelectItem value="hours">Hours</SelectItem>
+                                      <SelectItem value="days">Days</SelectItem>
+                                      <SelectItem value="months">Months</SelectItem>
+                                      <SelectItem value="years">Years</SelectItem>
+                                  </SelectContent>
+                              </Select>
+                          </div>
+                        </div>
                    </div>
                    <div className="space-y-2"><Label>Description</Label><Textarea value={formData.description || ''} onChange={e => handleChange('description', e.target.value)} /></div>
                    <div className="space-y-2"><Label>Features (comma-separated)</Label><Textarea value={formData.features?.join(', ') || ''} onChange={e => handleChange('features', e.target.value)} /></div>
@@ -227,7 +257,7 @@ export default function AdminPlansPage() {
                         </div>
                         <div className="space-y-1">
                             <Label className="text-xs text-muted-foreground">Duration</Label>
-                            <p className="font-semibold">{plan.durationDays >= 36500 ? 'Permanent' : `${plan.durationDays} Day(s)`}</p>
+                            <p className="font-semibold capitalize">{plan.durationValue} {plan.durationType}</p>
                         </div>
                         <div className="space-y-1">
                             <Label className="text-xs text-muted-foreground">Display Order</Label>

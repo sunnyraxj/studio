@@ -87,9 +87,14 @@
           "type": "number",
           "description": "The price of the plan the user is subscribing to."
         },
-        "planDurationDays": {
+        "planDurationValue": {
             "type": "number",
-            "description": "The duration of the subscription plan in days."
+            "description": "The value of the subscription plan's duration (e.g., 30)."
+        },
+        "planDurationType": {
+            "type": "string",
+            "enum": ["hours", "days", "months", "years"],
+            "description": "The unit of the subscription plan's duration (e.g., 'days')."
         },
         "subscriptionRequestDate": {
             "type": "string",
@@ -429,13 +434,14 @@
         "name": { "type": "string" },
         "price": { "type": "number" },
         "originalPrice": { "type": "number" },
-        "durationDays": { "type": "number" },
+        "durationValue": { "type": "number" },
+        "durationType": { "type": "string", "enum": ["hours", "days", "months", "years"] },
         "description": { "type": "string" },
         "features": { "type": "array", "items": { "type": "string" } },
         "highlight": { "type": "boolean" },
         "order": { "type": "number", "description": "Sort order for displaying plans." }
       },
-      "required": ["id", "name", "price", "durationDays", "order"]
+      "required": ["id", "name", "price", "durationValue", "durationType", "order"]
     },
     "Supplier": {
       "title": "Supplier",

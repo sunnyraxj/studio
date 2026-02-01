@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -28,7 +29,8 @@ type UserProfile = {
   subscriptionEndDate?: string;
   subscriptionType?: 'New' | 'Renew';
   rejectionReason?: string;
-  planDurationDays?: number;
+  planDurationValue?: number;
+  planDurationType?: 'hours' | 'days' | 'months' | 'years';
   lastAdjustment?: {
       days: number;
       reason: string;

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -29,7 +30,6 @@ type UserProfile = {
   utr?: string;
   planPrice?: number;
   rejectionReason?: string;
-  planDurationMonths?: number;
   subscriptionEndDate?: string;
   subscriptionStartDate?: string;
   planName?: string;

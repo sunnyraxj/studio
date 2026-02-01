@@ -29,7 +29,8 @@ type Plan = {
   name: string;
   price: number;
   originalPrice?: number;
-  durationDays: number;
+  durationValue: number;
+  durationType: 'hours' | 'days' | 'months' | 'years';
   description: string;
   features: string[];
   highlight: boolean;
@@ -228,8 +229,8 @@ export default function SubscribePage() {
                                      <span className="text-lg font-medium text-muted-foreground line-through flex items-center gap-1"><IndianRupee className="h-4 w-4"/>{plan.originalPrice.toLocaleString('en-IN')}</span>
                                 )}
                             </div>
-                            <div className="text-sm text-muted-foreground mb-4">
-                                For {plan.durationDays} days
+                            <div className="text-sm text-muted-foreground mb-4 capitalize">
+                                For {plan.durationValue} {plan.durationType}
                             </div>
                             <ul className="space-y-2 pt-4">
                                 {plan.features.map((feature) => (
