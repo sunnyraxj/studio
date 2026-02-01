@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect } from 'react';
@@ -148,12 +147,12 @@ export default function HomePage() {
               </div>
               
                 <Image
-                    src="https://images.unsplash.com/photo-1546213290-e1b492ab3eee?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxyZXRhaWwlMjBzdG9yZXxlbnwwfHx8fDE3Njk4NTgxMjJ8MA&ixlib=rb-4.1.0&q=80&w=1080"
+                    src="https://i.pinimg.com/1200x/cc/f7/7d/ccf77d8e42d8865b454a2c4ebdd373ff.jpg"
                     width={1200}
                     height={800}
                     alt="Hero"
                     className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last lg:aspect-square"
-                    data-ai-hint="retail store"
+                    data-ai-hint="retail interior"
                 />
               
             </div>
@@ -218,7 +217,7 @@ export default function HomePage() {
             </div>
         </section>
 
-        <section className="w-full py-6 md:py-12 lg:py-16 bg-muted">
+        <section className="w-full py-12 md:py-24 lg:py-32 bg-muted">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
@@ -233,7 +232,7 @@ export default function HomePage() {
                 </p>
               </div>
             </div>
-            <div className="mx-auto grid max-w-6xl items-start gap-6 py-12 lg:grid-cols-3 lg:gap-8">
+            <div className="mx-auto grid max-w-sm items-start gap-8 sm:max-w-4xl sm:grid-cols-2 md:gap-12 lg:max-w-5xl lg:grid-cols-3 py-12">
               {isPlansLoading ? (
                 Array.from({ length: 3 }).map((_, i) => (
                   <Card key={i}>
