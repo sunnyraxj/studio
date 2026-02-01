@@ -1,8 +1,8 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth } from '@/firebase';
+import { useRouter } from 'next/navigation';
+import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, query, where, doc, addDoc, serverTimestamp, updateDoc, orderBy } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -11,8 +11,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { PlusCircle, Send, ArrowLeft } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { PlusCircle, Send, ArrowLeft, Loader2 } from 'lucide-react';
+import { format, formatDistanceToNow, isAfter } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -38,6 +38,11 @@ type SupportMessage = {
     text: string;
     createdAt: any;
 }
+
+type UserProfile = {
+  subscriptionStatus?: 'active' | 'inactive' | 'pending_verification' | 'rejected';
+  subscriptionEndDate?: string;
+};
 
 const NewTicketDialog = ({ isOpen, onOpenChange, onTicketCreated }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onTicketCreated: () => void }) => {
     const { user } = useUser();
@@ -121,11 +126,36 @@ const NewTicketDialog = ({ isOpen, onOpenChange, onTicketCreated }: { isOpen: bo
 };
 
 export default function HelpAndSupportPage() {
-    const { user } = useUser();
+    const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
+    const router = useRouter();
     const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
     const [isNewTicketDialogOpen, setIsNewTicketDialogOpen] = useState(false);
     const [reply, setReply] = useState('');
+
+    const userDocRef = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return doc(firestore, 'users', user.uid);
+    }, [user, firestore]);
+    const { data: userData, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
+
+    const isSubscriptionActive = useMemo(() => {
+        if (userData?.subscriptionStatus === 'active' && userData?.subscriptionEndDate) {
+            return isAfter(new Date(userData.subscriptionEndDate), new Date());
+        }
+        return false;
+    }, [userData]);
+    
+    useEffect(() => {
+        if (!isUserLoading && !isProfileLoading && !isSubscriptionActive) {
+            toast({
+                variant: 'destructive',
+                title: 'Subscription Required',
+                description: 'You need an active subscription to access the help and support page.'
+            });
+            router.push('/dashboard/subscription');
+        }
+    }, [isUserLoading, isProfileLoading, isSubscriptionActive, router]);
 
     const ticketsQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
@@ -171,6 +201,15 @@ export default function HelpAndSupportPage() {
     const handleTicketCreated = () => {
         // The useCollection hook will automatically refresh the list.
     };
+
+    if (isUserLoading || isProfileLoading || !isSubscriptionActive) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px]">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                <p className="mt-4 text-muted-foreground">Checking subscription status...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="h-full flex flex-col">
@@ -265,4 +304,3 @@ export default function HelpAndSupportPage() {
         </div>
     );
 }
-
