@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
@@ -28,9 +29,16 @@ import {
 import { Button } from '@/components/ui/button';
 import { ChevronDownIcon, ChevronRightIcon } from '@radix-ui/react-icons';
 import * as React from 'react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { differenceInDays, format } from 'date-fns';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from '@/hooks/use-toast.tsx';
+import { Loader2 } from 'lucide-react';
+import { adjustPlanDuration } from './actions';
 
 type Shop = {
   id: string;
@@ -63,10 +71,67 @@ type ShopViewModel = Shop & {
   daysRemaining?: number;
 };
 
+function AdjustPlanDialog({ isOpen, onOpenChange, shop, owner }: { isOpen: boolean, onOpenChange: (open: boolean) => void, shop: Shop, owner: UserProfile | null }) {
+    const [days, setDays] = useState('');
+    const [reason, setReason] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSubmit = async () => {
+        setIsSubmitting(true);
+        const daysNum = parseInt(days, 10);
+        if (isNaN(daysNum) || !reason) {
+            toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please provide a valid number of days and a reason.' });
+            setIsSubmitting(false);
+            return;
+        }
+
+        const result = await adjustPlanDuration(shop.ownerId, daysNum, reason);
+
+        if (result.success) {
+            toast({ title: 'Success', description: result.message });
+            onOpenChange(false);
+            setDays('');
+            setReason('');
+        } else {
+            toast({ variant: 'destructive', title: 'Error', description: result.message });
+        }
+        setIsSubmitting(false);
+    }
+    
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Adjust Plan for {shop.name}</DialogTitle>
+                    <DialogDescription>Add or remove days from the user's subscription. Use a negative number to remove days.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="days">Days to Add/Remove</Label>
+                        <Input id="days" type="number" placeholder="e.g., 30 or -7" value={days} onChange={e => setDays(e.target.value)} />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="reason">Reason</Label>
+                        <Textarea id="reason" placeholder="e.g., Bonus for loyalty or Penalty for violation" value={reason} onChange={e => setReason(e.target.value)} />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button onClick={handleSubmit} disabled={isSubmitting}>
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Apply Changes
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 
 function ShopRow({ shop }: { shop: Shop }) {
     const firestore = useFirestore();
     const [isExpanded, setIsExpanded] = React.useState(false);
+    const [isAdjustOpen, setIsAdjustOpen] = React.useState(false);
 
     const ownerDocRef = useMemoFirebase(() => {
         if (!firestore || !shop.ownerId) return null;
@@ -112,14 +177,17 @@ function ShopRow({ shop }: { shop: Shop }) {
                         <span className={daysRemaining < 10 ? 'font-bold text-destructive' : ''}>
                            {daysRemaining >= 0 ? `${daysRemaining} days` : 'Expired'}
                         </span>
-                    ) : 'N/A'}
+                    ) : (owner?.subscriptionStatus || 'N/A')}
                 </TableCell>
             </TableRow>
             {isExpanded && (
                 <TableRow>
                 <TableCell colSpan={5} className="p-0">
                   <div className="p-4 bg-muted/50 space-y-4">
-                    <h4 className="font-bold">Shop Details: {shop.name}</h4>
+                    <div className="flex justify-between items-center">
+                        <h4 className="font-bold">Shop Details: {shop.name}</h4>
+                        <Button size="sm" variant="outline" onClick={() => setIsAdjustOpen(true)}>Adjust Plan</Button>
+                    </div>
                      {isLoading ? (
                          <p>Loading details...</p>
                      ) : (
@@ -156,6 +224,12 @@ function ShopRow({ shop }: { shop: Shop }) {
                 </TableCell>
               </TableRow>
             )}
+            <AdjustPlanDialog 
+                isOpen={isAdjustOpen} 
+                onOpenChange={setIsAdjustOpen}
+                shop={shop}
+                owner={owner}
+            />
         </React.Fragment>
     )
 }
@@ -189,7 +263,7 @@ export default function AdminShopsPage() {
                   <TableHead>Shop Name</TableHead>
                   <TableHead>Owner's Email</TableHead>
                   <TableHead>Shop ID</TableHead>
-                  <TableHead className="text-right">Days Remaining</TableHead>
+                  <TableHead className="text-right">Subscription Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

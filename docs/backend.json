@@ -551,6 +551,19 @@
         }
       },
       "required": ["items", "status", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "type": "object",
+      "description": "Represents a system or admin notification for a user.",
+      "properties": {
+        "id": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["bonus", "penalty", "info"] },
+        "seen": { "type": "boolean" }
+      },
+      "required": ["id", "date", "message", "type", "seen"]
     }
   },
   "auth": {
@@ -568,6 +581,15 @@
             "$ref": "#/backend/entities/UserProfile"
           },
           "description": "Stores user profile information. Path-based ownership ensures only the user can access their profile."
+        }
+      },
+      {
+        "path": "/users/{userId}/notifications/{notificationId}",
+        "definition": {
+          "schema": {
+            "$ref": "#/backend/entities/Notification"
+          },
+          "description": "Stores admin-generated notifications for a user."
         }
       },
       {
@@ -717,5 +739,3 @@
     ]
   }
 }
-
-    
