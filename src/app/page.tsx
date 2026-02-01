@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Gem, LayoutDashboard, ShoppingCart, BarChart, Check, LucideProps } from 'lucide-react';
+import { Gem, LayoutDashboard, ShoppingCart, BarChart, Check, LucideProps, BadgePercent, IndianRupee } from 'lucide-react';
 import Link from 'next/link';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
@@ -10,7 +11,9 @@ import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+
 
 type UserProfile = {
   subscriptionStatus?: string;
@@ -25,6 +28,18 @@ type HomepageFeature = {
   keyPoints: string[];
   imageUrl: string;
   imageHint?: string;
+  order: number;
+};
+
+type Plan = {
+  id: string;
+  name: string;
+  price: number;
+  originalPrice?: number;
+  durationDays: number;
+  description: string;
+  features: string[];
+  highlight: boolean;
   order: number;
 };
 
@@ -53,6 +68,13 @@ export default function HomePage() {
   }, [firestore]);
   
   const { data: features, isLoading: isFeaturesLoading } = useCollection<HomepageFeature>(featuresQuery);
+
+  const plansQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'plans'), orderBy('order'));
+  }, [firestore]);
+
+  const { data: plans, isLoading: isPlansLoading } = useCollection<Plan>(plansQuery);
   
   useEffect(() => {
     if (!isUserLoading && !isProfileLoading && userData) {
@@ -102,7 +124,7 @@ export default function HomePage() {
         </div>
       </header>
       <main className="flex-1">
-        <section className="w-full py-6 md:py-12 lg:py-16">
+        <section className="w-full py-12 md:py-24 lg:py-32">
           <div className="container px-4 md:px-6">
             <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px]">
               <div className="flex flex-col justify-center space-y-4">
@@ -137,7 +159,7 @@ export default function HomePage() {
           </div>
         </section>
         
-        <section className="w-full py-6 md:py-12 lg:py-16 bg-muted">
+        <section className="w-full py-12 md:py-24 lg:py-32 bg-muted">
             <div className="container px-4 md:px-6">
                 <div className="flex flex-col items-center justify-center space-y-4 text-center">
                     <div className="space-y-2">
@@ -148,7 +170,7 @@ export default function HomePage() {
                         </p>
                     </div>
                 </div>
-                <div className="mx-auto grid max-w-6xl items-start gap-4 sm:grid-cols-2 md:gap-4 lg:grid-cols-3 mt-8">
+                <div className="mx-auto grid max-w-6xl items-start gap-4 sm:grid-cols-2 md:gap-8 lg:grid-cols-3 mt-8">
                     {isFeaturesLoading ? (
                         Array.from({ length: 3 }).map((_, i) => (
                             <Card key={i}>
@@ -193,6 +215,88 @@ export default function HomePage() {
                     })}
                 </div>
             </div>
+        </section>
+
+        <section className="w-full py-12 md:py-24 lg:py-32">
+          <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center">
+              <div className="space-y-2">
+                <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm">
+                  Pricing
+                </div>
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
+                  Choose a plan that fits your needs
+                </h2>
+                <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                  Simple, transparent pricing. No hidden fees.
+                </p>
+              </div>
+            </div>
+            <div className="mx-auto grid max-w-6xl items-start gap-6 py-12 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+              {isPlansLoading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <Card key={i}>
+                      <CardHeader>
+                          <Skeleton className="h-6 w-3/4" />
+                          <Skeleton className="h-4 w-1/2" />
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                          <Skeleton className="h-8 w-1/2" />
+                          <div className="space-y-2">
+                              <Skeleton className="h-4 w-full" />
+                              <Skeleton className="h-4 w-full" />
+                              <Skeleton className="h-4 w-3/4" />
+                          </div>
+                      </CardContent>
+                  </Card>
+                ))
+              ) : plans?.map(plan => (
+                <Card key={plan.id} className={cn('flex flex-col transition-all duration-300 relative overflow-hidden hover:shadow-lg hover:-translate-y-1', plan.highlight ? 'border-primary ring-2 ring-primary shadow-xl' : '')}>
+                    {plan.highlight && (
+                        <div className="text-center py-1 bg-primary text-primary-foreground text-sm font-semibold sparkle">
+                            Most Popular
+                        </div>
+                    )}
+                    {plan.originalPrice && plan.originalPrice > plan.price && (
+                        <div className="absolute top-2 right-2 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 z-10">
+                            <BadgePercent className="h-3 w-3"/>
+                            Save {Math.round(100 - (plan.price / plan.originalPrice) * 100)}%
+                        </div>
+                    )}
+                    <CardHeader className="pt-8 flex-shrink-0">
+                        <CardTitle className="text-xl min-h-[28px]">{plan.name}</CardTitle>
+                        <CardDescription className="min-h-[40px]">{plan.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex-grow flex flex-col justify-between">
+                        <div>
+                            <div className="flex items-baseline flex-wrap gap-x-2">
+                                <span className="text-4xl font-bold flex items-center gap-1"><IndianRupee className="h-8 w-8"/>{plan.price.toLocaleString('en-IN')}</span>
+                                {plan.originalPrice && plan.originalPrice > plan.price && (
+                                    <span className="text-lg font-medium text-muted-foreground line-through flex items-center gap-1"><IndianRupee className="h-4 w-4"/>{plan.originalPrice.toLocaleString('en-IN')}</span>
+                                )}
+                            </div>
+                            <div className="text-sm text-muted-foreground mb-4">
+                                For {plan.durationDays} days
+                            </div>
+                            <ul className="space-y-2 pt-4">
+                                {plan.features.map((feature) => (
+                                <li key={feature} className="flex items-start text-sm">
+                                    <Check className="h-4 w-4 mr-2 text-green-500 flex-shrink-0 mt-0.5" />
+                                    <span>{feature}</span>
+                                </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </CardContent>
+                    <CardFooter>
+                      <Button asChild className="w-full mt-6">
+                        <Link href="/subscribe">Choose Plan</Link>
+                      </Button>
+                    </CardFooter>
+                </Card>
+              ))}
+            </div>
+          </div>
         </section>
       </main>
       <footer className="flex flex-col gap-2 sm:flex-row py-4 w-full shrink-0 items-center px-4 md:px-6 border-t">
