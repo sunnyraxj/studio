@@ -102,7 +102,7 @@ export default function HomePage() {
             <Gem className="h-6 w-6 mr-2" />
             <span>Axom Billing</span>
             </Link>
-            <nav className="ml-auto flex gap-4 sm:gap-6">
+            <nav className="ml-auto flex items-center gap-4 sm:gap-6">
             <Link
                 href="/subscribe"
                 className="text-sm font-medium hover:underline underline-offset-4"
@@ -115,6 +115,9 @@ export default function HomePage() {
             >
                 Login
             </Link>
+             <Button asChild variant="outline">
+                <Link href="/dashboard">Live Demo</Link>
+            </Button>
             <Button asChild>
                 <Link href="/subscribe">Get Started with 1rs</Link>
             </Button>
@@ -311,5 +314,3 @@ export default function HomePage() {
     </div>
   )
 }
-
-    
