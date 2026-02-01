@@ -3,7 +3,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Gem, LayoutDashboard, ShoppingCart, BarChart } from 'lucide-react';
+import { Gem, LayoutDashboard, ShoppingCart, BarChart, Check } from 'lucide-react';
 import Link from 'next/link';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
@@ -21,20 +21,23 @@ const features = [
     {
       id: 'feature-pos',
       title: 'Effortless Point of Sale',
-      description: 'A fast, intuitive POS system that makes billing a breeze. Handle sales, returns, and challans with ease.',
-      icon: ShoppingCart
+      description: 'A fast, intuitive POS system that makes billing a breeze.',
+      icon: ShoppingCart,
+      keyPoints: ['Handle Sales', 'Process Returns', 'Create Challans'],
     },
     {
       id: 'feature-inventory',
       title: 'Smart Inventory Control',
-      description: 'Manage your products, track stock levels, and generate barcodes. Never run out of your best-selling items.',
-      icon: LayoutDashboard
+      description: 'Manage your products, track stock levels, and generate barcodes.',
+      icon: LayoutDashboard,
+      keyPoints: ['Product Management', 'Stock Tracking', 'Barcode Generation'],
     },
     {
       id: 'feature-dashboard',
       title: 'Insightful Analytics',
-      description: 'Get a clear view of your sales, profit margins, and top products with our powerful dashboard and reports.',
-      icon: BarChart
+      description: 'Get a clear view of your business performance with powerful reports.',
+      icon: BarChart,
+      keyPoints: ['Sales Reports', 'Profit Margins', 'Top Products'],
     }
 ];
 
@@ -144,7 +147,7 @@ export default function HomePage() {
                         </p>
                     </div>
                 </div>
-                <div className="mx-auto grid max-w-6xl items-start gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-3 mt-12">
+                <div className="mx-auto grid max-w-6xl items-start gap-4 sm:grid-cols-2 md:gap-4 lg:grid-cols-3 mt-12">
                     {features.map((feature) => {
                         const featureImage = PlaceHolderImages.find(p => p.id === feature.id);
                         return (
@@ -161,7 +164,15 @@ export default function HomePage() {
                                 )}
                                 <div className="space-y-2">
                                     <h3 className="text-xl font-bold flex items-center gap-2"><feature.icon className="h-5 w-5" />{feature.title}</h3>
-                                    <p className="text-muted-foreground">{feature.description}</p>
+                                    <p className="text-muted-foreground text-sm">{feature.description}</p>
+                                    <ul className="space-y-1 pt-2">
+                                        {feature.keyPoints.map(point => (
+                                            <li key={point} className="flex items-center gap-2 text-sm font-medium">
+                                                <Check className="h-4 w-4 text-green-500" />
+                                                <span>{point}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
                                 </div>
                             </div>
                         )
