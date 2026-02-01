@@ -102,7 +102,7 @@ export default function HomePage() {
         </div>
       </header>
       <main className="flex-1">
-        <section className="w-full py-12 md:py-20 lg:py-24">
+        <section className="w-full py-6 md:py-12 lg:py-16">
           <div className="container px-4 md:px-6">
             <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px]">
               <div className="flex flex-col justify-center space-y-4">
@@ -116,7 +116,7 @@ export default function HomePage() {
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
                   <Button asChild size="lg">
-                    <Link href="/subscribe">Get Started for Free</Link>
+                    <Link href="/subscribe">Get Started with 1rs</Link>
                   </Button>
                   <Button asChild variant="outline" size="lg">
                      <Link href="/dashboard">Live Demo</Link>
@@ -137,7 +137,7 @@ export default function HomePage() {
           </div>
         </section>
         
-        <section className="w-full py-12 md:py-20 lg:py-24 bg-muted">
+        <section className="w-full py-6 md:py-12 lg:py-16 bg-muted">
             <div className="container px-4 md:px-6">
                 <div className="flex flex-col items-center justify-center space-y-4 text-center">
                     <div className="space-y-2">
@@ -148,7 +148,7 @@ export default function HomePage() {
                         </p>
                     </div>
                 </div>
-                <div className="mx-auto grid max-w-6xl items-start gap-4 sm:grid-cols-2 md:gap-4 lg:grid-cols-3 mt-12">
+                <div className="mx-auto grid max-w-6xl items-start gap-4 sm:grid-cols-2 md:gap-4 lg:grid-cols-3 mt-8">
                     {isFeaturesLoading ? (
                         Array.from({ length: 3 }).map((_, i) => (
                             <Card key={i}>
@@ -195,7 +195,7 @@ export default function HomePage() {
             </div>
         </section>
       </main>
-      <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
+      <footer className="flex flex-col gap-2 sm:flex-row py-4 w-full shrink-0 items-center px-4 md:px-6 border-t">
         <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} Axom Billing. All rights reserved.</p>
         <nav className="sm:ml-auto flex gap-4 sm:gap-6">
             <Link href="#" className="text-xs hover:underline underline-offset-4">
