@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -49,7 +50,6 @@ type Plan = {
   description: string;
   features: string[];
   highlight: boolean;
-  razorpayPlanId?: string;
 };
 
 const PlanFormDialog = ({ isOpen, onOpenChange, plan, onSaveSuccess }: { isOpen: boolean, onOpenChange: (open: boolean) => void, plan: Partial<Plan> | null, onSaveSuccess: () => void }) => {
@@ -66,7 +66,6 @@ const PlanFormDialog = ({ isOpen, onOpenChange, plan, onSaveSuccess }: { isOpen:
             features: [],
             highlight: false,
             order: 1,
-            razorpayPlanId: ''
         });
     }, [plan]);
     
@@ -134,7 +133,6 @@ const PlanFormDialog = ({ isOpen, onOpenChange, plan, onSaveSuccess }: { isOpen:
                         <div className="space-y-2"><Label>Duration (Months)</Label><Input type="number" value={formData.durationMonths || ''} onChange={e => handleChange('durationMonths', e.target.value)} /></div>
                         <div className="space-y-2"><Label>Display Order</Label><Input type="number" value={formData.order || ''} onChange={e => handleChange('order', e.target.value)} /></div>
                    </div>
-                   <div className="space-y-2"><Label>Razorpay Plan ID</Label><Input value={formData.razorpayPlanId || ''} onChange={e => handleChange('razorpayPlanId', e.target.value)} /></div>
                    <div className="space-y-2"><Label>Description</Label><Textarea value={formData.description || ''} onChange={e => handleChange('description', e.target.value)} /></div>
                    <div className="space-y-2"><Label>Features (comma-separated)</Label><Textarea value={formData.features?.join(', ') || ''} onChange={e => handleChange('features', e.target.value)} /></div>
                    <div className="flex items-center space-x-2"><Switch id="highlight" checked={formData.highlight} onCheckedChange={checked => handleChange('highlight', checked)} /><Label htmlFor="highlight">Highlight this plan?</Label></div>
@@ -221,7 +219,7 @@ export default function AdminPlansPage() {
                     <CardDescription>{plan.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
                         <div className="space-y-1">
                             <Label className="text-xs text-muted-foreground">Price</Label>
                             <p className="font-semibold flex items-center gap-1"><IndianRupee className="h-4 w-4"/>{plan.price.toLocaleString()}
@@ -236,11 +234,7 @@ export default function AdminPlansPage() {
                             <Label className="text-xs text-muted-foreground">Display Order</Label>
                             <p className="font-semibold">{plan.order}</p>
                         </div>
-                        <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Razorpay ID</Label>
-                            <p className="font-semibold text-xs break-all">{plan.razorpayPlanId || 'Not Set'}</p>
-                        </div>
-                         <div className="space-y-2 md:col-span-2 lg:col-span-4">
+                         <div className="space-y-2 md:col-span-2 lg:col-span-3">
                             <Label className="text-xs text-muted-foreground">Features</Label>
                              <ul className="list-disc list-inside text-sm space-y-1">
                                 {plan.features.map(f => <li key={f}>{f}</li>)}
@@ -282,3 +276,5 @@ export default function AdminPlansPage() {
     </div>
   );
 }
+
+    

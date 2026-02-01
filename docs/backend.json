@@ -414,8 +414,7 @@
         "description": { "type": "string" },
         "features": { "type": "array", "items": { "type": "string" } },
         "highlight": { "type": "boolean" },
-        "order": { "type": "number", "description": "Sort order for displaying plans." },
-        "razorpayPlanId": { "type": "string", "description": "The corresponding Plan ID from Razorpay." }
+        "order": { "type": "number", "description": "Sort order for displaying plans." }
       },
       "required": ["id", "name", "price", "durationMonths", "order"]
     },
@@ -719,4 +718,5 @@
   }
 }
 
+    
     
