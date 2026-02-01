@@ -36,7 +36,6 @@ export async function POST(req: NextRequest) {
         razorpay_signature,
         userId,
         plan,
-        isRenewal,
     } = await req.json();
 
     if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature || !userId || !plan) {
@@ -75,6 +74,8 @@ export async function POST(req: NextRequest) {
     const userData = userDoc.data();
     const now = new Date();
     
+    const isRenewal = userData?.subscriptionStatus === 'active' || (userData?.subscriptionStatus === 'inactive' && !!userData?.planName);
+    
     // If it's a renewal and the old plan is still active, extend from the old expiry date.
     // Otherwise, start from today.
     const currentEndDate = userData?.subscriptionEndDate ? new Date(userData.subscriptionEndDate) : now;
@@ -102,5 +103,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
-
-    

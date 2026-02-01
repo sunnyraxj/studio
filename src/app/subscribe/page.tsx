@@ -87,8 +87,6 @@ export default function SubscribePage() {
     setIsProcessing(true);
 
     try {
-      const isRenewal = userData.subscriptionStatus === 'active' || userData.subscriptionStatus === 'inactive';
-      
       const createOrderResponse = await fetch('/api/razorpay/create-subscription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -120,7 +118,6 @@ export default function SubscribePage() {
               razorpay_signature: response.razorpay_signature,
               userId: user.uid,
               plan: selectedPlan,
-              isRenewal: isRenewal,
             }),
           });
           
@@ -269,5 +266,3 @@ export default function SubscribePage() {
     </div>
   );
 }
-
-    
