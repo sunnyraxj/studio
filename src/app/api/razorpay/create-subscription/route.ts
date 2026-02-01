@@ -28,10 +28,8 @@ function initializeFirebaseAdmin(): App {
 
 export async function POST(req: NextRequest) {
   try {
+    // getRazorpayInstance will throw an error if keys are not configured.
     const razorpay = getRazorpayInstance();
-    if (!razorpay) {
-      throw new Error('Razorpay is not configured. Please set API keys in environment variables.');
-    }
     
     const { planId, userId } = await req.json();
 
