@@ -300,6 +300,65 @@ const EmployeeDetailsDialog: React.FC<{ employee: Employee | null, open: boolean
     )
 }
 
+const EmployeeBalanceCell: React.FC<{ employee: Employee }> = ({ employee }) => {
+    const { user } = useUser();
+    const firestore = useFirestore();
+    const isDemoMode = !user;
+    
+    const userDocRef = useMemoFirebase(() => {
+        if (!user || !firestore || isDemoMode) return null;
+        return doc(firestore, `users/${user.uid}`);
+    }, [user, firestore, isDemoMode]);
+    const { data: userData } = useDoc(userDocRef);
+    const shopId = userData?.shopId;
+    
+    const paymentsQuery = useMemoFirebase(() => {
+        if (isDemoMode || !shopId || !firestore || !employee) return null;
+        return query(collection(firestore, `shops/${shopId}/employees/${employee.id}/salaryPayments`));
+    }, [shopId, firestore, isDemoMode, employee.id]);
+
+    const { data: salaryPayments, isLoading } = useCollection<SalaryPayment>(paymentsQuery);
+
+    const balanceDue = useMemo(() => {
+        const payments = isDemoMode ? (employee.salaryPayments || []) : (salaryPayments || []);
+        
+        const now = new Date();
+        const joiningDate = new Date(employee.joiningDate);
+        
+        if(isNaN(joiningDate.getTime())) return 0; // Invalid joining date
+
+        const startOfCurrentMonth = startOfMonth(now);
+        
+        let monthsWorked = differenceInMonths(startOfCurrentMonth, joiningDate);
+        
+        if (joiningDate > startOfCurrentMonth) {
+          monthsWorked = -1;
+        }
+        
+        const totalAccrued = monthsWorked >= 0 ? (monthsWorked + 1) * employee.monthlySalary : 0;
+        const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+
+        return totalAccrued - totalPaid;
+    }, [employee, salaryPayments, isDemoMode]);
+    
+    if (isLoading && !isDemoMode) {
+        return <div className="text-right text-xs">Loading...</div>;
+    }
+
+    if (balanceDue === 0) {
+        return <div className="text-right font-semibold text-gray-500">Settled</div>;
+    }
+    
+    const label = balanceDue > 0 ? 'Payable' : 'Advance';
+    const color = balanceDue > 0 ? 'text-green-600' : 'text-destructive';
+
+    return (
+        <div className={cn("text-right font-semibold flex items-center justify-end gap-1", color)}>
+            <span>{label}:</span> <IndianRupee className="h-4 w-4" />{Math.abs(balanceDue).toLocaleString('en-IN')}
+        </div>
+    );
+};
+
 export default function EmployeesPage() {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'name', desc: false }]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -394,6 +453,11 @@ export default function EmployeesPage() {
         </Button>
       ),
       cell: ({ row }) => <div className="text-right font-semibold flex items-center justify-end gap-1"><IndianRupee className="h-4 w-4" />{row.original.monthlySalary.toLocaleString('en-IN')}</div>
+    },
+    {
+      id: 'balance',
+      header: () => <div className="text-right font-semibold">Current Balance</div>,
+      cell: ({ row }) => <EmployeeBalanceCell employee={row.original} />,
     },
     {
       id: 'actions',
