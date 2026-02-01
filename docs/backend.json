@@ -592,6 +592,37 @@
         "order": { "type": "number", "description": "The sort order for displaying the feature on the page." }
       },
       "required": ["id", "title", "description", "icon", "keyPoints", "imageUrl", "order"]
+    },
+    "SupportTicket": {
+      "title": "Support Ticket",
+      "type": "object",
+      "description": "Represents a support request from a user.",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerId": { "type": "string", "description": "The UID of the user who created the ticket." },
+        "ownerName": { "type": "string" },
+        "ownerEmail": { "type": "string" },
+        "subject": { "type": "string" },
+        "status": { "type": "string", "enum": ["Open", "In Progress", "Closed"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lastMessage": { "type": "string" },
+        "lastUpdatedAt": { "type": "string", "format": "date-time" },
+        "isReadByAdmin": { "type": "boolean" }
+      },
+      "required": ["ownerId", "ownerName", "ownerEmail", "subject", "status", "createdAt"]
+    },
+    "SupportMessage": {
+      "title": "Support Message",
+      "type": "object",
+      "description": "A single message within a support ticket.",
+      "properties": {
+        "id": { "type": "string" },
+        "senderId": { "type": "string", "description": "UID of the message sender ('admin' for admin replies)." },
+        "senderName": { "type": "string" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["senderId", "senderName", "text", "createdAt"]
     }
   },
   "auth": {
@@ -763,9 +794,25 @@
           },
           "description": "Configuration for the feature cards shown on the public landing page."
         }
+      },
+      {
+        "path": "/supportTickets/{ticketId}",
+        "definition": {
+          "schema": {
+            "$ref": "#/backend/entities/SupportTicket"
+          },
+          "description": "Stores support tickets created by users."
+        }
+      },
+      {
+        "path": "/supportTickets/{ticketId}/messages/{messageId}",
+        "definition": {
+          "schema": {
+            "$ref": "#/backend/entities/SupportMessage"
+          },
+          "description": "Stores messages for a specific support ticket."
+        }
       }
     ]
   }
 }
-
-    

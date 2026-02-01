@@ -42,15 +42,14 @@ const adminNavLinks = [
     label: 'Homepage',
   },
   {
+    href: '/admin/help',
+    icon: LifeBuoy,
+    label: 'Help Desk',
+  },
+  {
     href: '/admin/settings',
     icon: Settings,
     label: 'Settings',
-  },
-  {
-    href: '#',
-    icon: LifeBuoy,
-    label: 'Help to Shops',
-    disabled: true,
   },
 ];
 

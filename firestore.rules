@@ -21,6 +21,8 @@ service cloud.firestore {
 
     // Is the requesting user an admin?
     function isAdmin() {
+      // Use this if admin status is stored in a user document.
+      // Make sure this path is correct for your user data structure.
       return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
@@ -50,6 +52,43 @@ service cloud.firestore {
       // A user who is a member of the shop can read and write anything within that shop's data.
       // Admins can also read and write anything.
       allow read, write: if isShopMember(shopId) || isAdmin();
+    }
+    
+    // --- Support Tickets ---
+    match /supportTickets/{ticketId} {
+      // Helper function to check if the user owns the ticket.
+      function isTicketOwner() {
+        return request.auth.uid == resource.data.ownerId;
+      }
+      
+      // CREATE: An authenticated user can create a ticket if they are the owner.
+      allow create: if request.auth.uid == request.resource.data.ownerId;
+      
+      // READ (Single Doc): The owner or an admin can get the ticket.
+      allow get: if isTicketOwner() || isAdmin();
+      
+      // READ (List): Admin can list all. User can list only their own via a query.
+      allow list: if isAdmin() || (request.query.where.ownerId == request.auth.uid);
+      
+      // UPDATE: The owner or an admin can update the ticket (e.g., change status).
+      allow update: if isTicketOwner() || isAdmin();
+      
+      // DELETE: Only admins can delete tickets.
+      allow delete: if isAdmin();
+      
+      // --- Messages Subcollection ---
+      match /messages/{messageId} {
+        // We use a `get()` call to the parent ticket document to check ownership.
+        function isParentTicketOwner() {
+          return get(/databases/$(database)/documents/supportTickets/$(ticketId)).data.ownerId == request.auth.uid;
+        }
+        
+        // READ/CREATE: Only the ticket owner or an admin can read or create messages.
+        allow read, create: if isParentTicketOwner() || isAdmin();
+        
+        // No updates or deletes for individual messages to preserve chat history.
+        allow update, delete: if false;
+      }
     }
   }
 }

@@ -118,6 +118,12 @@ const navLinks = [
     icon: CreditCard,
     label: 'Subscription',
     category: 'Utilities'
+  },
+  {
+    href: '/dashboard/help',
+    icon: LifeBuoy,
+    label: 'Help & Support',
+    category: 'Utilities'
   }
 ];
 
