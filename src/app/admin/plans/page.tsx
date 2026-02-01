@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -97,11 +96,11 @@ const PlanFormDialog = ({ isOpen, onOpenChange, plan, onSaveSuccess }: { isOpen:
 
         try {
             if (planData.id) {
-                const planRef = doc(firestore, 'global/plans/all', planData.id);
+                const planRef = doc(firestore, 'plans', planData.id);
                 await updateDoc(planRef, planData);
                 toast({ title: 'Success', description: 'Plan updated successfully.' });
             } else {
-                const plansCollectionRef = collection(firestore, 'global/plans/all');
+                const plansCollectionRef = collection(firestore, 'plans');
                 const newDocRef = doc(plansCollectionRef);
                 await setDoc(newDocRef, {...planData, id: newDocRef.id});
                 toast({ title: 'Success', description: 'New plan added successfully.' });
@@ -155,7 +154,7 @@ export default function AdminPlansPage() {
 
   const plansQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return collection(firestore, 'global/plans/all');
+    return collection(firestore, 'plans');
   }, [firestore]);
 
   // The useCollection hook will automatically update when Firestore data changes.
@@ -183,7 +182,7 @@ export default function AdminPlansPage() {
   const confirmDelete = async () => {
     if (!planToDelete || !firestore) return;
     try {
-      await deleteDoc(doc(firestore, 'global/plans/all', planToDelete.id));
+      await deleteDoc(doc(firestore, 'plans', planToDelete.id));
       toast({ title: 'Success', description: 'Plan has been deleted.' });
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error', description: e.message });
@@ -276,5 +275,3 @@ export default function AdminPlansPage() {
     </div>
   );
 }
-
-    

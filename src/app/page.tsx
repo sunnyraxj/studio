@@ -48,7 +48,7 @@ export default function HomePage() {
 
   const featuresQuery = useMemoFirebase(() => {
       if(!firestore) return null;
-      return query(collection(firestore, 'global/homepageFeatures'), orderBy('order'));
+      return query(collection(firestore, 'homepageFeatures'), orderBy('order'));
   }, [firestore]);
   
   const { data: features, isLoading: isFeaturesLoading } = useCollection<HomepageFeature>(featuresQuery);

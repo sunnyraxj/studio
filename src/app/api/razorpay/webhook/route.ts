@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
       }
 
       const userDocRef = adminFirestore.collection('users').doc(userId);
-      const planDocRef = adminFirestore.collection('global/plans/all').doc(planId);
+      const planDocRef = adminFirestore.collection('plans').doc(planId);
       
       const [userDoc, planDoc] = await Promise.all([userDocRef.get(), planDocRef.get()]);
 
@@ -127,5 +127,3 @@ export async function POST(req: NextRequest) {
   // 3. Acknowledge receipt to Razorpay for any other events
   return NextResponse.json({ received: true });
 }
-
-    

@@ -26,12 +26,16 @@ service cloud.firestore {
 
     // --- Rules ---
 
-    // Global data (e.g., subscription plans)
-    match /global/{path=**} {
-      // Authenticated users can read global data.
-      allow read: if isAuthenticated();
-      // Only admins can write to global data.
+    // Publicly readable, admin-writable plans
+    match /plans/{planId} {
+      allow read: if true;
       allow write: if isAdmin();
+    }
+    
+    // Publicly readable, admin-writable homepage features
+    match /homepageFeatures/{featureId} {
+        allow read: if true;
+        allow write: if isAdmin();
     }
 
     // User profiles and their sub-collections

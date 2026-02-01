@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     initializeFirebaseAdmin();
     const adminFirestore = getFirestore();
     
-    const planDoc = await adminFirestore.collection('global/plans/all').doc(planId).get();
+    const planDoc = await adminFirestore.collection('plans').doc(planId).get();
     if (!planDoc.exists) {
         return NextResponse.json({ error: 'Plan not found' }, { status: 404 });
     }

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -122,11 +121,11 @@ const FeatureFormDialog = ({ isOpen, onOpenChange, feature, onSaveSuccess }: { i
 
         try {
             if (featureData.id) {
-                const featureRef = doc(firestore, 'global/homepageFeatures', featureData.id);
+                const featureRef = doc(firestore, 'homepageFeatures', featureData.id);
                 await updateDoc(featureRef, featureData);
                 toast({ title: 'Success', description: 'Feature updated successfully.' });
             } else {
-                const featuresCollectionRef = collection(firestore, 'global/homepageFeatures');
+                const featuresCollectionRef = collection(firestore, 'homepageFeatures');
                 const newDocRef = doc(featuresCollectionRef);
                 await setDoc(newDocRef, {...featureData, id: newDocRef.id});
                 toast({ title: 'Success', description: 'New feature added successfully.' });
@@ -176,7 +175,7 @@ export default function AdminHomepageFeaturesPage() {
 
   const featuresQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'global/homepageFeatures'), orderBy('order'));
+    return query(collection(firestore, 'homepageFeatures'), orderBy('order'));
   }, [firestore]);
 
   const { data: featuresData, isLoading } = useCollection<HomepageFeature>(featuresQuery);
@@ -186,7 +185,7 @@ export default function AdminHomepageFeaturesPage() {
         const seedData = async () => {
             console.log("Seeding initial homepage features...");
             const batch = writeBatch(firestore);
-            const featuresCollectionRef = collection(firestore, 'global/homepageFeatures');
+            const featuresCollectionRef = collection(firestore, 'homepageFeatures');
             initialFeatures.forEach(feature => {
                 const docRef = doc(featuresCollectionRef, feature.imageId); // Use imageId as doc id
                 batch.set(docRef, { ...feature, id: docRef.id });
@@ -216,7 +215,7 @@ export default function AdminHomepageFeaturesPage() {
   const confirmDelete = async () => {
     if (!featureToDelete || !firestore) return;
     try {
-      await deleteDoc(doc(firestore, 'global/homepageFeatures', featureToDelete.id));
+      await deleteDoc(doc(firestore, 'homepageFeatures', featureToDelete.id));
       toast({ title: 'Success', description: 'Feature has been deleted.' });
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error', description: e.message });

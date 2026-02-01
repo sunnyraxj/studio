@@ -52,7 +52,7 @@ export default function SubscribePage() {
   
   const plansQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'global/plans/all'), orderBy('order'));
+    return query(collection(firestore, 'plans'), orderBy('order'));
   }, [firestore]);
 
   const { data: plans, isLoading: isPlansLoading } = useCollection<Plan>(plansQuery);
@@ -261,5 +261,3 @@ export default function SubscribePage() {
     </div>
   );
 }
-
-    

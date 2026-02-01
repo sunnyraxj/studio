@@ -677,7 +677,7 @@
         }
       },
       {
-        "path": "/global/plans/all/{planId}",
+        "path": "/plans/{planId}",
         "definition": {
           "schema": {
             "$ref": "#/backend/entities/SubscriptionPlan"
@@ -749,7 +749,7 @@
         }
       },
       {
-        "path": "/global/homepageFeatures/{featureId}",
+        "path": "/homepageFeatures/{featureId}",
         "definition": {
           "schema": {
             "$ref": "#/backend/entities/HomepageFeature"
