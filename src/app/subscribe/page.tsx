@@ -29,12 +29,11 @@ type Plan = {
   name: string;
   price: number;
   originalPrice?: number;
-  durationMonths: number;
+  durationDays: number;
   description: string;
   features: string[];
   highlight: boolean;
   order: number;
-  razorpayPlanId?: string;
 };
 
 type UserProfile = {
@@ -195,8 +194,6 @@ export default function SubscribePage() {
                 </Card>
              ))
          ) : plans?.map(plan => {
-            const perMonthCost = plan.durationMonths > 1 && plan.durationMonths < 100 ? plan.price / plan.durationMonths : plan.price;
-            
             const isSelected = selectedPlan?.id === plan.id;
 
             return (
@@ -231,11 +228,9 @@ export default function SubscribePage() {
                                      <span className="text-lg font-medium text-muted-foreground line-through flex items-center gap-1"><IndianRupee className="h-4 w-4"/>{plan.originalPrice.toLocaleString('en-IN')}</span>
                                 )}
                             </div>
-                             {plan.durationMonths > 1 && plan.durationMonths < 100 && (
-                                 <div className="text-sm text-muted-foreground mb-4">
-                                    (Just ₹{Math.round(perMonthCost).toLocaleString('en-IN')}/month)
-                                 </div>
-                             )}
+                            <div className="text-sm text-muted-foreground mb-4">
+                                For {plan.durationDays} days
+                            </div>
                             <ul className="space-y-2 pt-4">
                                 {plan.features.map((feature) => (
                                 <li key={feature} className="flex items-start text-sm">
@@ -266,3 +261,5 @@ export default function SubscribePage() {
     </div>
   );
 }
+
+    

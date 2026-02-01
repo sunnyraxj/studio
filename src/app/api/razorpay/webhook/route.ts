@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
       const currentEndDate = userData?.subscriptionEndDate ? new Date(userData.subscriptionEndDate) : now;
       const startDate = isRenewal && currentEndDate > now ? currentEndDate : now;
       
-      const endDate = add(startDate, { months: planData.durationMonths });
+      const endDate = add(startDate, { days: planData.durationDays });
 
       await userDoc.ref.update({
         subscriptionStatus: 'active',
@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
         razorpay_payment_id: payment.id, // Log the latest payment ID
         planName: planData.name,
         planPrice: planData.price,
-        planDurationMonths: planData.durationMonths,
+        planDurationDays: planData.durationDays,
         subscriptionType: isRenewal ? 'Renew' : 'New',
       });
 
@@ -127,4 +127,5 @@ export async function POST(req: NextRequest) {
   // 3. Acknowledge receipt to Razorpay for any other events
   return NextResponse.json({ received: true });
 }
+
     

@@ -28,6 +28,7 @@ type UserProfile = {
   subscriptionEndDate?: string;
   subscriptionType?: 'New' | 'Renew';
   rejectionReason?: string;
+  planDurationDays?: number;
 };
 
 type TimeRemaining = {

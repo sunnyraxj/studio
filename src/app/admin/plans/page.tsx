@@ -45,7 +45,7 @@ type Plan = {
   name: string;
   price: number;
   originalPrice?: number;
-  durationMonths: number;
+  durationDays: number;
   order: number;
   description: string;
   features: string[];
@@ -61,7 +61,7 @@ const PlanFormDialog = ({ isOpen, onOpenChange, plan, onSaveSuccess }: { isOpen:
             name: '',
             price: 0,
             originalPrice: 0,
-            durationMonths: 1,
+            durationDays: 30,
             description: '',
             features: [],
             highlight: false,
@@ -84,13 +84,13 @@ const PlanFormDialog = ({ isOpen, onOpenChange, plan, onSaveSuccess }: { isOpen:
             ...formData,
             price: Number(formData.price) || 0,
             originalPrice: Number(formData.originalPrice) || 0,
-            durationMonths: Number(formData.durationMonths) || 1,
+            durationDays: Number(formData.durationDays) || 1,
             order: Number(formData.order) || 1,
             highlight: formData.highlight || false,
             features: formData.features || []
         };
 
-        if (!planData.name || !planData.price || !planData.durationMonths) {
+        if (!planData.name || !planData.price || !planData.durationDays) {
             toast({ variant: 'destructive', title: 'Missing Fields', description: 'Name, Price, and Duration are required.' });
             return;
         }
@@ -130,7 +130,7 @@ const PlanFormDialog = ({ isOpen, onOpenChange, plan, onSaveSuccess }: { isOpen:
                     <div className="space-y-2"><Label>Original Price</Label><div className="relative"><IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="number" value={formData.originalPrice || ''} onChange={e => handleChange('originalPrice', e.target.value)} className="pl-8" /></div></div>
                   </div>
                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label>Duration (Months)</Label><Input type="number" value={formData.durationMonths || ''} onChange={e => handleChange('durationMonths', e.target.value)} /></div>
+                        <div className="space-y-2"><Label>Duration (Days)</Label><Input type="number" value={formData.durationDays || ''} onChange={e => handleChange('durationDays', e.target.value)} /></div>
                         <div className="space-y-2"><Label>Display Order</Label><Input type="number" value={formData.order || ''} onChange={e => handleChange('order', e.target.value)} /></div>
                    </div>
                    <div className="space-y-2"><Label>Description</Label><Textarea value={formData.description || ''} onChange={e => handleChange('description', e.target.value)} /></div>
@@ -228,7 +228,7 @@ export default function AdminPlansPage() {
                         </div>
                         <div className="space-y-1">
                             <Label className="text-xs text-muted-foreground">Duration</Label>
-                            <p className="font-semibold">{plan.durationMonths >= 1200 ? 'Permanent' : `${plan.durationMonths} Month(s)`}</p>
+                            <p className="font-semibold">{plan.durationDays >= 36500 ? 'Permanent' : `${plan.durationDays} Day(s)`}</p>
                         </div>
                         <div className="space-y-1">
                             <Label className="text-xs text-muted-foreground">Display Order</Label>

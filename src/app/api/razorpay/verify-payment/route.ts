@@ -81,13 +81,13 @@ export async function POST(req: NextRequest) {
     const currentEndDate = userData?.subscriptionEndDate ? new Date(userData.subscriptionEndDate) : now;
     const startDate = isRenewal && currentEndDate > now ? currentEndDate : now;
     
-    const endDate = add(startDate, { months: plan.durationMonths });
+    const endDate = add(startDate, { days: plan.durationDays });
 
     const subscriptionData = {
         subscriptionStatus: 'active',
         planName: plan.name,
         planPrice: plan.price,
-        planDurationMonths: plan.durationMonths,
+        planDurationDays: plan.durationDays,
         razorpay_payment_id: razorpay_payment_id,
         subscriptionRequestDate: new Date().toISOString(),
         subscriptionStartDate: startDate.toISOString(),
@@ -103,3 +103,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+    
