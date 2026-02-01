@@ -110,6 +110,25 @@
             "type": "string",
             "description": "Indicates if the subscription request is new or a renewal.",
             "enum": ["New", "Renew"]
+        },
+        "lastAdjustment": {
+          "type": "object",
+          "description": "Details of the last manual plan adjustment by an admin.",
+          "properties": {
+            "days": {
+              "type": "number",
+              "description": "The number of days added (positive) or removed (negative)."
+            },
+            "reason": {
+              "type": "string",
+              "description": "The reason provided by the admin for the adjustment."
+            },
+            "date": {
+              "type": "string",
+              "format": "date-time",
+              "description": "The timestamp when the adjustment was made."
+            }
+          }
         }
       },
       "required": [

@@ -44,7 +44,6 @@ export async function adjustPlanDuration(userId: string, days: number, reason: s
     const adminFirestore = getFirestore(adminApp);
 
     const userDocRef = adminFirestore.collection('users').doc(userId);
-    const notificationRef = userDocRef.collection('notifications').doc();
 
     const userDoc = await userDocRef.get();
     if (!userDoc.exists) {
@@ -63,24 +62,20 @@ export async function adjustPlanDuration(userId: string, days: number, reason: s
 
     const newEndDate = add(currentEndDate, { days });
 
-    const notificationMessage = days > 0 
-        ? `An administrator has granted you a bonus of ${days} day(s). Reason: ${reason}`
-        : `An administrator has applied a penalty of ${Math.abs(days)} day(s) to your plan. Reason: ${reason}`;
-    
-    const notification = {
-        id: notificationRef.id,
-        date: new Date().toISOString(),
-        message: notificationMessage,
-        type: days > 0 ? 'bonus' : 'penalty',
-        seen: false
+    const lastAdjustment = {
+        days: days,
+        reason: reason,
+        date: new Date().toISOString()
     };
-
+    
     const batch = adminFirestore.batch();
     
     // Also ensure status is active if we are adding days to an inactive plan
-    const updateData: { subscriptionEndDate: string, subscriptionStatus?: 'active' } = {
-        subscriptionEndDate: newEndDate.toISOString()
+    const updateData: { subscriptionEndDate: string, lastAdjustment: any, subscriptionStatus?: 'active' } = {
+        subscriptionEndDate: newEndDate.toISOString(),
+        lastAdjustment: lastAdjustment
     };
+
     if (days > 0 && userData?.subscriptionStatus !== 'active') {
         updateData.subscriptionStatus = 'active';
         // If activating a new plan, set start date
@@ -90,12 +85,12 @@ export async function adjustPlanDuration(userId: string, days: number, reason: s
     }
     
     batch.update(userDocRef, updateData);
-    batch.set(notificationRef, notification);
 
     await batch.commit();
 
     revalidatePath('/admin/shops');
     revalidatePath('/dashboard');
+    revalidatePath('/dashboard/subscription');
 
     return { success: true, message: `Successfully adjusted plan for user.` };
 

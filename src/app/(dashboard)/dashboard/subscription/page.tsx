@@ -15,9 +15,9 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { format, differenceInMilliseconds, differenceInDays } from 'date-fns';
+import { format, differenceInMilliseconds, differenceInDays, differenceInHours } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CheckCircle, Clock, XCircle, AlertTriangle } from 'lucide-react';
+import { CheckCircle, Clock, XCircle, AlertTriangle, Gift, ShieldAlert } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
 type UserProfile = {
@@ -29,6 +29,11 @@ type UserProfile = {
   subscriptionType?: 'New' | 'Renew';
   rejectionReason?: string;
   planDurationDays?: number;
+  lastAdjustment?: {
+      days: number;
+      reason: string;
+      date: string;
+  };
 };
 
 type TimeRemaining = {
@@ -54,6 +59,31 @@ export default function SubscriptionPage() {
   const [timeRemaining, setTimeRemaining] = useState<TimeRemaining | null>(null);
   const [progress, setProgress] = useState(0);
   const [canRenew, setCanRenew] = useState(false);
+  const [adjustmentNotification, setAdjustmentNotification] = useState<{message: string, type: 'bonus' | 'penalty'} | null>(null);
+
+  useEffect(() => {
+    if (userData?.lastAdjustment) {
+      const adjustmentDate = new Date(userData.lastAdjustment.date);
+      const now = new Date();
+      const hoursSinceAdjustment = differenceInHours(now, adjustmentDate);
+
+      if (hoursSinceAdjustment < 24) {
+        const days = userData.lastAdjustment.days;
+        const reason = userData.lastAdjustment.reason;
+        if (days > 0) {
+          setAdjustmentNotification({
+            message: `An administrator has granted you a bonus of ${days} day(s). Reason: ${reason}`,
+            type: 'bonus'
+          });
+        } else {
+          setAdjustmentNotification({
+            message: `An administrator has applied a penalty of ${Math.abs(days)} day(s) to your plan. Reason: ${reason}`,
+            type: 'penalty'
+          });
+        }
+      }
+    }
+  }, [userData]);
 
   useEffect(() => {
     if (userData?.subscriptionStatus === 'active' && userData.subscriptionStartDate && userData.subscriptionEndDate) {
@@ -189,6 +219,21 @@ export default function SubscriptionPage() {
   return (
     <div className="flex-1 space-y-4">
       <h2 className="text-3xl font-bold tracking-tight">My Subscription</h2>
+      
+      {adjustmentNotification && (
+        <Card className={adjustmentNotification.type === 'bonus' ? 'bg-green-500/10 border-green-500' : 'bg-destructive/10 border-destructive'}>
+            <CardHeader className="flex flex-row items-start gap-4">
+                <div className={`p-2 rounded-full ${adjustmentNotification.type === 'bonus' ? 'bg-green-500/20 text-green-700' : 'bg-destructive/20 text-destructive'}`}>
+                    {adjustmentNotification.type === 'bonus' ? <Gift className="h-5 w-5" /> : <ShieldAlert className="h-5 w-5" />}
+                </div>
+                <div>
+                    <CardTitle>{adjustmentNotification.type === 'bonus' ? 'Plan Bonus Received!' : 'Plan Adjustment'}</CardTitle>
+                    <CardDescription className={adjustmentNotification.type === 'bonus' ? 'text-green-800' : 'text-destructive-foreground/80'}>{adjustmentNotification.message}</CardDescription>
+                </div>
+            </CardHeader>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <div className="flex items-start justify-between">
@@ -271,5 +316,3 @@ export default function SubscriptionPage() {
     </div>
   );
 }
-
-    
