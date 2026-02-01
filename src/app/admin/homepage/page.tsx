@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -36,7 +37,6 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 type HomepageFeature = {
   id: string;
@@ -44,7 +44,8 @@ type HomepageFeature = {
   description: string;
   icon: string;
   keyPoints: string[];
-  imageId: string;
+  imageUrl: string;
+  imageHint?: string;
   order: number;
 };
 
@@ -54,7 +55,8 @@ const initialFeatures: Omit<HomepageFeature, 'id'>[] = [
       description: 'A fast, intuitive POS system that makes billing a breeze.',
       icon: 'ShoppingCart',
       keyPoints: ['Handle Sales', 'Process Returns', 'Create Challans'],
-      imageId: 'feature-pos',
+      imageUrl: 'https://images.unsplash.com/photo-1556740738-b6a63e27c4df?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxwb2ludCUyMG9mJTIwc2FsZXxlbnwwfHx8fDE3NzA5ODcyODV8MA&ixlib=rb-4.1.0&q=80&w=1080',
+      imageHint: 'point sale',
       order: 1
     },
     {
@@ -62,7 +64,8 @@ const initialFeatures: Omit<HomepageFeature, 'id'>[] = [
       description: 'Manage your products, track stock levels, and generate barcodes.',
       icon: 'LayoutDashboard',
       keyPoints: ['Product Management', 'Stock Tracking', 'Barcode Generation'],
-      imageId: 'feature-inventory',
+      imageUrl: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxpbnZlbnRvcnklMjBtYW5hZ2VtZW50fGVufDB8fHx8MTcwNzMwMDU1Nnww&ixlib=rb-4.1.0&q=80&w=1080',
+      imageHint: 'warehouse shelf',
       order: 2
     },
     {
@@ -70,7 +73,8 @@ const initialFeatures: Omit<HomepageFeature, 'id'>[] = [
       description: 'Get a clear view of your business performance with powerful reports.',
       icon: 'BarChart',
       keyPoints: ['Sales Reports', 'Profit Margins', 'Top Products'],
-      imageId: 'feature-dashboard',
+      imageUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkYXNoYm9hcmQlMjBjaGFydHxlbnwwfHx8fDE3MDI3NjMwMjV8MA&ixlib=rb-4.1.0&q=80&w=1080',
+      imageHint: 'data chart',
       order: 3
     }
 ];
@@ -92,7 +96,8 @@ const FeatureFormDialog = ({ isOpen, onOpenChange, feature, onSaveSuccess }: { i
             description: '',
             icon: 'ShoppingCart',
             keyPoints: [],
-            imageId: '',
+            imageUrl: '',
+            imageHint: '',
             order: 1
         });
     }, [feature]);
@@ -114,8 +119,8 @@ const FeatureFormDialog = ({ isOpen, onOpenChange, feature, onSaveSuccess }: { i
             keyPoints: formData.keyPoints || []
         };
 
-        if (!featureData.title || !featureData.description || !featureData.icon || !featureData.imageId) {
-            toast({ variant: 'destructive', title: 'Missing Fields', description: 'All fields are required.' });
+        if (!featureData.title || !featureData.description || !featureData.icon || !featureData.imageUrl) {
+            toast({ variant: 'destructive', title: 'Missing Fields', description: 'All fields except Image Hint are required.' });
             return;
         }
 
@@ -154,7 +159,8 @@ const FeatureFormDialog = ({ isOpen, onOpenChange, feature, onSaveSuccess }: { i
                     <div className="space-y-2"><Label>Icon Name</Label><Input placeholder="e.g., ShoppingCart" value={formData.icon || ''} onChange={e => handleChange('icon', e.target.value)} /></div>
                     <div className="space-y-2"><Label>Display Order</Label><Input type="number" value={formData.order || ''} onChange={e => handleChange('order', e.target.value)} /></div>
                   </div>
-                   <div className="space-y-2"><Label>Image ID</Label><Input placeholder="From placeholder-images.json" value={formData.imageId || ''} onChange={e => handleChange('imageId', e.target.value)} /></div>
+                   <div className="space-y-2"><Label>Image URL</Label><Input placeholder="https://example.com/image.png" value={formData.imageUrl || ''} onChange={e => handleChange('imageUrl', e.target.value)} /></div>
+                   <div className="space-y-2"><Label>Image Hint (for AI)</Label><Input placeholder="e.g., data chart" value={formData.imageHint || ''} onChange={e => handleChange('imageHint', e.target.value)} /></div>
                    <div className="space-y-2"><Label>Key Points (comma-separated)</Label><Textarea placeholder="Point 1, Point 2, Point 3" value={formData.keyPoints?.join(', ') || ''} onChange={e => handleChange('keyPoints', e.target.value)} /></div>
               </div>
               <DialogFooter>
@@ -187,7 +193,7 @@ export default function AdminHomepageFeaturesPage() {
             const batch = writeBatch(firestore);
             const featuresCollectionRef = collection(firestore, 'homepageFeatures');
             initialFeatures.forEach(feature => {
-                const docRef = doc(featuresCollectionRef, feature.imageId); // Use imageId as doc id
+                const docRef = doc(featuresCollectionRef); // Use auto-generated ID
                 batch.set(docRef, { ...feature, id: docRef.id });
             });
             await batch.commit();
@@ -242,18 +248,18 @@ export default function AdminHomepageFeaturesPage() {
             Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-48 w-full" />)
           ) : featuresData && featuresData.length > 0 ? (
             featuresData.map(feature => {
-              const featureImage = PlaceHolderImages.find(p => p.id === feature.imageId);
               const IconComponent = iconMap[feature.icon];
 
               return (
               <Card key={feature.id} className="relative shadow-sm flex gap-6 p-4">
-                {featureImage && (
+                {feature.imageUrl && (
                     <Image
-                        src={featureImage.imageUrl}
+                        src={feature.imageUrl}
                         width={250}
                         height={250}
                         alt={feature.title}
                         className="rounded-lg object-cover aspect-square"
+                        data-ai-hint={feature.imageHint}
                     />
                 )}
                 <div className="flex-1">
@@ -305,3 +311,5 @@ export default function AdminHomepageFeaturesPage() {
     </div>
   );
 }
+
+    

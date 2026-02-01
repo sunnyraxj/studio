@@ -5,24 +5,6 @@
       "description": "Image for the hero section on the main landing page.",
       "imageUrl": "https://images.unsplash.com/photo-1546213290-e1b492ab3eee?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxyZXRhaWwlMjBzdG9yZXxlbnwwfHx8fDE3Njk4NTgxMjJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "retail store"
-    },
-    {
-      "id": "feature-pos",
-      "description": "Image for the Point of Sale feature.",
-      "imageUrl": "https://images.unsplash.com/photo-1556740738-b6a63e27c4df?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxwb2ludCUyMG9mJTIwc2FsZXxlbnwwfHx8fDE3NzA5ODcyODV8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "point sale"
-    },
-    {
-      "id": "feature-inventory",
-      "description": "Image for the Inventory Management feature.",
-      "imageUrl": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxpbnZlbnRvcnklMjBtYW5hZ2VtZW50fGVufDB8fHx8MTcwNzMwMDU1Nnww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "warehouse shelf"
-    },
-    {
-      "id": "feature-dashboard",
-      "description": "Image for the Dashboard & Reports feature.",
-      "imageUrl": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkYXNoYm9hcmQlMjBjaGFydHxlbnwwfHx8fDE3MDI3NjMwMjV8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "data chart"
     }
   ]
 }

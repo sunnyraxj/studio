@@ -24,7 +24,8 @@ type HomepageFeature = {
   description: string;
   icon: string;
   keyPoints: string[];
-  imageId: string;
+  imageUrl: string;
+  imageHint?: string;
   order: number;
 };
 
@@ -161,18 +162,17 @@ export default function HomePage() {
                             </Card>
                         ))
                     ) : features?.map((feature) => {
-                        const featureImage = PlaceHolderImages.find(p => p.id === feature.imageId);
                         const IconComponent = iconMap[feature.icon] || Gem;
                         return (
                             <Card key={feature.title} className="flex flex-col">
-                                {featureImage && (
+                                {feature.imageUrl && (
                                     <Image
-                                        src={featureImage.imageUrl}
+                                        src={feature.imageUrl}
                                         width={600}
                                         height={400}
                                         alt={feature.title}
                                         className="rounded-t-lg object-cover aspect-video"
-                                        data-ai-hint={featureImage.imageHint}
+                                        data-ai-hint={feature.imageHint}
                                     />
                                 )}
                                 <CardHeader>
@@ -210,3 +210,5 @@ export default function HomePage() {
     </div>
   )
 }
+
+    
