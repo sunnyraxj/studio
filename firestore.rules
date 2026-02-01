@@ -38,21 +38,7 @@ service cloud.firestore {
     match /users/{userId} {
       // A user can read and write their own profile.
       // An admin can also read any user's profile.
-      allow read, write: if isOwner(userId);
-      allow get: if isAdmin();
-
-      // Notifications for a user
-      match /notifications/{notificationId} {
-        // A user can get their own notification, and an admin can get any notification.
-        allow get: if isOwner(userId) || isAdmin();
-        // An admin can write (create) notifications for a user.
-        allow write: if isAdmin();
-      }
-
-      match /notifications {
-        // A user can list their own notifications, and an admin can list any user's notifications.
-        allow list: if isOwner(userId) || isAdmin();
-      }
+      allow read, write: if isOwner(userId) || isAdmin();
     }
 
     // All shop-related data

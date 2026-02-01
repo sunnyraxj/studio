@@ -13,8 +13,8 @@ import {
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc, useShopSettings } from '@/firebase';
-import { collection, doc, query, where, updateDoc, orderBy } from 'firebase/firestore';
-import { IndianRupee, PartyPopper, Percent, Calendar as CalendarIcon, FileText, Info } from 'lucide-react';
+import { collection, doc, query, where, orderBy } from 'firebase/firestore';
+import { IndianRupee, PartyPopper, Percent, Calendar as CalendarIcon, FileText } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { subDays, format, startOfDay, parse } from 'date-fns';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
@@ -129,14 +129,6 @@ type UserProfile = {
   subscriptionType?: 'New' | 'Renew';
 };
 
-type Notification = {
-    id: string;
-    date: string;
-    message: string;
-    type: 'bonus' | 'penalty' | 'info';
-    seen: boolean;
-}
-
 // Demo Data
 const initialDemoSales: Sale[] = [
     { id: '1', invoiceNumber: 'D-INV-001', customer: { name: 'Ravi Kumar', phone: '9876543210', state: 'Assam', gstin: '18ABCDE1234F1Z5' }, date: new Date().toISOString(), total: 2625, subtotal: 2500, cgst: 62.5, sgst: 62.5, igst: 0, items: [{ productId: '1', name: 'T-Shirt', quantity: 2, price: 500, margin: 25, sku: 'TS-01', hsn: '6109', gst: 5, discount: 0 }, { productId: '2', name: 'Jeans', quantity: 1, price: 1500, margin: 30, sku: 'JN-01', hsn: '6203', gst: 5, discount: 0 }], paymentMode: 'cash', status: 'Completed', isGstInvoice: true },
@@ -232,24 +224,6 @@ export default function DashboardPage() {
   
   const { data: overviewSalesData, isLoading: isOverviewLoading } = useCollection<Sale>(salesCollectionRef);
   
-  const notificationsQuery = useMemoFirebase(() => {
-    if (isDemoMode || !user || !firestore) return null;
-    return query(collection(firestore, `users/${user.uid}/notifications`), where('seen', '==', false), orderBy('date', 'desc'));
-  }, [user, firestore, isDemoMode]);
-
-  const { data: notifications, isLoading: isNotificationsLoading } = useCollection<Notification>(notificationsQuery);
-
-  const handleMarkAsSeen = async (notificationId: string) => {
-    if (isDemoMode || !user || !firestore) return;
-    const notifDocRef = doc(firestore, `users/${user.uid}/notifications`, notificationId);
-    try {
-        await updateDoc(notifDocRef, { seen: true });
-    } catch (e) {
-        console.error("Failed to mark notification as seen:", e);
-    }
-  }
-
-
   const salesData = isDemoMode ? demoSales : overviewSalesData;
   const originalData = salesData || [];
 
@@ -332,25 +306,6 @@ export default function DashboardPage() {
                 {isDemoMode ? t('Dashboard (Demo Mode)') : t('Dashboard')}
             </h2>
         </div>
-
-         {!isNotificationsLoading && notifications && notifications.length > 0 && (
-            <Card className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-blue-800 dark:text-blue-200">
-                        <Info className="h-5 w-5" />
-                        Admin Notification
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                    {notifications.map(notif => (
-                        <div key={notif.id} className="flex items-start justify-between gap-4 p-2 rounded-md bg-blue-100 dark:bg-blue-900/50">
-                            <p className="text-sm text-blue-700 dark:text-blue-300">{notif.message}</p>
-                            <Button variant="ghost" size="sm" onClick={() => handleMarkAsSeen(notif.id)}>Dismiss</Button>
-                        </div>
-                    ))}
-                </CardContent>
-            </Card>
-        )}
         
         {isNewSubscriber && (
             <Card className="bg-accent/50 border-primary/50">
