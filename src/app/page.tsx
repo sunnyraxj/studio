@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -143,7 +144,7 @@ export default function HomePage() {
                         </p>
                     </div>
                 </div>
-                <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-2 md:gap-12 lg:max-w-none lg:grid-cols-3 mt-12">
+                <div className="mx-auto grid max-w-6xl items-start gap-6 sm:grid-cols-2 md:gap-8 lg:grid-cols-3 mt-12">
                     {features.map((feature) => {
                         const featureImage = PlaceHolderImages.find(p => p.id === feature.id);
                         return (
