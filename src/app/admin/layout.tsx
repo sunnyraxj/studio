@@ -12,7 +12,6 @@ import {
   LogOut,
   Tags,
   LayoutList,
-  Lightbulb,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -40,11 +39,6 @@ const adminNavLinks = [
     href: '/admin/homepage',
     icon: LayoutList,
     label: 'Homepage',
-  },
-  {
-    href: '/admin/help',
-    icon: Lightbulb,
-    label: 'Feature Requests',
   },
   {
     href: '/admin/settings',

@@ -27,7 +27,6 @@ import {
   Search,
   Languages,
   Palette,
-  Lightbulb,
 } from 'lucide-react';
 
 import {
@@ -118,12 +117,6 @@ const navLinks = [
     label: 'Subscription',
     category: 'Utilities'
   },
-  {
-    href: '/dashboard/help',
-    icon: Lightbulb,
-    label: 'Suggestions',
-    category: 'Utilities'
-  }
 ];
 
 type UserProfile = {
@@ -190,10 +183,10 @@ function AppSidebar({ shopName, isExpired }: { shopName: string, isExpired: bool
                         <Separator className="my-2" />
                         {links.map((link) => (
                             <SidebarMenuItem key={link.label}>
-                                <Link href={isExpired && link.href !== '/dashboard/subscription' && link.href !== '/dashboard/help' ? '#' : link.href} passHref>
+                                <Link href={isExpired && link.href !== '/dashboard/subscription' ? '#' : link.href} passHref>
                                     <SidebarMenuButton
                                         isActive={pathname === link.href}
-                                        disabled={isExpired && link.href !== '/dashboard/subscription' && link.href !== '/dashboard/help'}
+                                        disabled={isExpired && link.href !== '/dashboard/subscription'}
                                         tooltip={t(link.label as any)}
                                     >
                                         <link.icon className="h-4 w-4" />
@@ -226,11 +219,11 @@ function AppSidebar({ shopName, isExpired }: { shopName: string, isExpired: bool
                         <span>{t('Settings')}</span>
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild disabled={isExpired && pathname !== '/dashboard/help'}>
-                      <Link href={isExpired && pathname !== '/dashboard/help' ? '#' : "/dashboard/help"}>
-                        <Lightbulb className="mr-2 h-4 w-4" />
-                        <span>Suggestions</span>
-                      </Link>
+                    <DropdownMenuItem asChild>
+                      <a href="mailto:support@axombilling.com">
+                        <LifeBuoy className="mr-2 h-4 w-4" />
+                        <span>Contact Support</span>
+                      </a>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout}>
@@ -300,11 +293,11 @@ const MobileSidebar = ({ shopName, isExpired }: { shopName: string; isExpired: b
                     {navLinks.map((link) => (
                         <Link
                             key={link.label}
-                            href={isExpired && link.href !== '/dashboard/subscription' && link.href !== '/dashboard/help' ? '#' : link.href}
+                            href={isExpired && link.href !== '/dashboard/subscription' ? '#' : link.href}
                             className={cn(
                                 "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
                                 pathname === link.href && "text-primary bg-muted",
-                                isExpired && link.href !== '/dashboard/subscription' && link.href !== '/dashboard/help' && "pointer-events-none opacity-50"
+                                isExpired && link.href !== '/dashboard/subscription' && "pointer-events-none opacity-50"
                             )}
                         >
                             <link.icon className="h-4 w-4" />
@@ -357,7 +350,7 @@ export default function DashboardLayout({
     if (userData?.subscriptionStatus === 'active' && userData?.subscriptionEndDate) {
         const endDate = new Date(userData.subscriptionEndDate);
         const now = new Date();
-        return endDate.getTime() < now.getTime();
+        return now.getTime() > endDate.getTime();
     }
     if(userData?.subscriptionStatus && userData.subscriptionStatus !== 'active') return true;
     return false;
@@ -413,7 +406,7 @@ export default function DashboardLayout({
 
   const shopName = user ? (settingsData?.companyName || 'My Shop') : 'Demo Shop';
 
-  const isUIBlocked = isSubscriptionExpired && pathname !== '/dashboard/subscription' && pathname !== '/dashboard/help';
+  const isUIBlocked = isSubscriptionExpired && pathname !== '/dashboard/subscription';
 
   return (
     <SidebarProvider>

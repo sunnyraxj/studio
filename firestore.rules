@@ -53,39 +53,5 @@ service cloud.firestore {
       // Admins can also read and write anything.
       allow read, write: if isShopMember(shopId) || isAdmin();
     }
-    
-    // --- Support Tickets ---
-    match /supportTickets/{ticketId} {
-      // Helper function to check if the user owns the ticket.
-      function isTicketOwner() {
-        return request.auth.uid == resource.data.ownerId;
-      }
-      
-      // CREATE: An authenticated user can create a ticket if they are the owner.
-      allow create: if request.auth.uid == request.resource.data.ownerId;
-      
-      // READ (Single Doc): The owner or an admin can get the ticket.
-      allow get: if isTicketOwner() || isAdmin();
-      
-      // UPDATE: The owner or an admin can update the ticket (e.g., change status).
-      allow update: if isTicketOwner() || isAdmin();
-      
-      // DELETE: Only admins can delete tickets.
-      allow delete: if isAdmin();
-      
-      // --- Messages Subcollection ---
-      match /messages/{messageId} {
-        // We use a `get()` call to the parent ticket document to check ownership.
-        function isParentTicketOwner() {
-          return get(/databases/$(database)/documents/supportTickets/$(ticketId)).data.ownerId == request.auth.uid;
-        }
-        
-        // READ/CREATE: Only the ticket owner or an admin can read or create messages.
-        allow read, create: if isParentTicketOwner() || isAdmin();
-        
-        // No updates or deletes for individual messages to preserve chat history.
-        allow update, delete: if false;
-      }
-    }
   }
 }
