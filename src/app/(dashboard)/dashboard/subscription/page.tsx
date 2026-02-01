@@ -19,6 +19,7 @@ import { format, differenceInMilliseconds, differenceInDays, differenceInHours }
 import { Skeleton } from '@/components/ui/skeleton';
 import { CheckCircle, Clock, XCircle, AlertTriangle, Gift, ShieldAlert } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
 
 type UserProfile = {
   subscriptionStatus?: 'active' | 'inactive' | 'pending_verification' | 'rejected';
@@ -59,7 +60,7 @@ export default function SubscriptionPage() {
   const [timeRemaining, setTimeRemaining] = useState<TimeRemaining | null>(null);
   const [progress, setProgress] = useState(0);
   const [canRenew, setCanRenew] = useState(false);
-  const [adjustmentNotification, setAdjustmentNotification] = useState<{message: string, type: 'bonus' | 'penalty'} | null>(null);
+  const [adjustmentNotification, setAdjustmentNotification] = useState<{days: number; reason: string; type: 'bonus' | 'penalty'} | null>(null);
 
   useEffect(() => {
     if (userData?.lastAdjustment) {
@@ -70,17 +71,11 @@ export default function SubscriptionPage() {
       if (hoursSinceAdjustment < 24) {
         const days = userData.lastAdjustment.days;
         const reason = userData.lastAdjustment.reason;
-        if (days > 0) {
-          setAdjustmentNotification({
-            message: `An administrator has granted you a bonus of ${days} day(s). Reason: ${reason}`,
-            type: 'bonus'
-          });
-        } else {
-          setAdjustmentNotification({
-            message: `An administrator has applied a penalty of ${Math.abs(days)} day(s) to your plan. Reason: ${reason}`,
-            type: 'penalty'
-          });
-        }
+        setAdjustmentNotification({
+            days,
+            reason,
+            type: days > 0 ? 'bonus' : 'penalty'
+        });
       }
     }
   }, [userData]);
@@ -221,16 +216,23 @@ export default function SubscriptionPage() {
       <h2 className="text-3xl font-bold tracking-tight">My Subscription</h2>
       
       {adjustmentNotification && (
-        <Card className={adjustmentNotification.type === 'bonus' ? 'bg-green-500/10 border-green-500' : 'bg-destructive/10 border-destructive'}>
-            <CardHeader className="flex flex-row items-start gap-4">
+        <Card className={cn(adjustmentNotification.type === 'bonus' ? 'bg-green-500/10 border-green-500' : 'bg-destructive/10 border-destructive')}>
+            <CardContent className="p-4 flex items-center gap-4">
                 <div className={`p-2 rounded-full ${adjustmentNotification.type === 'bonus' ? 'bg-green-500/20 text-green-700' : 'bg-destructive/20 text-destructive'}`}>
                     {adjustmentNotification.type === 'bonus' ? <Gift className="h-5 w-5" /> : <ShieldAlert className="h-5 w-5" />}
                 </div>
-                <div>
-                    <CardTitle>{adjustmentNotification.type === 'bonus' ? 'Plan Bonus Received!' : 'Plan Adjustment'}</CardTitle>
-                    <CardDescription className={adjustmentNotification.type === 'bonus' ? 'text-green-800' : 'text-destructive-foreground/80'}>{adjustmentNotification.message}</CardDescription>
+                <div className='flex-grow'>
+                    <p className="font-semibold text-sm">
+                        {adjustmentNotification.type === 'bonus' ? 'Plan Extended by Admin' : 'Plan Reduced by Admin'}
+                    </p>
+                    <p className='text-xs text-muted-foreground'>
+                        Reason: {adjustmentNotification.reason}
+                    </p>
                 </div>
-            </CardHeader>
+                <div className={cn('text-lg font-bold', adjustmentNotification.type === 'bonus' ? 'text-green-700' : 'text-destructive')}>
+                    {adjustmentNotification.days > 0 ? `+${adjustmentNotification.days}` : adjustmentNotification.days} Days
+                </div>
+            </CardContent>
         </Card>
       )}
 
