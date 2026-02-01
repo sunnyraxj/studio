@@ -570,6 +570,21 @@
         }
       },
       "required": ["items", "status", "createdAt"]
+    },
+    "HomepageFeature": {
+      "title": "Homepage Feature",
+      "type": "object",
+      "description": "Represents a feature card displayed on the main landing page.",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "icon": { "type": "string", "description": "The name of the lucide-react icon to display." },
+        "keyPoints": { "type": "array", "items": { "type": "string" }, "description": "A list of key features to display as bullet points." },
+        "imageId": { "type": "string", "description": "The ID of the placeholder image from placeholder-images.json." },
+        "order": { "type": "number", "description": "The sort order for displaying the feature on the page." }
+      },
+      "required": ["id", "title", "description", "icon", "keyPoints", "imageId", "order"]
     }
   },
   "auth": {
@@ -731,6 +746,15 @@
             "$ref": "#/entities/KOT"
           },
           "description": "Stores active Kitchen Order Tickets for a specific shop."
+        }
+      },
+      {
+        "path": "/global/homepageFeatures/{featureId}",
+        "definition": {
+          "schema": {
+            "$ref": "#/backend/entities/HomepageFeature"
+          },
+          "description": "Configuration for the feature cards shown on the public landing page."
         }
       }
     ]

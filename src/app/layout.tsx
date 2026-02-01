@@ -1,16 +1,16 @@
 
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import './globals.css';
-import { Inter, Inter as FontSans } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { FirebaseClientProvider } from '@/firebase';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as HotToaster } from 'react-hot-toast';
 import { ThemeProvider } from '@/components/theme-provider';
 import { LanguageProvider } from '@/context/language-provider';
-import Head from 'next/head';
 
-const fontSans = FontSans({
+const fontSans = Inter({
   subsets: ['latin'],
   variable: '--font-sans',
 })
@@ -30,9 +30,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-      </head>
       <body className={cn("min-h-screen bg-background font-sans antialiased", fontSans.variable)}>
         <ThemeProvider
           attribute="class"
@@ -48,6 +45,7 @@ export default function RootLayout({
           <Toaster />
           <HotToaster />
         </ThemeProvider>
+        <Script src="https://checkout.razorpay.com/v1/checkout.js" />
       </body>
     </html>
   );

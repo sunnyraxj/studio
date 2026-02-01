@@ -3,43 +3,36 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Gem, LayoutDashboard, ShoppingCart, BarChart, Check } from 'lucide-react';
+import { Gem, LayoutDashboard, ShoppingCart, BarChart, Check, LucideProps } from 'lucide-react';
 import Link from 'next/link';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-
+import { Skeleton } from '@/components/ui/skeleton';
 
 type UserProfile = {
   subscriptionStatus?: string;
   role?: 'user' | 'admin';
 };
 
-const features = [
-    {
-      id: 'feature-pos',
-      title: 'Effortless Point of Sale',
-      description: 'A fast, intuitive POS system that makes billing a breeze.',
-      icon: ShoppingCart,
-      keyPoints: ['Handle Sales', 'Process Returns', 'Create Challans'],
-    },
-    {
-      id: 'feature-inventory',
-      title: 'Smart Inventory Control',
-      description: 'Manage your products, track stock levels, and generate barcodes.',
-      icon: LayoutDashboard,
-      keyPoints: ['Product Management', 'Stock Tracking', 'Barcode Generation'],
-    },
-    {
-      id: 'feature-dashboard',
-      title: 'Insightful Analytics',
-      description: 'Get a clear view of your business performance with powerful reports.',
-      icon: BarChart,
-      keyPoints: ['Sales Reports', 'Profit Margins', 'Top Products'],
-    }
-];
+type HomepageFeature = {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  keyPoints: string[];
+  imageId: string;
+  order: number;
+};
+
+const iconMap: { [key: string]: React.FC<LucideProps> } = {
+  ShoppingCart,
+  LayoutDashboard,
+  BarChart,
+};
+
 
 export default function HomePage() {
   const { user, isUserLoading } = useUser();
@@ -52,6 +45,13 @@ export default function HomePage() {
   }, [user, firestore]);
 
   const { data: userData, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
+
+  const featuresQuery = useMemoFirebase(() => {
+      if(!firestore) return null;
+      return query(collection(firestore, 'global/homepageFeatures'), orderBy('order'));
+  }, [firestore]);
+  
+  const { data: features, isLoading: isFeaturesLoading } = useCollection<HomepageFeature>(featuresQuery);
   
   useEffect(() => {
     if (!isUserLoading && !isProfileLoading && userData) {
@@ -148,8 +148,18 @@ export default function HomePage() {
                     </div>
                 </div>
                 <div className="mx-auto grid max-w-6xl items-start gap-4 sm:grid-cols-2 md:gap-4 lg:grid-cols-3 mt-12">
-                    {features.map((feature) => {
-                        const featureImage = PlaceHolderImages.find(p => p.id === feature.id);
+                    {isFeaturesLoading ? (
+                        Array.from({ length: 3 }).map((_, i) => (
+                            <Card key={i} className="p-6 space-y-4">
+                                <Skeleton className="aspect-video w-full rounded-lg" />
+                                <Skeleton className="h-6 w-3/4" />
+                                <Skeleton className="h-4 w-full" />
+                                <Skeleton className="h-4 w-full" />
+                            </Card>
+                        ))
+                    ) : features?.map((feature) => {
+                        const featureImage = PlaceHolderImages.find(p => p.id === feature.imageId);
+                        const IconComponent = iconMap[feature.icon] || Gem;
                         return (
                             <div key={feature.title} className="grid gap-4 rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
                                 {featureImage && (
@@ -163,7 +173,7 @@ export default function HomePage() {
                                     />
                                 )}
                                 <div className="space-y-2">
-                                    <h3 className="text-xl font-bold flex items-center gap-2"><feature.icon className="h-5 w-5" />{feature.title}</h3>
+                                    <h3 className="text-xl font-bold flex items-center gap-2"><IconComponent className="h-5 w-5" />{feature.title}</h3>
                                     <p className="text-muted-foreground text-sm">{feature.description}</p>
                                     <ul className="space-y-1 pt-2">
                                         {feature.keyPoints.map(point => (
