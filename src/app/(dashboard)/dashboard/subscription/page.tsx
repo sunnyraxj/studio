@@ -289,7 +289,7 @@ export default function SubscriptionPage() {
                             {isLoading || !timeRemaining ? <Skeleton className="h-4 w-48" /> : 
                                 timeRemaining.days === 0 && timeRemaining.hours === 0 && timeRemaining.minutes === 0 ?
                                 <span>Plan expired</span> :
-                                <span>Time used</span>
+                                <span>Time used ({progress.toFixed(0)}%)</span>
                             }
                             {isLoading || !timeRemaining ? <Skeleton className="h-4 w-48" /> : 
                                 (timeRemaining.days > 0 || timeRemaining.hours > 0 || timeRemaining.minutes > 0) ? (
