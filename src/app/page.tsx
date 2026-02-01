@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 
 type UserProfile = {
   subscriptionStatus?: string;
@@ -150,31 +151,35 @@ export default function HomePage() {
                 <div className="mx-auto grid max-w-6xl items-start gap-4 sm:grid-cols-2 md:gap-4 lg:grid-cols-3 mt-12">
                     {isFeaturesLoading ? (
                         Array.from({ length: 3 }).map((_, i) => (
-                            <Card key={i} className="p-6 space-y-4">
-                                <Skeleton className="aspect-video w-full rounded-lg" />
-                                <Skeleton className="h-6 w-3/4" />
-                                <Skeleton className="h-4 w-full" />
-                                <Skeleton className="h-4 w-full" />
+                            <Card key={i}>
+                                <CardContent className="p-6 space-y-4">
+                                    <Skeleton className="aspect-video w-full rounded-lg" />
+                                    <Skeleton className="h-6 w-3/4" />
+                                    <Skeleton className="h-4 w-full" />
+                                    <Skeleton className="h-4 w-full" />
+                                </CardContent>
                             </Card>
                         ))
                     ) : features?.map((feature) => {
                         const featureImage = PlaceHolderImages.find(p => p.id === feature.imageId);
                         const IconComponent = iconMap[feature.icon] || Gem;
                         return (
-                            <div key={feature.title} className="grid gap-4 rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
+                            <Card key={feature.title} className="flex flex-col">
                                 {featureImage && (
                                     <Image
                                         src={featureImage.imageUrl}
                                         width={600}
                                         height={400}
                                         alt={feature.title}
-                                        className="rounded-lg object-cover aspect-video"
+                                        className="rounded-t-lg object-cover aspect-video"
                                         data-ai-hint={featureImage.imageHint}
                                     />
                                 )}
-                                <div className="space-y-2">
-                                    <h3 className="text-xl font-bold flex items-center gap-2"><IconComponent className="h-5 w-5" />{feature.title}</h3>
-                                    <p className="text-muted-foreground text-sm">{feature.description}</p>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2"><IconComponent className="h-5 w-5" />{feature.title}</CardTitle>
+                                    <CardDescription>{feature.description}</CardDescription>
+                                </CardHeader>
+                                <CardContent>
                                     <ul className="space-y-1 pt-2">
                                         {feature.keyPoints.map(point => (
                                             <li key={point} className="flex items-center gap-2 text-sm font-medium">
@@ -183,8 +188,8 @@ export default function HomePage() {
                                             </li>
                                         ))}
                                     </ul>
-                                </div>
-                            </div>
+                                </CardContent>
+                            </Card>
                         )
                     })}
                 </div>
