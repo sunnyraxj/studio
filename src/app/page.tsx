@@ -116,13 +116,13 @@ export default function HomePage() {
                 Login
             </Link>
             <Button asChild>
-                <Link href="/subscribe">Get Started</Link>
+                <Link href="/subscribe">Get Started with 1rs</Link>
             </Button>
             </nav>
         </div>
       </header>
       <main className="flex-1">
-        <section className="w-full py-12 md:py-24 lg:py-16">
+        <section className="w-full py-6 md:py-12 lg:py-16">
           <div className="container px-4 md:px-6">
             <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px]">
               <div className="flex flex-col justify-center space-y-4">
@@ -157,7 +157,7 @@ export default function HomePage() {
           </div>
         </section>
         
-        <section className="w-full py-12 md:py-24 lg:py-16 bg-muted">
+        <section className="w-full py-6 md:py-12 lg:py-16 bg-muted">
             <div className="container px-4 md:px-6">
                 <div className="flex flex-col items-center justify-center space-y-4 text-center">
                     <div className="space-y-2">
@@ -215,7 +215,7 @@ export default function HomePage() {
             </div>
         </section>
 
-        <section className="w-full py-12 md:py-24 lg:py-16 bg-muted">
+        <section className="w-full py-6 md:py-12 lg:py-16 bg-muted">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
@@ -230,7 +230,7 @@ export default function HomePage() {
                 </p>
               </div>
             </div>
-            <div className="mx-auto grid max-w-6xl items-start gap-6 py-12 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mx-auto grid max-w-6xl items-start gap-6 py-12 lg:grid-cols-3 lg:gap-8">
               {isPlansLoading ? (
                 Array.from({ length: 3 }).map((_, i) => (
                   <Card key={i}>
@@ -311,3 +311,5 @@ export default function HomePage() {
     </div>
   )
 }
+
+    
