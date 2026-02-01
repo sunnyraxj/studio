@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -151,7 +152,7 @@ export default function HomePage() {
                     width={1200}
                     height={800}
                     alt="Hero"
-                    className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last lg:aspect-square"
+                    className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last"
                     data-ai-hint="retail interior"
                 />
               
@@ -159,7 +160,7 @@ export default function HomePage() {
           </div>
         </section>
         
-        <section className="w-full py-6 md:py-12 lg:py-16 bg-muted">
+        <section className="w-full py-12 md:py-24 lg:py-16 bg-muted">
             <div className="container px-4 md:px-6">
                 <div className="flex flex-col items-center justify-center space-y-4 text-center">
                     <div className="space-y-2">
