@@ -17,7 +17,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { format, differenceInMilliseconds, differenceInDays, differenceInHours } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CheckCircle, Clock, XCircle, AlertTriangle, Gift, ShieldAlert } from 'lucide-react';
+import { CheckCircle, Clock, XCircle, AlertTriangle, Gift, ShieldAlert, IndianRupee } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 
@@ -218,7 +218,7 @@ export default function SubscriptionPage() {
       {adjustmentNotification && (
         <Card className={cn(adjustmentNotification.type === 'bonus' ? 'bg-green-500/10 border-green-500' : 'bg-destructive/10 border-destructive')}>
             <CardContent className="p-4 flex items-center gap-4">
-                <div className={`p-2 rounded-full ${adjustmentNotification.type === 'bonus' ? 'bg-green-500/20 text-green-700' : 'bg-destructive/20 text-destructive'}`}>
+                <div className={cn('p-2 rounded-full', adjustmentNotification.type === 'bonus' ? 'bg-green-500/20 text-green-700' : 'bg-destructive/20 text-destructive')}>
                     {adjustmentNotification.type === 'bonus' ? <Gift className="h-5 w-5" /> : <ShieldAlert className="h-5 w-5" />}
                 </div>
                 <div className='flex-grow'>
@@ -260,23 +260,26 @@ export default function SubscriptionPage() {
             </div>
 
             {(userData?.subscriptionStatus === 'active' || (userData?.subscriptionStatus === 'inactive' && userData?.planName)) && (
-                <div className="space-y-4 rounded-md border p-4">
-                    <div className="grid grid-cols-1 gap-y-2 text-sm md:grid-cols-2">
-                        <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Current Plan</span>
-                            {isLoading ? <Skeleton className="h-5 w-20" /> : <span className="font-bold">{userData.planName || 'N/A'}</span>}
+                <div className="space-y-6 rounded-md border p-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-muted-foreground">Current Plan</p>
+                            {isLoading ? <Skeleton className="h-6 w-24 mt-1" /> : <p className="text-xl font-bold">{userData.planName || 'N/A'}</p>}
                         </div>
-                         <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Activation Date</span>
-                            {isLoading ? <Skeleton className="h-5 w-28" /> : <span className="font-medium">{userData.subscriptionStartDate ? format(new Date(userData.subscriptionStartDate), 'dd MMM, yyyy') : 'N/A'}</span>}
+                        <div>
+                            <p className="text-sm text-muted-foreground text-right">Price</p>
+                            {isLoading ? <Skeleton className="h-6 w-20 mt-1" /> : <p className="text-xl font-bold flex items-center justify-end"><IndianRupee className="h-5 w-5 mr-1" />{userData.planPrice?.toLocaleString('en-IN') || 0}</p>}
                         </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Price</span>
-                            {isLoading ? <Skeleton className="h-5 w-24" /> : <span className="font-bold">₹{userData.planPrice?.toLocaleString('en-IN') || 0}</span>}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 text-center">
+                        <div className="p-3 bg-muted/50 rounded-md">
+                            <p className="text-xs text-muted-foreground">Activation Date</p>
+                            {isLoading ? <Skeleton className="h-5 w-24 mx-auto mt-1" /> : <p className="font-medium text-sm">{userData.subscriptionStartDate ? format(new Date(userData.subscriptionStartDate), 'dd MMM, yyyy') : 'N/A'}</p>}
                         </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Expiry Date</span>
-                            {isLoading ? <Skeleton className="h-5 w-28" /> : <span className="font-medium">{userData.subscriptionEndDate ? format(new Date(userData.subscriptionEndDate), 'dd MMM, yyyy') : 'N/A'}</span>}
+                        <div className="p-3 bg-muted/50 rounded-md">
+                            <p className="text-xs text-muted-foreground">Expiry Date</p>
+                            {isLoading ? <Skeleton className="h-5 w-24 mx-auto mt-1" /> : <p className="font-medium text-sm">{userData.subscriptionEndDate ? format(new Date(userData.subscriptionEndDate), 'dd MMM, yyyy') : 'N/A'}</p>}
                         </div>
                     </div>
                     
