@@ -67,9 +67,6 @@ service cloud.firestore {
       // READ (Single Doc): The owner or an admin can get the ticket.
       allow get: if isTicketOwner() || isAdmin();
       
-      // READ (List): Admin can list all. User can list only their own via a query.
-      allow list: if isAdmin() || (request.query.where.ownerId == request.auth.uid);
-      
       // UPDATE: The owner or an admin can update the ticket (e.g., change status).
       allow update: if isTicketOwner() || isAdmin();
       
