@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -12,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PlusCircle, Send, ArrowLeft, Loader2 } from 'lucide-react';
-import { format, formatDistanceToNow, isAfter } from 'date-fns';
+import { format, formatDistanceToNow, isAfter, differenceInDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -141,7 +142,10 @@ export default function HelpAndSupportPage() {
 
     const isSubscriptionActive = useMemo(() => {
         if (userData?.subscriptionStatus === 'active' && userData?.subscriptionEndDate) {
-            return isAfter(new Date(userData.subscriptionEndDate), new Date());
+            const endDate = new Date(userData.subscriptionEndDate);
+            const now = new Date();
+            // A plan is active if today is the same day or before the end date.
+            return differenceInDays(endDate, now) >= 0;
         }
         return false;
     }, [userData]);

@@ -65,7 +65,7 @@ import {
 } from '@/components/ui/collapsible';
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { isAfter } from 'date-fns';
+import { isAfter, differenceInDays } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
 import { UniversalSearch } from './components/universal-search';
 import { useTranslation } from '@/hooks/use-translation';
@@ -354,7 +354,10 @@ export default function DashboardLayout({
   
   const isSubscriptionExpired = React.useMemo(() => {
     if (userData?.subscriptionStatus === 'active' && userData?.subscriptionEndDate) {
-        return !isAfter(new Date(userData.subscriptionEndDate), new Date());
+        const endDate = new Date(userData.subscriptionEndDate);
+        const now = new Date();
+        // A plan is expired if the end date is before today.
+        return differenceInDays(endDate, now) < 0;
     }
     // If status is not active, treat as expired UI-wise
     if(userData?.subscriptionStatus && userData.subscriptionStatus !== 'active') return true;
