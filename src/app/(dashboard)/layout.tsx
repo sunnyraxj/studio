@@ -117,6 +117,12 @@ const navLinks = [
     label: 'Subscription',
     category: 'Utilities'
   },
+  {
+    href: '/dashboard/help',
+    icon: LifeBuoy,
+    label: 'Help & Support',
+    category: 'Utilities'
+  },
 ];
 
 type UserProfile = {
@@ -186,7 +192,7 @@ function AppSidebar({ shopName, isExpired }: { shopName: string, isExpired: bool
                                 <Link href={isExpired && link.href !== '/dashboard/subscription' ? '#' : link.href} passHref>
                                     <SidebarMenuButton
                                         isActive={pathname === link.href}
-                                        disabled={isExpired && link.href !== '/dashboard/subscription'}
+                                        disabled={isExpired && link.href !== '/dashboard/subscription' && link.href !== '/dashboard/help'}
                                         tooltip={t(link.label as any)}
                                     >
                                         <link.icon className="h-4 w-4" />
@@ -220,10 +226,10 @@ function AppSidebar({ shopName, isExpired }: { shopName: string, isExpired: bool
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <a href="mailto:support@axombilling.com">
+                       <Link href="/dashboard/help">
                         <LifeBuoy className="mr-2 h-4 w-4" />
-                        <span>Contact Support</span>
-                      </a>
+                        <span>{t('Help & Support')}</span>
+                      </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout}>
@@ -293,11 +299,11 @@ const MobileSidebar = ({ shopName, isExpired }: { shopName: string; isExpired: b
                     {navLinks.map((link) => (
                         <Link
                             key={link.label}
-                            href={isExpired && link.href !== '/dashboard/subscription' ? '#' : link.href}
+                            href={isExpired && link.href !== '/dashboard/subscription' && link.href !== '/dashboard/help' ? '#' : link.href}
                             className={cn(
                                 "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
                                 pathname === link.href && "text-primary bg-muted",
-                                isExpired && link.href !== '/dashboard/subscription' && "pointer-events-none opacity-50"
+                                isExpired && link.href !== '/dashboard/subscription' && link.href !== '/dashboard/help' && "pointer-events-none opacity-50"
                             )}
                         >
                             <link.icon className="h-4 w-4" />
@@ -310,6 +316,11 @@ const MobileSidebar = ({ shopName, isExpired }: { shopName: string; isExpired: b
                      <Link href={isExpired ? '#' : "/dashboard/settings"} passHref aria-disabled={isExpired}>
                          <Button variant="ghost" className="w-full justify-start gap-2" disabled={isExpired}>
                             <Settings className="h-4 w-4" /> {t('Settings')}
+                         </Button>
+                     </Link>
+                      <Link href="/dashboard/help" passHref>
+                         <Button variant="ghost" className="w-full justify-start gap-2">
+                            <LifeBuoy className="h-4 w-4" /> {t('Help & Support')}
                          </Button>
                      </Link>
                      <Button variant="ghost" className="w-full justify-start gap-2" onClick={handleLogout}>
@@ -406,7 +417,7 @@ export default function DashboardLayout({
 
   const shopName = user ? (settingsData?.companyName || 'My Shop') : 'Demo Shop';
 
-  const isUIBlocked = isSubscriptionExpired && pathname !== '/dashboard/subscription';
+  const isUIBlocked = isSubscriptionExpired && pathname !== '/dashboard/subscription' && pathname !== '/dashboard/help';
 
   return (
     <SidebarProvider>
